@@ -1,0 +1,238 @@
+import media2 from '../../../assets/images/media/media-2.jpg';
+import media8 from '../../../assets/images/media/media-8.jpg';
+import media9 from '../../../assets/images/media/media-9.jpg';
+import media13 from '../../../assets/images/media/media-13.jpg';
+import media14 from '../../../assets/images/media/media-14.jpg';
+import face2 from '../../../assets/images/faces/2.jpg';
+import face3 from '../../../assets/images/faces/3.jpg';
+import face4 from '../../../assets/images/faces/4.jpg';
+import face5 from '../../../assets/images/faces/5.jpg';
+import face15 from '../../../assets/images/faces/15.jpg';
+import type { ReactNode } from 'react';
+
+
+interface Badge {
+    label: string;
+    class: string;
+}
+
+interface MediaItem {
+    src: string;
+    alt: string;
+}
+
+interface TimelineEventType {
+    id: number;
+    theme: string;
+    date: string;
+    time: string;
+    title: string;
+    badges: Badge[];
+    comments: number;
+    likes: number;
+    commenter: string;
+    postOwner: string;
+    description: string;
+    innertext: string;
+    media?: MediaItem[];
+}
+
+export const Timeline01: TimelineEventType[] = [
+    {
+        id: 1,
+        theme: 'primary',
+        date: '15 August 2024',
+        time: '09:45, Thursday',
+        title: 'Initial Planning',
+        badges: [
+            { label: 'Event', class: 'primary' },
+            { label: 'Personal', class: 'secondary' }
+        ],
+        comments: 32,
+        likes: 16,
+        commenter: 'Aman Gupta',
+        innertext: ' Commented on',
+        postOwner: ' Sonia Mehta ',
+        description: ` Aman appreciated Sonia's recent article on entrepreneurship and innovation in India. He added insights about how Indian startups are shaping the global market, highlighting the growing impact of young Indian entrepreneurs.`
+    },
+    {
+        id: 2,
+        theme: 'secondary',
+        date: '13 January 2024',
+        time: '11:45, Friday',
+        title: 'Early Growth',
+        badges: [
+            { label: 'Future', class: 'secondary' },
+            { label: 'Technical', class: 'danger' },
+            { label: 'Planning', class: 'warning' }
+        ],
+        comments: 17,
+        likes: 34,
+        commenter: 'Raj Malhotra',
+        innertext: 'Tagged',
+        postOwner: 'Ananya Singh ',
+        description: `Celebrating a special day with Ananya, capturing the beautiful moments together. Raj shared these memories with friends and family, adding Ananya to the cherished collection of moments.`,
+        media: [
+            { src: media2, alt: 'media 1' },
+            { src: media8, alt: 'media 2' }
+        ]
+    },
+    {
+        id: 3,
+        theme: 'danger',
+        date: '22 July 2024',
+        time: '09:32, Monday',
+        title: 'Leading The Future ',
+        badges: [
+            { label: 'Comment', class: 'danger' },
+            { label: 'Personal', class: 'warning' }
+        ],
+        comments: 23,
+        likes: 18,
+        commenter: 'Riya Sharma',
+        innertext: 'Shared a Post by',
+        postOwner: 'Rajesh Iyer ',
+        description: `Riya shared Rajesh's recent update about his tech company's latest innovations. She emphasized the importance of supporting local businesses and congratulated Rajesh on his achievements in the field of AI and automation in India.`
+    },
+    {
+        id: 4,
+        theme: 'warning',
+        date: '05 August 2024',
+        time: '12:08, Saturday',
+        title: 'Community Building',
+        badges: [
+            { label: 'Business', class: 'warning' },
+            { label: 'Meeting', class: 'primary' }
+        ],
+        comments: 19,
+        likes: 22,
+        commenter: 'Anil Kapoor',
+        innertext: 'Liked a Post by',
+        postOwner: 'Priya Verma ',
+        description: `Anil showed his appreciation for Priya's post about sustainable farming practices in rural India. Priya's efforts to raise awareness about environmental conservation have been well-received, and Anil's engagement further promoted her message.`
+    },
+    {
+        id: 5,
+        theme: 'info',
+        date: '17 May 2024',
+        time: '12:32, Tuesday',
+        title: 'Expanding Reach',
+        badges: [
+            { label: 'Knowledge', class: 'info' },
+            { label: 'Thinking', class: 'secondary' },
+            { label: 'Expand', class: 'primary' }
+        ],
+        comments: 12,
+        likes: 42,
+        commenter: 'Pooja Verma ',
+        innertext: 'Shared Photos from her recent trip to',
+        postOwner: 'Manali ',
+        description: `Pooja captured the stunning beauty of the snow-capped mountains in Manali and shared these breathtaking pictures with her friends, reminiscing about the unforgettable adventure.`,
+        media: [
+            { src: media13, alt: 'media 3' },
+            { src: media14, alt: 'media 4' },
+            { src: media9, alt: 'media 5' }
+        ]
+    }
+];
+
+
+const EvaluationIcon = <svg xmlns="http://www.w3.org/2000/svg" enableBackground="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000"><g>    <rect fill="none" height="24" width="24"></rect></g><g>    <g opacity=".8" fill="#fff">        <path d="M6.71,18.71c-0.28,0.28-2.17,0.76-2.17,0.76s0.47-1.88,0.76-2.17C5.47,17.11,5.72,17,6,17c0.55,0,1,0.45,1,1 C7,18.28,6.89,18.53,6.71,18.71z M7.41,10.83L5.5,10.01l1.97-1.97l1.44,0.29C8.34,9.16,7.83,10.03,7.41,10.83z M13.99,18.5 l-0.82-1.91c0.8-0.42,1.67-0.93,2.49-1.5l0.29,1.44L13.99,18.5z M19.99,4.01c0,0-3.55-0.69-8.23,3.99 c-1.32,1.32-2.4,3.38-2.73,4.04l2.93,2.93c0.65-0.32,2.71-1.4,4.04-2.73C20.68,7.56,19.99,4.01,19.99,4.01z M15,11 c-1.1,0-2-0.9-2-2c0-1.1,0.9-2,2-2s2,0.9,2,2C17,10.1,16.1,11,15,11z"></path>    </g>    <g>        <path d="M6,15c-0.83,0-1.58,0.34-2.12,0.88C2.7,17.06,2,22,2,22s4.94-0.7,6.12-1.88C8.66,19.58,9,18.83,9,18C9,16.34,7.66,15,6,15 z M6.71,18.71c-0.28,0.28-2.17,0.76-2.17,0.76s0.47-1.88,0.76-2.17C5.47,17.11,5.72,17,6,17c0.55,0,1,0.45,1,1 C7,18.28,6.89,18.53,6.71,18.71z M17.42,13.65L17.42,13.65c6.36-6.36,4.24-11.31,4.24-11.31s-4.95-2.12-11.31,4.24l-2.49-0.5 C7.21,5.95,6.53,6.16,6.05,6.63L2,10.69l5,2.14L11.17,17l2.14,5l4.05-4.05c0.47-0.47,0.68-1.15,0.55-1.81L17.42,13.65z M7.41,10.83L5.5,10.01l1.97-1.97l1.44,0.29C8.34,9.16,7.83,10.03,7.41,10.83z M13.99,18.5l-0.82-1.91 c0.8-0.42,1.67-0.93,2.49-1.5l0.29,1.44L13.99,18.5z M16,12.24c-1.32,1.32-3.38,2.4-4.04,2.73l-2.93-2.93 c0.32-0.65,1.4-2.71,2.73-4.04c4.68-4.68,8.23-3.99,8.23-3.99S20.68,7.56,16,12.24z M15,11c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2 S13.9,11,15,11z"></path>    </g></g></svg>
+const ScopingIcon = <svg xmlns="http://www.w3.org/2000/svg" enableBackground="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000"><rect fill="none" height="24" width="24"></rect><path d="M12,14c-1.65,0-3-1.35-3-3V5h6v6C15,12.65,13.65,14,12,14z" opacity=".8" fill="#fff"></path><path d="M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M12,14 c-1.65,0-3-1.35-3-3V5h6v6C15,12.65,13.65,14,12,14z M19,8c0,1.3-0.84,2.4-2,2.82V7h2V8z"></path></svg>
+const ValidationIcon = <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zm-2 13-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" opacity=".8" fill="#fff" /><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z" /></svg>
+const ContractingIcon = <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M13 4H6v16h12V9h-5V4zm3 14H8v-2h8v2zm0-6v2H8v-2h8z" opacity=".8" fill="#fff" /><path d="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z" /></svg>
+const LaunchIcon = <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M13 4H6v16h12V9h-5V4zm3 14H8v-2h8v2zm0-6v2H8v-2h8z" opacity=".8" fill="#fff" /><path d="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z" /></svg>
+
+
+interface TimelineItemType {
+    id: number;
+    date: string;
+    title: string;
+    description: string;
+    svg: ReactNode;
+    outerClass: string;
+    isComplete: boolean;
+}
+export const Timeline02: TimelineItemType[] = [
+    { id: 1, date: '10:00 AM - Mar 1, 2022', title: 'Start Of Evaluation', description: 'Kickoff Meeting: Start of a new project. Learning Up Setting goals.', svg: EvaluationIcon, outerClass: 'primary', isComplete: false, },
+    { id: 2, date: '3:30 PM - Apr 10, 2022', title: 'Initial Scoping', description: 'Team Workshop: Enhancing collaboration and creative thinking.', svg: ScopingIcon, outerClass: 'secondary', isComplete: false, },
+    { id: 3, date: '12:00 PM - Jun 5, 2022', title: 'Validation', description: 'Lunch & Learn: Exploring the latest industry trends over a meal.', svg: ValidationIcon, outerClass: 'danger', isComplete: false, },
+    { id: 4, date: '2:15 PM - Jul 20, 2022', title: 'Contracting', description: 'Product Demo: Sneak peek into our upcoming release Use Though It.', svg: ContractingIcon, outerClass: 'warning', isComplete: false, },
+    { id: 5, date: '9:00 AM - Sep 15, 2022', title: 'Global Launch', description: 'Training Session: Skill-building for team members All time use purpose.', svg: LaunchIcon, outerClass: 'light', isComplete: true, },
+];
+
+interface Notification {
+    id: number;
+    title: string;
+    description: string;
+    avatar: string;
+    date: string;
+    time: string;
+    day: string;
+    borderColor: string;
+    bgColor: string;
+    alignment: 'left' | 'right';
+}
+
+export const Notifications: Notification[] = [
+    {
+        id: 1,
+        title: 'Initial Planning',
+        description: 'Created the <a to="#!" class="text-info fw-medium">product roadmap</a> with clear milestones for each stage. <span class="fw-medium">Team Roles Assigned:</span> Allocated responsibilities to team.',
+        avatar: face2,
+        date: '12 April, 2024',
+        time: '10:00 AM',
+        day: 'Tuesday',
+        borderColor: 'primary',
+        bgColor: 'primary-transparent',
+        alignment: 'left',
+    },
+    {
+        id: 2,
+        title: 'Marketing Strategy',
+        description: '<span class="fw-bold text-secondary">Campaigns Designed:</span> Created the <a to="#!" class="text-secondary1 fw-medium">marketing materials</a> for online and offline promotions.',
+        avatar: face3,
+        date: '25 April, 2024',
+        time: '02:30 PM',
+        day: 'Friday',
+        borderColor: 'secondary',
+        bgColor: 'secondary-transparent',
+        alignment: 'right',
+    },
+    {
+        id: 3,
+        title: 'Product Development',
+        description: '<span class="fw-bold text-danger">Final Prototypes:</span> Completed <a to="#!" class="text-primary fw-medium">product prototypes</a> and tested key functionalities. Incorporated <a to="#!" class="text-danger fw-medium">feedback</a> from internal testing.',
+        avatar: face4,
+        date: '10 May, 2024',
+        time: '01:45 PM',
+        day: 'Monday',
+        borderColor: 'danger',
+        bgColor: 'danger-transparent',
+        alignment: 'left',
+    },
+    {
+        id: 4,
+        title: 'Preparation and Organization',
+        description: '<span class="fw-semibold text-info">Venue Secured:</span> Finalized contracts with vendors. <span class="fw-semibold text-primary">Marketing:</span> Created event marketing materials and promotional strategies.',
+        avatar: face15,
+        date: '22nd Mar, 2024',
+        time: '10:55 PM',
+        day: 'Wednesday',
+        borderColor: 'info',
+        bgColor: 'info-transparent',
+        alignment: 'right',
+    },
+    {
+        id: 5,
+        title: 'Pre-Launch Testing',
+        description: '<span class="fw-bold text-warning">Beta Version Released:</span> Released the <a to="#!" class="text-primary fw-medium">beta version</a> to select users for feedback. <span class="fw-bold">Bug Fixes:</span> Collected <a to="#!" class="text-primary fw-medium">user feedback</a> and implemented fixes before launch.',
+        avatar: face5,
+        date: '22 May, 2024',
+        time: '03:20 PM',
+        day: 'Wednesday',
+        borderColor: 'warning',
+        bgColor: 'warning-transparent',
+        alignment: 'left',
+    },
+];

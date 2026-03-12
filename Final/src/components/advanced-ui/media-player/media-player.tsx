@@ -1,0 +1,93 @@
+
+import { Fragment, } from "react";
+import Plyr from "plyr-react"
+import ReactAudioPlayer from 'react-audio-player';
+import { Card, Col } from "react-bootstrap";
+import Seo from "../../../shared/layouts-components/seo/seo";
+import Pageheader from "../../../shared/layouts-components/pageheader/pageheader";
+import audio from '../../../assets/audio/perfect-beauty.mp3'
+import "plyr-react/plyr.css"
+
+interface VideoSource {
+    src: string;
+    type: string;
+}
+
+const MediaPlayer = () => {
+    const videoSources: VideoSource[] = [
+        {
+            src: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4',
+            type: 'video/mp4',
+        },
+        {
+            src: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4',
+            type: 'video/mp4',
+        },
+        {
+            src: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-1080p.mp4',
+            type: 'video/mp4',
+        },
+    ];
+    return (
+        <Fragment>
+            {/* <!-- Page Header --> */}
+            <Seo title={"Media Player"} />
+            <Pageheader title="Advanced Ui" currentpage="Media Player" activepage="Media Player" />
+
+            {/* <!-- Page Header Close --> */}
+
+            {/* <!-- Start::row-1 --> */}
+            <div className="row">
+                <Col xl={6}>
+                    <Card className="custom-card">
+                        <Card.Header>
+                            <Card.Title>
+                                VIDEO PLAYER
+                            </Card.Title>
+                        </Card.Header>
+                        <Card.Body>
+                            <Plyr
+                                source={{
+                                    type: 'video',
+                                    sources: videoSources,
+                                    poster: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.jpg", // Poster image
+                                }}
+                                id="player"
+                            />
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col xl={6}>
+                    <div className="card custom-card overflow-hidden">
+                        <Card.Header>
+                            <Card.Title>YOUTUBE VIDEO</Card.Title>
+                        </Card.Header>
+                        <Card.Body>
+                            <iframe width="100%" height="425" src="https://www.youtube.com/embed/-lDlbQ7DiCI?si=EerYCepJFDTb5xOl" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                        </Card.Body>
+                    </div>
+                </Col>
+                <Col xl={12}>
+                    <Card className="custom-card">
+                        <Card.Header>
+                            <Card.Title>
+                                AUDIO PLAYER
+                            </Card.Title>
+                        </Card.Header>
+                        <Card.Body>
+                            <ReactAudioPlayer id="player2"
+                                className="w-100"
+                                src={audio}
+                                autoPlay
+                                controls
+                            />
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </div>
+            {/* <!--End::row-1 --> */}
+        </Fragment>
+    );
+};
+
+export default MediaPlayer;
