@@ -1,0 +1,23 @@
+0 info it worked if it ends with ok
+1 verbose cli [
+1 verbose cli   '/opt/homebrew/Cellar/node/25.8.1/bin/node',
+1 verbose cli   '/Users/bharath/node_modules/.bin/npm',
+1 verbose cli   'ls',
+1 verbose cli   '@scarf/scarf',
+1 verbose cli   '--json',
+1 verbose cli   '--long'
+1 verbose cli ]
+2 info using npm@3.10.10
+3 info using node@v25.8.1
+4 verbose stack TypeError: cb.apply is not a function
+4 verbose stack     at /Users/bharath/node_modules/npm/node_modules/graceful-fs/polyfills.js:267:18
+4 verbose stack     at FSReqCallback.oncomplete (node:fs:192:5)
+5 verbose cwd /Users/bharath/Documents/Innovative
+6 error Darwin 25.3.0
+7 error argv "/opt/homebrew/Cellar/node/25.8.1/bin/node" "/Users/bharath/node_modules/.bin/npm" "ls" "@scarf/scarf" "--json" "--long"
+8 error node v25.8.1
+9 error npm  v3.10.10
+10 error cb.apply is not a function
+11 error If you need help, you may report this error at:
+11 error     <https://github.com/npm/npm/issues>
+12 verbose exit [ 1, true ]
