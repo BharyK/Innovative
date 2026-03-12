@@ -27,11 +27,11 @@ const Sales = () => {
                     <p className="fs-13 text-muted mb-0">Let's make today a productive one!</p>
                 </div>
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <div className="d-flex gap-2">
+                    <div className="d-flex gap-2" >
                         <div className="position-relative">
                             <Dropdown className="position-relative">
-                                <Dropdown.Toggle as="button" className="btn btn-primary btn-wave no-caret" type="button" id="dropdownMenuClickableInside" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                    Filter By <i className="ri-arrow-down-s-fill ms-1"></i>
+                                <Dropdown.Toggle as="button" className="btn btn-primary btn-wave no-caret" type="button" id="dropdownMenuClickableInside" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Filter">
+                                    Filter By <i className="ri-arrow-down-s-fill ms-1" title="Filter"></i>
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu as="ul" aria-labelledby="dropdownMenuClickableInside">
                                     <li><Dropdown.Item as="a" href="#!">Today</Dropdown.Item></li>

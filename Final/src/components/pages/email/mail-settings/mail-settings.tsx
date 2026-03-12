@@ -122,7 +122,7 @@ const MailSettings = () => {
                                             </div>
                                         </Nav.Link>
                                     </Nav.Item>
-                                    <Nav.Item as='li' className="m-1" role="presentation">
+                                    {/* <Nav.Item as='li' className="m-1" role="presentation">
                                         <Nav.Link as='a' eventKey='email' className="nav-link d-inline-flex w-100 gap-2 mb-3" id="notification-tab"
                                             data-bs-toggle="tab" data-bs-target="#email-settings" role="tab"
                                             aria-controls="email-settings" href="#email-settings" aria-selected="false"
@@ -144,8 +144,8 @@ const MailSettings = () => {
                                                 <span className="text-muted fs-13">Add Product Pricing Details</span>
                                             </div>
                                         </Nav.Link>
-                                    </Nav.Item>
-                                    <Nav.Item as='li' className="m-1" role="presentation">
+                                    </Nav.Item> */}
+                                    {/* <Nav.Item as='li' className="m-1" role="presentation">
                                         <Nav.Link as='a' eventKey='lables' className="nav-link d-inline-flex w-100 mb-3 gap-2" id="security-tab"
                                             data-bs-toggle="tab" data-bs-target="#labels" role="tab"
                                             aria-controls="labels" aria-selected="false" href="#labels" tabIndex={-1}>
@@ -166,8 +166,8 @@ const MailSettings = () => {
                                                 <span className="text-muted fs-13">Add Product Specification</span>
                                             </div>
                                         </Nav.Link>
-                                    </Nav.Item>
-                                    <Nav.Item as='li' className="m-1" role="presentation">
+                                    </Nav.Item> */}
+                                    {/* <Nav.Item as='li' className="m-1" role="presentation">
                                         <Nav.Link as='a' eventKey='notifactions' className="nav-link d-inline-flex w-100 mb-3 gap-2" id="otherinfo-tab"
                                             data-bs-toggle="tab" data-bs-target="#notification-settings" role="tab"
                                             aria-controls="notification-settings" aria-selected="false"
@@ -190,8 +190,8 @@ const MailSettings = () => {
                                                 <span className="text-muted fs-13">Add Any Other Information</span>
                                             </div>
                                         </Nav.Link>
-                                    </Nav.Item>
-                                    <Nav.Item as='li' className="m-1" role="presentation">
+                                    </Nav.Item> */}
+                                    {/* <Nav.Item as='li' className="m-1" role="presentation">
                                         <Nav.Link as='a' eventKey='security' className="nav-link d-inline-flex w-100 mb-0 gap-2" id="otherinfo-tab"
                                             data-bs-toggle="tab" data-bs-target="#security" role="tab"
                                             aria-controls="security" aria-selected="false" href="#security"
@@ -213,7 +213,7 @@ const MailSettings = () => {
                                                 <span className="text-muted fs-13">Add Any Other Information</span>
                                             </div>
                                         </Nav.Link>
-                                    </Nav.Item>
+                                    </Nav.Item> */}
                                 </Nav>
                             </Card.Body>
                         </Card>
