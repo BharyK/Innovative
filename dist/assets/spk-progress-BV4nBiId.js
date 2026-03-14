@@ -1,0 +1,1 @@
+import{j as m}from"./index-B9OqNNtW.js";import{P as p}from"./ProgressBar-APL7EgJG.js";const j=({variant:r,now:s=0,mainClass:o,animated:t,striped:a,label:e})=>m.jsx(p,{variant:r,now:s,className:o,animated:t,striped:a,label:e});export{j as S};
