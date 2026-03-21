@@ -1,34 +1,8 @@
 import { Fragment, useState } from "react";
 import Seo from "../../../shared/layouts-components/seo/seo";
-import { Card, Col, Dropdown, ListGroup, Row } from "react-bootstrap";
-import SpkTooltips from "../../../shared/@spk-reusable-components/reusable-uielements/spk-tooltips";
-import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
-import {
-  BrowserActivity,
-  RecentOrders,
-  RecentTransactions,
-  RevenueChannels,
-  SalesDataRow1,
-  SalesRevenueOptions,
-  SalesRevenueSeries,
-  TopAudienceLocations,
-  TopCategoriesBySales,
-  UpcomingSales,
-  VisitorsByDevice,
-  VisitorsByDeviceOptions,
-  VisitorsByDeviceSeries,
-} from "../../../shared/data/dashboards/salesdata";
-import SpkSalesdashboard from "../../../shared/@spk-reusable-components/reusable-dashboards/spk-salesdashboard";
-import SpkDropdown from "../../../shared/@spk-reusable-components/reusable-uielements/spk-dropdown";
-import Spkapexcharts from "../../../shared/@spk-reusable-components/reusable-plugins/spk-apexcharts";
-import SpkTables from "../../../shared/@spk-reusable-components/reusable-tables/spk-tables";
+import { Card, Col, Dropdown} from "react-bootstrap";
 import { Link } from "react-router-dom";
-import SpkBadge from "../../../shared/@spk-reusable-components/reusable-uielements/spk-badge";
-import media9 from "../../../assets/images/media/png/9.png";
-import { ExcelReader } from "../../utilities/excel-reader/excel-reader";
-import { ExcelReaderDynamic } from "../../utilities/excel-reader/excel-reader-dynamic";
 import ExcelMultiTab from '../../utilities/excel-reader/excel-multi-tab'
-import moment from "moment";
 
 const Sales = () => {
  const [excelData, setExcelData] = useState({});
@@ -94,21 +68,6 @@ const Sales = () => {
               </Dropdown>
             </div>
           </Card.Header>
-
-          {/* 🔥 SHEET TABS */}
-          <div className="p-2">
-            {Object.keys(excelData).map((sheet) => (
-              <button
-                key={sheet}
-                onClick={() => setActiveSheet(sheet)}
-                className={`btn btn-sm me-2 ${
-                  activeSheet === sheet ? "btn-primary" : "btn-light"
-                }`}
-              >
-                {sheet}
-              </button>
-            ))}
-          </div>
 
           {/* BODY */}
           <Card.Body className="p-0">
