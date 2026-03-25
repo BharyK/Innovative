@@ -73,8 +73,8 @@ export const MENUITEMS: Menuitemtype[] = [
   // },
    { path: `${import.meta.env.BASE_URL}dashboards/summary`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Summary" },
   { path: `${import.meta.env.BASE_URL}dashboards/revenue`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Revenue" },
- { path: `${import.meta.env.BASE_URL}dashboards/expenses`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Expenses" },
- { path: `${import.meta.env.BASE_URL}dashboards/expensesOne`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Expenses-01" },
+ { path: `${import.meta.env.BASE_URL}dashboards/expenses`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Direct-Expenses" },
+ { path: `${import.meta.env.BASE_URL}dashboards/expensesOne`, icon: Icons, type: "link", active: false, selected: false, dirchange: false, title: "Indirect-Expenses" },
 
   {
     menutitle: "WEB APPS"
