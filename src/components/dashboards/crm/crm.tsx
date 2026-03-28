@@ -1,7 +1,15 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useRef } from "react";
 import Seo from "../../../shared/layouts-components/seo/seo";
 import Pageheader from "../../../shared/layouts-components/pageheader/pageheader";
-import { Card, Col, Row, Form, InputGroup } from "react-bootstrap";
+import {
+  Card,
+  Col,
+  Row,
+  OverlayTrigger,
+  Popover,
+  Button,
+  Form,
+} from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
 
@@ -44,6 +52,27 @@ const Crm = () => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("");
+  const [inputValue, setInputValue] = useState();
+  const popover = (
+    <Popover>
+      <Popover.Header as="h3">Edit Customer</Popover.Header>
+      <Popover.Body>
+        <Form.Control
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+        />
+
+        <Button
+          className="mt-2"
+          size="sm"
+          onClick={() => updateRow(row.id, "customer", inputValue)}
+        >
+          Save
+        </Button>
+      </Popover.Body>
+    </Popover>
+  );
   const dropdownOptions = {
     firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
     leadGenerator: ["Vijay", "Guru", "Santhosh", "Ashok", "Chandan"],
@@ -52,9 +81,30 @@ const Crm = () => {
       "Robotics Simulation",
       "Manufacturing",
       "Control Engineering",
+      "Staffing Engineering",
+      "IT",
+      "Plant Support",
+      "Onsite Support",
+      "Tech Pub",
+      "Documentation",
+      "NPD",
+      "Aerospace",
+      "Design team",
+      "Simulation team",
+      "Company",
     ],
-    businessUnit: ["BU1", "BU2", "BU3", "BU4", "BU5"],
+    businessUnit: [
+      "Management BU1",
+      "Company BU2",
+      "Vijay BU3",
+      "Guru BU4",
+      "Santhosh BU5",
+      "Ashok BU6",
+      "Design team BU7",
+      "Simulation team BU8",
+    ],
     status: ["Approved", "Pending", "Rejected"],
+    currecny: ["INR", "USD", "EURO", "GBP", "Chinese Yuan", "Japanese Yen"],
   };
   const [invoiceData, setInvoiceData] = useState([
     {
@@ -132,6 +182,59 @@ const Crm = () => {
     }));
   };
 
+  function InvoiceMilestoneCell({
+    row,
+    updateRow,
+  }: {
+    row: any;
+    updateRow: any;
+  }) {
+    const [tempValue, setTempValue] = useState(row.invoiceMilestone ?? "");
+    const overlayRef = useRef<any>(null);
+
+    return (
+      <OverlayTrigger
+        trigger="click"
+        placement="bottom"
+        rootClose
+        ref={overlayRef}
+        onToggle={(show) => {
+          if (show) setTempValue(row.invoiceMilestone ?? "");
+        }}
+        overlay={
+          <Popover>
+            <Popover.Header as="h3">Edit Invoice Milestone</Popover.Header>
+            <Popover.Body>
+              <Form.Control
+                type="text"
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                autoFocus
+              />
+              <Button
+                size="sm"
+                className="mt-2 w-100"
+                onClick={() => {
+                  updateRow(row.id, "invoiceMilestone", tempValue);
+                  overlayRef.current?.hide();
+                }}
+              >
+                Save
+              </Button>
+            </Popover.Body>
+          </Popover>
+        }
+      >
+        <Form.Control
+          value={row.invoiceMilestone ?? ""}
+          readOnly
+          placeholder="Click to edit..."
+          style={{ cursor: "pointer" }}
+        />
+      </OverlayTrigger>
+    );
+  }
+
   return (
     <Fragment>
       {/* <!-- Start::page-header --> */}
@@ -147,19 +250,18 @@ const Crm = () => {
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>Responsible BU Head</Card.Title>
-               <div className="search-box">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
+              <Card.Title>OFFER DETAILS</Card.Title>
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </Card.Header>
 
             <Card.Body>
-              
               <div className="table-responsive app-table-wrapper">
                 <table className="table table-bordered table-hover app-table">
                   <thead className="table-primary">
@@ -361,55 +463,74 @@ const Crm = () => {
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>Responsible BU Head and Chandan</Card.Title>
-               <div className="search-box">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
+              <Card.Title>PURCHASE ORDER DETAILS</Card.Title>
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </Card.Header>
 
             <Card.Body>
-            
               <div className="app-table-wrapper">
                 <table className="table table-bordered app-table">
                   <thead>
                     <tr>
-                      <th>Status</th>
                       <th>Order No</th>
                       <th>Order Date</th>
                       <th>Order Value</th>
-                      <th>Order Value (INR)</th>
+                      <th>Order Value in INR</th>
                       <th>Invoice Milestones</th>
-                      <th>Invoice Number</th>
+                      <th>Status</th>
                       <th>Attachment</th> {/* ✅ Separate column */}
                     </tr>
                   </thead>
-
                   <tbody>
                     {filteredData.map((row) => (
                       <tr key={row.id}>
-                        {/* STATUS DROPDOWN */}
+                        {/* Order No */}
                         <td>
-                          <select
-                            className="form-select"
-                            value={row.status || ""}
-                            onChange={(e) =>
-                              updateRow(row.id, "status", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.status.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
+                          {row.proposalNumber}
+                          <div className="file-upload-cell">
+                            <label className="upload-btn">
+                              Upload
+                              <input
+                                type="file"
+                                hidden
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+                                  updateRow(row.id, "file", file);
+                                }}
+                              />
+                            </label>
+                            {row.file && (
+                              <div className="file-info">
+                                <div className="file-top">
+                                  <span className="file-name">
+                                    📄 {row.file.name}
+                                  </span>
+                                  <button
+                                    className="remove-file-btn"
+                                    onClick={() =>
+                                      updateRow(row.id, "file", null)
+                                    }
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <span className="file-size">
+                                  {(row.file.size / 1024).toFixed(1)} KB
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
 
-                        <td>{row.orderNo}</td>
-
+                        {/* Order Date */}
                         <td>
                           <SpkDatepickr
                             className="form-control"
@@ -427,51 +548,58 @@ const Crm = () => {
                           />
                         </td>
 
+                        {/* Order Value (Currency) */}
+                        <td>
+                          <select
+                            className="form-select"
+                            value={row.status || ""}
+                            onChange={(e) =>
+                              updateRow(row.id, "status", e.target.value)
+                            }
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.currecny.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* Order Value in INR */}
                         <td>
                           <input
                             className="form-control"
-                            value={row.orderValue}
+                            value={row.customer ?? ""}
                             onChange={(e) =>
-                              updateRow(row.id, "orderValue", e.target.value)
+                              updateRow(row.id, "customer", e.target.value)
                             }
                           />
                         </td>
 
+                        {/* ✅ Invoice Milestones - Popover Cell */}
                         <td>
-                          <input
-                            className="form-control"
-                            value={row.orderValueINR}
-                            onChange={(e) =>
-                              updateRow(row.id, "orderValueINR", e.target.value)
-                            }
+                          <InvoiceMilestoneCell
+                            row={row}
+                            updateRow={updateRow}
                           />
                         </td>
 
+                        {/* Status */}
                         <td>
-                          <input
-                            className="form-control"
-                            value={row.invoiceMilestones}
+                          <select
+                            className="form-select"
+                            value={row.status ?? ""}
                             onChange={(e) =>
-                              updateRow(
-                                row.id,
-                                "invoiceMilestones",
-                                e.target.value,
-                              )
+                              updateRow(row.id, "status", e.target.value)
                             }
-                          />
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.status.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </td>
 
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.invoiceNumber}
-                            onChange={(e) =>
-                              updateRow(row.id, "invoiceNumber", e.target.value)
-                            }
-                          />
-                        </td>
-
-                        {/* 📎 FILE UPLOAD COLUMN */}
+                        {/* Attachment */}
                         <td>
                           <div className="file-upload-cell">
                             <label className="upload-btn">
@@ -486,14 +614,12 @@ const Crm = () => {
                                 }}
                               />
                             </label>
-
                             {row.file && (
                               <div className="file-info">
                                 <div className="file-top">
                                   <span className="file-name">
                                     📄 {row.file.name}
                                   </span>
-
                                   <button
                                     className="remove-file-btn"
                                     onClick={() =>
@@ -503,7 +629,6 @@ const Crm = () => {
                                     ✕
                                   </button>
                                 </div>
-
                                 <span className="file-size">
                                   {(row.file.size / 1024).toFixed(1)} KB
                                 </span>
@@ -525,7 +650,7 @@ const Crm = () => {
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>Responsible Accounts</Card.Title>
+              <Card.Title>INVOICE DETAILS</Card.Title>
               <div className="search-box">
                 <input
                   type="text"
@@ -549,6 +674,7 @@ const Crm = () => {
                       <th>Invoice Value (INR)</th>
                       <th>Payment Term</th>
                       <th>Due Date</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
 
@@ -565,6 +691,40 @@ const Crm = () => {
                               updateRow(row.id, "invoiceNumber", e.target.value)
                             }
                           />
+                          <div className="file-upload-cell">
+                            <label className="upload-btn">
+                              {row.file ? "Replace" : "Upload"}
+                              <input
+                                type="file"
+                                hidden
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+                                  updateRow(row.id, "file", file);
+                                }}
+                              />
+                            </label>
+                            {row.file && (
+                              <div className="file-info">
+                                <div className="file-top">
+                                  <span className="file-name">
+                                    📄 {row.file.name}
+                                  </span>
+                                  <button
+                                    className="remove-file-btn"
+                                    onClick={() =>
+                                      updateRow(row.id, "file", null)
+                                    }
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <span className="file-size">
+                                  {(row.file.size / 1024).toFixed(1)} KB
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
 
                         {/* Date */}
@@ -587,14 +747,18 @@ const Crm = () => {
 
                         {/* Value */}
                         <td>
-                          <input
-                            className="form-control"
-                            placeholder="€, £, ₹"
-                            value={row.invoiceValue}
+                          <select
+                            className="form-select"
+                            value={row.status || ""}
                             onChange={(e) =>
-                              updateRow(row.id, "invoiceValue", e.target.value)
+                              updateRow(row.id, "status", e.target.value)
                             }
-                          />
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.currecny.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </td>
 
                         {/* Conversion */}
@@ -633,8 +797,21 @@ const Crm = () => {
                           />
                         </td>
 
-                        {/* FILE */}
-                        <td></td>
+                        <td>Pending</td>
+                        <td>
+                          <select
+                            className="form-select"
+                            value={row.status}
+                            onChange={(e) =>
+                              updateRow(row.id, "status", e.target.value)
+                            }
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.status.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -649,8 +826,8 @@ const Crm = () => {
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between able-toolbar">
-              <Card.Title>Responsible Accounts</Card.Title>
-               <div className="search-box">
+              <Card.Title>PAYMENT DETAILS</Card.Title>
+              <div className="search-box">
                 <input
                   type="text"
                   placeholder="Search..."
@@ -659,7 +836,6 @@ const Crm = () => {
                 />
               </div>
             </Card.Header>
-            
 
             <Card.Body>
               {/* 📊 TABLE */}
@@ -669,6 +845,7 @@ const Crm = () => {
                   <thead className="table-primary">
                     <tr>
                       <th>Value Received</th>
+                      <th>Amount Realised</th>
                       <th>Realised Date</th>
                       <th>Payment Status</th>
                       <th>Fluctuation Difference</th>
@@ -695,7 +872,20 @@ const Crm = () => {
                           />
                         </td>
 
-                        {/* DATE */}
+                        <td>
+                          <select
+                            className="form-select"
+                            value={row.status || ""}
+                            onChange={(e) =>
+                              updateRow(row.id, "status", e.target.value)
+                            }
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.currecny.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td>
                           <SpkDatepickr
                             className="form-control"
