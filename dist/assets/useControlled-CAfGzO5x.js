@@ -1,1 +1,0 @@
-import{r as t}from"./index-B9OqNNtW.js";const f=t.createContext(),i=()=>t.useContext(f)??!1;function x(e){const{controlled:o,default:a,name:d,state:v="value"}=e,{current:s}=t.useRef(o!==void 0),[l,n]=t.useState(a),u=s?o:l,r=t.useCallback(c=>{s||n(c)},[]);return[u,r]}export{i as a,x as u};

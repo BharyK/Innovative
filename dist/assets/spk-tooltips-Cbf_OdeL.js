@@ -1,1 +1,0 @@
-import{j as o}from"./index-B9OqNNtW.js";import{O as i,T as l}from"./OverlayTrigger-gPwuSTjx.js";const x=({title:r,id:s,children:e,placement:a,tooltipClass:t})=>o.jsx(i,{placement:a,delay:{show:250,hide:400},overlay:o.jsx(l,{id:s,className:t,children:r}),children:e});export{x as S};

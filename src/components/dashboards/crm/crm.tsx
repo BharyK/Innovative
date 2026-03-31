@@ -31,6 +31,18 @@ interface OfferRow {
   status: string;
 }
 
+interface PurchaseOrderRow {
+  id: number;
+  orderNo: string;
+  orderValue: string;
+  orderAmount: string;
+  conversionRate: string;
+  orderValueINR: string;
+  invoiceMilestone: string;
+  status: string;
+  file: File | null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const createEmptyOfferRow = (id: number): OfferRow => ({
@@ -50,6 +62,18 @@ const createEmptyOfferRow = (id: number): OfferRow => ({
   hours: "",
   businessUnit: "",
   status: "",
+});
+
+const createEmptyPurchaseOrderRow = (id: number): PurchaseOrderRow => ({
+  id,
+  orderNo: "",
+  orderValue: "",
+  orderAmount: "",
+  conversionRate: "",
+  orderValueINR: "",
+  invoiceMilestone: "",
+  status: "",
+  file: null,
 });
 
 // ─── Initial Data ─────────────────────────────────────────────────────────────
@@ -93,7 +117,6 @@ const Crm = () => {
   const [search, setSearch] = useState("");
   const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
 
-  // All three accordion panels open by default
   const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
 
   const dropdownOptions = {
@@ -180,18 +203,9 @@ const Crm = () => {
     },
   ]);
 
-  // Separate state for Purchase Order rows (linked by id to offer rows)
-  const [purchaseOrderData, setPurchaseOrderData] = useState(
-    initialData.map((row) => ({
-      id: row.id,
-      orderNo: "",
-      orderValue: "",
-      conversionRate: "",
-      orderValueINR: "",
-      invoiceMilestone: "",
-      status: "",
-      file: null as File | null,
-    }))
+  // Purchase Order rows — independent from offer rows
+  const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderRow[]>(
+    initialData.map((row) => createEmptyPurchaseOrderRow(row.id))
   );
 
   // ─── Filter ───────────────────────────────────────────────────────────────
@@ -234,24 +248,21 @@ const Crm = () => {
     setDates((prev) => ({ ...prev, [key]: formatted }));
   };
 
-  // ─── Add Row ──────────────────────────────────────────────────────────────
+  // ─── Add Row — Offer Details ──────────────────────────────────────────────
 
   const addNewRow = () => {
     const newId = data.length > 0 ? Math.max(...data.map((r) => r.id)) + 1 : 1;
     setData((prev) => [...prev, createEmptyOfferRow(newId)]);
-    setPurchaseOrderData((prev) => [
-      ...prev,
-      {
-        id: newId,
-        orderNo: "",
-        orderValue: "",
-        conversionRate: "",
-        orderValueINR: "",
-        invoiceMilestone: "",
-        status: "",
-        file: null,
-      },
-    ]);
+  };
+
+  // ─── Add Row — Purchase Order ─────────────────────────────────────────────
+
+  const addNewPurchaseOrderRow = () => {
+    const newId =
+      purchaseOrderData.length > 0
+        ? Math.max(...purchaseOrderData.map((r) => r.id)) + 1
+        : 1;
+    setPurchaseOrderData((prev) => [...prev, createEmptyPurchaseOrderRow(newId)]);
   };
 
   // ─── Submit ───────────────────────────────────────────────────────────────
@@ -272,6 +283,40 @@ const Crm = () => {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
+
+  // ─── Add Row Button (reusable style) ──────────────────────────────────────
+
+  const AddRowButton = ({ onClick }: { onClick: () => void }) => (
+    <div className="px-3 py-2">
+      <button
+        onClick={onClick}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "13px",
+          fontWeight: 500,
+          border: "1.5px dashed #6c757d",
+          borderRadius: "6px",
+          background: "transparent",
+          color: "#495057",
+          padding: "6px 16px",
+          cursor: "pointer",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "#0d6efd";
+          (e.currentTarget as HTMLButtonElement).style.color = "#0d6efd";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "#6c757d";
+          (e.currentTarget as HTMLButtonElement).style.color = "#495057";
+        }}
+      >
+        <span style={{ fontSize: "18px", lineHeight: 1 }}>+</span>
+        Add Row
+      </button>
+    </div>
+  );
 
   // ─── Reusable File Upload Cell ────────────────────────────────────────────
 
@@ -300,7 +345,9 @@ const Crm = () => {
         <div className="file-info">
           <div className="file-top">
             <span className="file-name">📄 {file.name}</span>
-            <button className="remove-file-btn" onClick={onRemove}>✕</button>
+            <button className="remove-file-btn" onClick={onRemove}>
+              ✕
+            </button>
           </div>
           <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
         </div>
@@ -371,7 +418,7 @@ const Crm = () => {
       <Pageheader title="Dashboard" currentpage="Revenue" activepage="Revenue" />
 
       {/* ══════════════════════════════════════════════════════════════════════
-          OFFER DETAILS  (plain card — no accordion)
+          OFFER DETAILS
       ══════════════════════════════════════════════════════════════════════ */}
       <Row>
         <Col xl={12}>
@@ -575,7 +622,7 @@ const Crm = () => {
                 </table>
               </div>
 
-              {/* Add Row + Submit All */}
+              {/* Add Row */}
               <div className="d-flex align-items-center justify-content-between mt-3">
                 <button
                   onClick={addNewRow}
@@ -604,13 +651,6 @@ const Crm = () => {
                   <span style={{ fontSize: "18px", lineHeight: 1 }}>+</span>
                   Add Row
                 </button>
-
-                {/* <button
-                  className="btn btn-success btn-sm px-4"
-                  onClick={handleSubmit}
-                >
-                  Submit All
-                </button> */}
               </div>
 
               {/* JSON Output Table */}
@@ -768,131 +808,126 @@ const Crm = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredData.map((row) => {
-                        const poRow = purchaseOrderData.find((p) => p.id === row.id) ?? {
-                          id: row.id,
-                          orderNo: "",
-                          orderValue: "",
-                          conversionRate: "",
-                          orderValueINR: "",
-                          invoiceMilestone: "",
-                          status: "",
-                          file: null,
-                        };
-                        return (
-                          <tr key={row.id}>
-                            {/* Order No + Upload */}
-                            <td>
-                              <input
-                                className="form-control mb-1"
-                                value={poRow.orderNo}
-                                placeholder="Order number"
-                                onChange={(e) =>
-                                  updatePurchaseOrderRow(row.id, "orderNo", e.target.value)
-                                }
-                              />
-                              <FileUploadCell
-                                file={poRow.file}
-                                onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
-                                onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
-                              />
-                            </td>
+                      {purchaseOrderData.map((poRow) => (
+                        <tr key={poRow.id}>
+                          {/* Order No + Upload */}
+                          <td>
+                            <input
+                              className="form-control mb-1"
+                              value={poRow.orderNo}
+                              placeholder="Order number"
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(poRow.id, "orderNo", e.target.value)
+                              }
+                            />
+                            <FileUploadCell
+                              file={poRow.file}
+                              onUpload={(f) => updatePurchaseOrderRow(poRow.id, "file", f)}
+                              onRemove={() => updatePurchaseOrderRow(poRow.id, "file", null)}
+                            />
+                          </td>
 
-                            {/* Order Date */}
-                            <td>
-                              <SpkDatepickr
-                                className="form-control"
-                                dateFormat="yy/MM/dd"
-                                selected={
-                                  dates[`poDate_${row.id}`]
-                                    ? new Date(dates[`poDate_${row.id}`] as string)
-                                    : null
-                                }
-                                onChange={(date: Date | null) =>
-                                  handleDateChange(`poDate_${row.id}`, date)
-                                }
-                                placeholderText="Choose date"
-                                popperPlacement="bottom-start"
-                              />
-                            </td>
+                          {/* Order Date */}
+                          <td>
+                            <SpkDatepickr
+                              className="form-control"
+                              dateFormat="yy/MM/dd"
+                              selected={
+                                dates[`poDate_${poRow.id}`]
+                                  ? new Date(dates[`poDate_${poRow.id}`] as string)
+                                  : null
+                              }
+                              onChange={(date: Date | null) =>
+                                handleDateChange(`poDate_${poRow.id}`, date)
+                              }
+                              placeholderText="Choose date"
+                              popperPlacement="bottom-start"
+                            />
+                          </td>
 
-                            {/* Order Value (currency + amount) */}
-                            <td>
-                              <div className="d-flex gap-1">
-                                <select
-                                  className="form-select"
-                                  style={{ maxWidth: "110px" }}
-                                  value={poRow.orderValue}
-                                  onChange={(e) =>
-                                    updatePurchaseOrderRow(row.id, "orderValue", e.target.value)
-                                  }
-                                >
-                                  <option value="">Currency</option>
-                                  {dropdownOptions.currecny.map((opt) => (
-                                    <option key={opt}>{opt}</option>
-                                  ))}
-                                </select>
-                                <input
-                                  className="form-control"
-                                  type="number"
-                                  placeholder="Amount"
-                                />
-                              </div>
-                            </td>
-
-                            {/* Conversion Rate */}
-                            <td>
-                              <input
-                                className="form-control"
-                                value={poRow.conversionRate}
-                                placeholder="Rate"
-                                onChange={(e) =>
-                                  updatePurchaseOrderRow(row.id, "conversionRate", e.target.value)
-                                }
-                              />
-                            </td>
-
-                            {/* Order Value INR */}
-                            <td>
-                              <input
-                                className="form-control"
-                                value={poRow.orderValueINR}
-                                placeholder="INR value"
-                                onChange={(e) =>
-                                  updatePurchaseOrderRow(row.id, "orderValueINR", e.target.value)
-                                }
-                              />
-                            </td>
-
-                            {/* Invoice Milestones */}
-                            <td>
-                              <InvoiceMilestoneCell
-                                row={poRow}
-                                updateRow={updatePurchaseOrderRow}
-                              />
-                            </td>
-
-                            {/* Status */}
-                            <td>
+                          {/* Order Value (currency + amount) */}
+                          <td>
+                            <div className="d-flex gap-1">
                               <select
                                 className="form-select"
-                                value={poRow.status}
+                                style={{ maxWidth: "110px" }}
+                                value={poRow.orderValue}
                                 onChange={(e) =>
-                                  updatePurchaseOrderRow(row.id, "status", e.target.value)
+                                  updatePurchaseOrderRow(poRow.id, "orderValue", e.target.value)
                                 }
                               >
-                                <option value="">Select All</option>
-                                {dropdownOptions.status.map((opt) => (
+                                <option value="">Currency</option>
+                                {dropdownOptions.currecny.map((opt) => (
                                   <option key={opt}>{opt}</option>
                                 ))}
                               </select>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              <input
+                                className="form-control"
+                                type="number"
+                                placeholder="Amount"
+                                value={poRow.orderAmount}
+                                onChange={(e) =>
+                                  updatePurchaseOrderRow(poRow.id, "orderAmount", e.target.value)
+                                }
+                              />
+                            </div>
+                          </td>
+
+                          {/* Conversion Rate */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={poRow.conversionRate}
+                              placeholder="Rate"
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(poRow.id, "conversionRate", e.target.value)
+                              }
+                            />
+                          </td>
+
+                          {/* Order Value INR */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={poRow.orderValueINR}
+                              placeholder="INR value"
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(poRow.id, "orderValueINR", e.target.value)
+                              }
+                            />
+                          </td>
+
+                          {/* Invoice Milestones */}
+                          <td>
+                            <InvoiceMilestoneCell
+                              row={poRow}
+                              updateRow={updatePurchaseOrderRow}
+                            />
+                          </td>
+
+                          {/* Status */}
+                          <td>
+                            <select
+                              className="form-select"
+                              value={poRow.status}
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(poRow.id, "status", e.target.value)
+                              }
+                            >
+                              <option value="">Select All</option>
+                              {dropdownOptions.status.map((opt) => (
+                                <option key={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* ── Add Row — Purchase Order ── */}
+                <AddRowButton onClick={addNewPurchaseOrderRow} />
               </Accordion.Body>
             </Accordion.Item>
 

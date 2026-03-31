@@ -1,1 +1,0 @@
-import{j as r,r as p}from"./index-B9OqNNtW.js";import{L as x}from"./ListGroup-DvFdCj_D.js";const j=({CustomClass:s,children:t,Numbered:o,Horizontal:a,as:e,Variant:i,bsPrefix:m,Id:n})=>r.jsx(p.Fragment,{children:r.jsx(x,{variant:i,horizontal:a,numbered:o,bsPrefix:m,as:e,className:s,id:n,children:t})});export{j as S};

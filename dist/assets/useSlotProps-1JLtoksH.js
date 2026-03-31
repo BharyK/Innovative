@@ -1,1 +1,0 @@
-import{p as u,q as f,n as m,t as P}from"./mergeSlotProps-bH07im20.js";function d(o){return o&&o.ownerDocument||document}function w(o){const{elementType:t,externalSlotProps:n,ownerState:e,skipResolvingSlotProps:s=!1,...p}=o,r=s?{}:u(n,e),{props:l,internalRef:a}=f({...p,externalSlotProps:r}),c=m(a,r?.ref,o.additionalProps?.ref);return P(t,{...l,ref:c},e)}export{d as o,w as u};

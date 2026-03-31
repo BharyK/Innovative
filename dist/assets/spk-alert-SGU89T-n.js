@@ -1,1 +1,0 @@
-import{j as r,r as p}from"./index-B9OqNNtW.js";import{A as x}from"./Alert-BbpN3nso.js";const j=({CustomClass:s,children:e,Id:t,variant:a,Dismiss:o,Closebutton:l,show:i,...m})=>r.jsx(p.Fragment,{children:r.jsx(x,{variant:a,className:s,role:"alert",id:t,dismissible:o,closeLabel:l,show:i,...m,children:e})});export{j as S};
