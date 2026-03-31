@@ -605,12 +605,12 @@ const Crm = () => {
                   Add Row
                 </button>
 
-                <button
+                {/* <button
                   className="btn btn-success btn-sm px-4"
                   onClick={handleSubmit}
                 >
                   Submit All
-                </button>
+                </button> */}
               </div>
 
               {/* JSON Output Table */}
