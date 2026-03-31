@@ -9,6 +9,7 @@ import {
   Popover,
   Button,
   Form,
+  Accordion,
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
@@ -90,7 +91,14 @@ const Crm = () => {
   const [data, setData] = useState<OfferRow[]>(initialData);
   const [dates, setDates] = useState<{ [key: string]: Date | string | null }>({});
   const [search, setSearch] = useState("");
-  const [submittedJSON, setSubmittedJSON] = useState<OfferRow[] | null>(null);
+  const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
+
+  // All three accordion panels open by default
+  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([
+    "purchase-order",
+    "invoice",
+    "payment",
+  ]);
 
   const dropdownOptions = {
     firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
@@ -134,7 +142,8 @@ const Crm = () => {
       conversionRate: "",
       invoiceValueINR: "",
       paymentTerm: "30",
-      file: null,
+      status: "",
+      file: null as File | null,
     },
     {
       id: 2,
@@ -143,7 +152,8 @@ const Crm = () => {
       conversionRate: "",
       invoiceValueINR: "",
       paymentTerm: "30",
-      file: null,
+      status: "",
+      file: null as File | null,
     },
   ]);
 
@@ -154,6 +164,7 @@ const Crm = () => {
       paymentStatus: "Received",
       fluctuation: "₹ 252,600.00",
       comments: "",
+      status: "",
     },
     {
       id: 2,
@@ -161,6 +172,7 @@ const Crm = () => {
       paymentStatus: "Received",
       fluctuation: "₹ 9,120.00",
       comments: "",
+      status: "",
     },
     {
       id: 3,
@@ -168,8 +180,23 @@ const Crm = () => {
       paymentStatus: "Received",
       fluctuation: "0.00 €",
       comments: "",
+      status: "",
     },
   ]);
+
+  // Separate state for Purchase Order rows (linked by id to offer rows)
+  const [purchaseOrderData, setPurchaseOrderData] = useState(
+    initialData.map((row) => ({
+      id: row.id,
+      orderNo: "",
+      orderValue: "",
+      conversionRate: "",
+      orderValueINR: "",
+      invoiceMilestone: "",
+      status: "",
+      file: null as File | null,
+    }))
+  );
 
   // ─── Filter ───────────────────────────────────────────────────────────────
 
@@ -184,6 +211,12 @@ const Crm = () => {
 
   const updateRow = (id: number, field: string, value: any) => {
     setData((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const updatePurchaseOrderRow = (id: number, field: string, value: any) => {
+    setPurchaseOrderData((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
@@ -210,23 +243,84 @@ const Crm = () => {
   const addNewRow = () => {
     const newId = data.length > 0 ? Math.max(...data.map((r) => r.id)) + 1 : 1;
     setData((prev) => [...prev, createEmptyOfferRow(newId)]);
+    setPurchaseOrderData((prev) => [
+      ...prev,
+      {
+        id: newId,
+        orderNo: "",
+        orderValue: "",
+        conversionRate: "",
+        orderValueINR: "",
+        invoiceMilestone: "",
+        status: "",
+        file: null,
+      },
+    ]);
   };
 
   // ─── Submit ───────────────────────────────────────────────────────────────
 
   const handleSubmit = () => {
-    // Serialize rows (exclude non-serializable File object)
     const payload = data.map(({ file, ...rest }) => ({
       ...rest,
       fileName: file ? file.name : null,
       fileSize: file ? `${(file.size / 1024).toFixed(1)} KB` : null,
     }));
-    setSubmittedJSON(payload as any);
+    setSubmittedJSON(payload);
   };
+
+  // ─── Accordion Toggle ─────────────────────────────────────────────────────
+
+  const toggleAccordion = (key: string) => {
+    setActiveAccordionKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  // ─── Reusable File Upload Cell ────────────────────────────────────────────
+
+  const FileUploadCell = ({
+    file,
+    onUpload,
+    onRemove,
+  }: {
+    file: File | null;
+    onUpload: (f: File) => void;
+    onRemove: () => void;
+  }) => (
+    <div className="file-upload-cell">
+      <label className="upload-btn">
+        {file ? "Replace" : "Upload"}
+        <input
+          type="file"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onUpload(f);
+          }}
+        />
+      </label>
+      {file && (
+        <div className="file-info">
+          <div className="file-top">
+            <span className="file-name">📄 {file.name}</span>
+            <button className="remove-file-btn" onClick={onRemove}>✕</button>
+          </div>
+          <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+        </div>
+      )}
+    </div>
+  );
 
   // ─── Invoice Milestone Cell ───────────────────────────────────────────────
 
-  function InvoiceMilestoneCell({ row, updateRow }: { row: any; updateRow: any }) {
+  function InvoiceMilestoneCell({
+    row,
+    updateRow,
+  }: {
+    row: any;
+    updateRow: (id: number, field: string, value: any) => void;
+  }) {
     const [tempValue, setTempValue] = useState(row.invoiceMilestone ?? "");
     const overlayRef = useRef<any>(null);
 
@@ -236,7 +330,9 @@ const Crm = () => {
         placement="bottom"
         rootClose
         ref={overlayRef}
-        onToggle={(show) => { if (show) setTempValue(row.invoiceMilestone ?? ""); }}
+        onToggle={(show) => {
+          if (show) setTempValue(row.invoiceMilestone ?? "");
+        }}
         overlay={
           <Popover>
             <Popover.Header as="h3">Edit Invoice Milestone</Popover.Header>
@@ -279,7 +375,7 @@ const Crm = () => {
       <Pageheader title="Dashboard" currentpage="Revenue" activepage="Revenue" />
 
       {/* ══════════════════════════════════════════════════════════════════════
-          OFFER DETAILS
+          OFFER DETAILS  (plain card — no accordion)
       ══════════════════════════════════════════════════════════════════════ */}
       <Row>
         <Col xl={12}>
@@ -335,61 +431,48 @@ const Crm = () => {
                           </select>
                         </td>
 
-                        {/* Proposal No + File Upload */}
+                        {/* Proposal No + Upload */}
                         <td>
-                           <input
+                          <input
                             className="form-control"
                             value={row.proposalNumber}
-                            onChange={(e) => updateRow(row.id, "customer", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "proposalNumber", e.target.value)
+                            }
                           />
-                          <div className="file-upload-cell">
-                            <label className="upload-btn">
-                              Upload
-                              <input
-                                type="file"
-                                hidden
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  updateRow(row.id, "file", file);
-                                }}
-                              />
-                            </label>
-                            {row.file && (
-                              <div className="file-info">
-                                <div className="file-top">
-                                  <span className="file-name">📄 {row.file.name}</span>
-                                  <button
-                                    className="remove-file-btn"
-                                    onClick={() => updateRow(row.id, "file", null)}
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                                <span className="file-size">
-                                  {(row.file.size / 1024).toFixed(1)} KB
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                          <FileUploadCell
+                            file={row.file}
+                            onUpload={(f) => updateRow(row.id, "file", f)}
+                            onRemove={() => updateRow(row.id, "file", null)}
+                          />
                         </td>
 
                         {/* Date */}
                         <td>
-                         <SpkDatepickr
+                          <SpkDatepickr
                             className="form-control"
                             dateFormat="yy/MM/dd"
-                            selected={dates[`orderDate_${row.id}`] ? new Date(dates[`orderDate_${row.id}`] as string) : null}
-                            onChange={(date: Date | null) => handleDateChange(`orderDate_${row.id}`, date)}
+                            selected={
+                              dates[`offerDate_${row.id}`]
+                                ? new Date(dates[`offerDate_${row.id}`] as string)
+                                : null
+                            }
+                            onChange={(date: Date | null) =>
+                              handleDateChange(`offerDate_${row.id}`, date)
+                            }
                             placeholderText="Choose date"
-                            popperPlacement="bottom-start"/>
-                            </td>
+                            popperPlacement="bottom-start"
+                          />
+                        </td>
+
                         {/* Customer */}
                         <td>
                           <input
                             className="form-control"
                             value={row.customer}
-                            onChange={(e) => updateRow(row.id, "customer", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "customer", e.target.value)
+                            }
                           />
                         </td>
 
@@ -398,7 +481,9 @@ const Crm = () => {
                           <select
                             className="form-select"
                             value={row.leadGenerator}
-                            onChange={(e) => updateRow(row.id, "leadGenerator", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "leadGenerator", e.target.value)
+                            }
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.leadGenerator.map((opt) => (
@@ -412,7 +497,9 @@ const Crm = () => {
                           <input
                             className="form-control"
                             value={row.projectDetails}
-                            onChange={(e) => updateRow(row.id, "projectDetails", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "projectDetails", e.target.value)
+                            }
                           />
                         </td>
 
@@ -421,7 +508,9 @@ const Crm = () => {
                           <select
                             className="form-select"
                             value={row.department}
-                            onChange={(e) => updateRow(row.id, "department", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "department", e.target.value)
+                            }
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.department.map((opt) => (
@@ -436,7 +525,9 @@ const Crm = () => {
                             type="number"
                             className="form-control"
                             value={row.hours}
-                            onChange={(e) => updateRow(row.id, "hours", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "hours", e.target.value)
+                            }
                           />
                         </td>
 
@@ -445,7 +536,9 @@ const Crm = () => {
                           <select
                             className="form-select"
                             value={row.businessUnit}
-                            onChange={(e) => updateRow(row.id, "businessUnit", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "businessUnit", e.target.value)
+                            }
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.businessUnit.map((opt) => (
@@ -459,7 +552,9 @@ const Crm = () => {
                           <select
                             className="form-select"
                             value={row.status}
-                            onChange={(e) => updateRow(row.id, "status", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "status", e.target.value)
+                            }
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.status.map((opt) => (
@@ -468,7 +563,7 @@ const Crm = () => {
                           </select>
                         </td>
 
-                        {/* ✅ Actions */}
+                        {/* Actions */}
                         <td className="text-center">
                           <button
                             className="btn btn-primary btn-sm"
@@ -484,10 +579,9 @@ const Crm = () => {
                 </table>
               </div>
 
-              {/* ✅ Add Row + Submit All Row */}
+              {/* Add Row + Submit All */}
               <div className="d-flex align-items-center justify-content-between mt-3">
                 <button
-                  className="add-row-btn"
                   onClick={addNewRow}
                   style={{
                     display: "inline-flex",
@@ -523,13 +617,11 @@ const Crm = () => {
                 </button>
               </div>
 
-              {/* ✅ JSON Output Table */}
+              {/* JSON Output Table */}
               {submittedJSON && (
                 <div className="mt-4">
                   <div className="d-flex align-items-center justify-content-between mb-2">
-                    <h6 className="mb-0 fw-semibold text-success">
-                      ✓ Submitted Data
-                    </h6>
+                    <h6 className="mb-0 fw-semibold text-success">✓ Submitted Data</h6>
                     <button
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() => setSubmittedJSON(null)}
@@ -537,8 +629,6 @@ const Crm = () => {
                       Clear
                     </button>
                   </div>
-
-                  {/* JSON Table */}
                   <div
                     className="table-responsive"
                     style={{
@@ -547,7 +637,10 @@ const Crm = () => {
                       overflow: "hidden",
                     }}
                   >
-                    <table className="table table-sm table-bordered mb-0" style={{ fontSize: "12px" }}>
+                    <table
+                      className="table table-sm table-bordered mb-0"
+                      style={{ fontSize: "12px" }}
+                    >
                       <thead style={{ background: "#d1e7dd" }}>
                         <tr>
                           <th>ID</th>
@@ -602,8 +695,6 @@ const Crm = () => {
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Raw JSON toggle */}
                   <details className="mt-2">
                     <summary
                       style={{ fontSize: "12px", cursor: "pointer", color: "#6c757d" }}
@@ -633,378 +724,495 @@ const Crm = () => {
       </Row>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          PURCHASE ORDER DETAILS
+          ACCORDION  —  Purchase Order  |  Invoice  |  Payment Details
       ══════════════════════════════════════════════════════════════════════ */}
       <Row>
         <Col xl={12}>
-          <Card className="custom-card">
-            <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>PURCHASE ORDER DETAILS</Card.Title>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </Card.Header>
+          <Accordion alwaysOpen activeKey={activeAccordionKeys}>
 
-            <Card.Body>
-              <div className="app-table-wrapper">
-                <table className="table table-bordered app-table">
-                  <thead>
-                    <tr>
-                      <th>Order No</th>
-                      <th>Order Date</th>
-                      <th>Order Value</th>
-                      <th>Conversation Rate</th>
-                      <th>Order Value in INR</th>
-                      <th>Invoice Milestones</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <input
-                            className="form-control"
-                            value={""}
-                            onChange={(e) => updateRow(row.id, "customer", e.target.value)}/>
-                          <div className="file-upload-cell">
-                            <label className="upload-btn">
-                              Upload
+            {/* ── 1. Purchase Order Details ─────────────────────────────── */}
+            <Accordion.Item
+              eventKey="purchase-order"
+              className="custom-card mb-3"
+              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+            >
+              <Accordion.Header onClick={() => toggleAccordion("purchase-order")}>
+                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+                  PURCHASE ORDER DETAILS
+                </span>
+              </Accordion.Header>
+
+              <Accordion.Body className="p-0">
+                {/* Search inside accordion */}
+                <div
+                  className="d-flex justify-content-end px-3 pt-3 pb-2"
+                  style={{ borderBottom: "1px solid #f0f0f0" }}
+                >
+                  <div className="search-box">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table table-bordered app-table mb-0">
+                    <thead className="table-primary">
+                      <tr>
+                        <th>Order No</th>
+                        <th>Order Date</th>
+                        <th>Order Value</th>
+                        <th>Conversion Rate</th>
+                        <th>Order Value in INR</th>
+                        <th>Invoice Milestones</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.map((row) => {
+                        const poRow = purchaseOrderData.find((p) => p.id === row.id) ?? {
+                          id: row.id,
+                          orderNo: "",
+                          orderValue: "",
+                          conversionRate: "",
+                          orderValueINR: "",
+                          invoiceMilestone: "",
+                          status: "",
+                          file: null,
+                        };
+                        return (
+                          <tr key={row.id}>
+                            {/* Order No + Upload */}
+                            <td>
                               <input
-                                type="file"
-                                hidden
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  updateRow(row.id, "file", file);
-                                }}
+                                className="form-control mb-1"
+                                value={poRow.orderNo}
+                                placeholder="Order number"
+                                onChange={(e) =>
+                                  updatePurchaseOrderRow(row.id, "orderNo", e.target.value)
+                                }
                               />
-                            </label>
-                            {row.file && (
-                              <div className="file-info">
-                                <div className="file-top">
-                                  <span className="file-name">📄 {row.file.name}</span>
-                                  <button className="remove-file-btn" onClick={() => updateRow(row.id, "file", null)}>✕</button>
-                                </div>
-                                <span className="file-size">{(row.file.size / 1024).toFixed(1)} KB</span>
+                              <FileUploadCell
+                                file={poRow.file}
+                                onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
+                                onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
+                              />
+                            </td>
+
+                            {/* Order Date */}
+                            <td>
+                              <SpkDatepickr
+                                className="form-control"
+                                dateFormat="yy/MM/dd"
+                                selected={
+                                  dates[`poDate_${row.id}`]
+                                    ? new Date(dates[`poDate_${row.id}`] as string)
+                                    : null
+                                }
+                                onChange={(date: Date | null) =>
+                                  handleDateChange(`poDate_${row.id}`, date)
+                                }
+                                placeholderText="Choose date"
+                                popperPlacement="bottom-start"
+                              />
+                            </td>
+
+                            {/* Order Value (currency + amount) */}
+                            <td>
+                              <div className="d-flex gap-1">
+                                <select
+                                  className="form-select"
+                                  style={{ maxWidth: "110px" }}
+                                  value={poRow.orderValue}
+                                  onChange={(e) =>
+                                    updatePurchaseOrderRow(row.id, "orderValue", e.target.value)
+                                  }
+                                >
+                                  <option value="">Currency</option>
+                                  {dropdownOptions.currecny.map((opt) => (
+                                    <option key={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  className="form-control"
+                                  type="number"
+                                  placeholder="Amount"
+                                />
                               </div>
-                            )}
-                          </div>
-                        </td>
+                            </td>
 
-                        <td>
-                          <SpkDatepickr
-                            className="form-control"
-                            dateFormat="yy/MM/dd"
-                            selected={dates[`orderDate_${row.id}`] ? new Date(dates[`orderDate_${row.id}`] as string) : null}
-                            onChange={(date: Date | null) => handleDateChange(`orderDate_${row.id}`, date)}
-                            placeholderText="Choose date"
-                            popperPlacement="bottom-start"
-                          />
-                        </td>
-
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.status || ""}
-                            onChange={(e) => updateRow(row.id, "status", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.currecny.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
- <td>
-                          <input
-                            className="form-control"
-                            value={row.customer ?? ""}
-                            onChange={(e) => updateRow(row.id, "customer", e.target.value)}
-                          />
-                        </td>
-
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.customer ?? ""}
-                            onChange={(e) => updateRow(row.id, "customer", e.target.value)}
-                          />
-                        </td>
-
-                        <td>
-                          <InvoiceMilestoneCell row={row} updateRow={updateRow} />
-                        </td>
-
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.status ?? ""}
-                            onChange={(e) => updateRow(row.id, "status", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.status.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
-
-                        
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          INVOICE DETAILS
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Row>
-        <Col xl={12}>
-          <Card className="custom-card">
-            <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>INVOICE DETAILS</Card.Title>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div className="app-table-wrapper">
-                <table className="table table-bordered app-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice Number</th>
-                      <th>Invoice Date</th>
-                      <th>Invoice Value</th>
-                      <th>Conversion Rate</th>
-                      <th>Invoice Value (INR)</th>
-                      <th>Payment Term</th>
-                      <th>Due Date</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoiceData.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.invoiceNumber}
-                            onChange={(e) => updateInvoiceRow(row.id, "invoiceNumber", e.target.value)}
-                          />
-                          <div className="file-upload-cell">
-                            <label className="upload-btn">
-                              {row.file ? "Replace" : "Upload"}
+                            {/* Conversion Rate */}
+                            <td>
                               <input
-                                type="file"
-                                hidden
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  updateInvoiceRow(row.id, "file", file);
-                                }}
+                                className="form-control"
+                                value={poRow.conversionRate}
+                                placeholder="Rate"
+                                onChange={(e) =>
+                                  updatePurchaseOrderRow(row.id, "conversionRate", e.target.value)
+                                }
                               />
-                            </label>
-                            {row.file && (
-                              <div className="file-info">
-                                <div className="file-top">
-                                  <span className="file-name">📄 {(row.file as File).name}</span>
-                                  <button className="remove-file-btn" onClick={() => updateInvoiceRow(row.id, "file", null)}>✕</button>
-                                </div>
-                                <span className="file-size">{((row.file as File).size / 1024).toFixed(1)} KB</span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
+                            </td>
 
-                        <td>
-                          <SpkDatepickr
-                            className="form-control"
-                            dateFormat="yy/MM/dd"
-                            selected={dates[`invDate_${row.id}`] ? new Date(dates[`invDate_${row.id}`] as string) : null}
-                            onChange={(date: Date | null) => handleDateChange(`invDate_${row.id}`, date)}
-                            placeholderText="Choose date"
-                            popperPlacement="bottom-start"
-                          />
-                        </td>
+                            {/* Order Value INR */}
+                            <td>
+                              <input
+                                className="form-control"
+                                value={poRow.orderValueINR}
+                                placeholder="INR value"
+                                onChange={(e) =>
+                                  updatePurchaseOrderRow(row.id, "orderValueINR", e.target.value)
+                                }
+                              />
+                            </td>
 
-                        <td>
-                          <select
-                            className="form-select"
-                            value={(row as any).status || ""}
-                            onChange={(e) => updateInvoiceRow(row.id, "status", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.currecny.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
+                            {/* Invoice Milestones */}
+                            <td>
+                              <InvoiceMilestoneCell
+                                row={poRow}
+                                updateRow={updatePurchaseOrderRow}
+                              />
+                            </td>
 
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.conversionRate}
-                            onChange={(e) => updateInvoiceRow(row.id, "conversionRate", e.target.value)}
-                          />
-                        </td>
+                            {/* Status */}
+                            <td>
+                              <select
+                                className="form-select"
+                                value={poRow.status}
+                                onChange={(e) =>
+                                  updatePurchaseOrderRow(row.id, "status", e.target.value)
+                                }
+                              >
+                                <option value="">Select All</option>
+                                {dropdownOptions.status.map((opt) => (
+                                  <option key={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Accordion.Body>
+            </Accordion.Item>
 
-                        <td>
-                          <input className="form-control" value={row.invoiceValueINR} readOnly />
-                        </td>
+            {/* ── 2. Invoice Details ────────────────────────────────────── */}
+            <Accordion.Item
+              eventKey="invoice"
+              className="custom-card mb-3"
+              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+            >
+              <Accordion.Header onClick={() => toggleAccordion("invoice")}>
+                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+                  INVOICE DETAILS
+                </span>
+              </Accordion.Header>
 
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={row.paymentTerm}
-                            onChange={(e) => updateInvoiceRow(row.id, "paymentTerm", e.target.value)}
-                          />
-                        </td>
+              <Accordion.Body className="p-0">
+                <div
+                  className="d-flex justify-content-end px-3 pt-3 pb-2"
+                  style={{ borderBottom: "1px solid #f0f0f0" }}
+                >
+                  <div className="search-box">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
 
-                        <td>Pending</td>
-
-                        <td>
-                          <select
-                            className="form-select"
-                            value={(row as any).status || ""}
-                            onChange={(e) => updateInvoiceRow(row.id, "status", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.status.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
+                <div className="table-responsive">
+                  <table className="table table-bordered app-table mb-0">
+                    <thead className="table-primary">
+                      <tr>
+                        <th>Invoice Number</th>
+                        <th>Invoice Date</th>
+                        <th>Invoice Value</th>
+                        <th>Conversion Rate</th>
+                        <th>Invoice Value (INR)</th>
+                        <th>Payment Term</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                    </thead>
+                    <tbody>
+                      {invoiceData.map((row) => (
+                        <tr key={row.id}>
+                          {/* Invoice Number + Upload */}
+                          <td>
+                            <input
+                              className="form-control mb-1"
+                              value={row.invoiceNumber}
+                              onChange={(e) =>
+                                updateInvoiceRow(row.id, "invoiceNumber", e.target.value)
+                              }
+                            />
+                            <FileUploadCell
+                              file={row.file}
+                              onUpload={(f) => updateInvoiceRow(row.id, "file", f)}
+                              onRemove={() => updateInvoiceRow(row.id, "file", null)}
+                            />
+                          </td>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          PAYMENT DETAILS
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Row>
-        <Col xl={12}>
-          <Card className="custom-card">
-            <Card.Header className="pb-2 justify-content-between able-toolbar">
-              <Card.Title>PAYMENT DETAILS</Card.Title>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </Card.Header>
+                          {/* Invoice Date */}
+                          <td>
+                            <SpkDatepickr
+                              className="form-control"
+                              dateFormat="yy/MM/dd"
+                              selected={
+                                dates[`invDate_${row.id}`]
+                                  ? new Date(dates[`invDate_${row.id}`] as string)
+                                  : null
+                              }
+                              onChange={(date: Date | null) =>
+                                handleDateChange(`invDate_${row.id}`, date)
+                              }
+                              placeholderText="Choose date"
+                              popperPlacement="bottom-start"
+                            />
+                          </td>
 
-            <Card.Body>
-              <div className="table-responsive app-table-wrapper">
-                <table className="table table-bordered table-hover app-table">
-                  <thead className="table-primary">
-                    <tr>
-                      <th>Value Received</th>
-                      <th>Amount Realised</th>
-                      <th>Realised Date</th>
-                      <th>Payment Status</th>
-                      <th>Fluctuation Difference</th>
-                      <th>Comments</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paymentData.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.valueReceived}
-                            onChange={(e) => updatePaymentRow(row.id, "valueReceived", e.target.value)}
-                          />
-                        </td>
+                          {/* Invoice Value (currency + amount) */}
+                          <td>
+                            <div className="d-flex gap-1">
+                              <select
+                                className="form-select"
+                                style={{ maxWidth: "110px" }}
+                                value={row.invoiceValue}
+                                onChange={(e) =>
+                                  updateInvoiceRow(row.id, "invoiceValue", e.target.value)
+                                }
+                              >
+                                <option value="">Currency</option>
+                                {dropdownOptions.currecny.map((opt) => (
+                                  <option key={opt}>{opt}</option>
+                                ))}
+                              </select>
+                              <input className="form-control" placeholder="Amount" />
+                            </div>
+                          </td>
 
-                        <td>
-                          <select
-                            className="form-select"
-                            value={(row as any).status || ""}
-                            onChange={(e) => updatePaymentRow(row.id, "status", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.currecny.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
+                          {/* Conversion Rate */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.conversionRate}
+                              onChange={(e) =>
+                                updateInvoiceRow(row.id, "conversionRate", e.target.value)
+                              }
+                            />
+                          </td>
 
-                        <td>
-                          <SpkDatepickr
-                            className="form-control"
-                            dateFormat="yy/MM/dd"
-                            selected={dates[`realised_${row.id}`] ? new Date(dates[`realised_${row.id}`] as string) : null}
-                            onChange={(date: Date | null) => handleDateChange(`realised_${row.id}`, date)}
-                            placeholderText="Choose date"
-                          />
-                        </td>
+                          {/* Invoice Value INR (read-only) */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.invoiceValueINR}
+                              readOnly
+                            />
+                          </td>
 
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.paymentStatus || ""}
-                            onChange={(e) => updatePaymentRow(row.id, "paymentStatus", e.target.value)}
-                          >
-                            <option value="">Select All</option>
-                            <option>Received</option>
-                            <option>Pending</option>
-                            <option>Cancelled</option>
-                            <option>On Hold</option>
-                            <option>Partially Paid</option>
-                            <option>Extra Paid</option>
-                            <option>Credit Note Issued</option>
-                            <option>Advance Received</option>
-                            <option>Reversed</option>
-                          </select>
-                        </td>
+                          {/* Payment Term */}
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={row.paymentTerm}
+                              onChange={(e) =>
+                                updateInvoiceRow(row.id, "paymentTerm", e.target.value)
+                              }
+                            />
+                          </td>
 
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.fluctuation}
-                            onChange={(e) => updatePaymentRow(row.id, "fluctuation", e.target.value)}
-                          />
-                        </td>
+                          {/* Due Date */}
+                          <td>
+                            <SpkDatepickr
+                              className="form-control"
+                              dateFormat="yy/MM/dd"
+                              selected={
+                                dates[`dueDate_${row.id}`]
+                                  ? new Date(dates[`dueDate_${row.id}`] as string)
+                                  : null
+                              }
+                              onChange={(date: Date | null) =>
+                                handleDateChange(`dueDate_${row.id}`, date)
+                              }
+                              placeholderText="Choose date"
+                              popperPlacement="bottom-start"
+                            />
+                          </td>
 
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.comments}
-                            onChange={(e) => updatePaymentRow(row.id, "comments", e.target.value)}
-                          />
-                        </td>
+                          {/* Status */}
+                          <td>
+                            <select
+                              className="form-select"
+                              value={row.status || ""}
+                              onChange={(e) =>
+                                updateInvoiceRow(row.id, "status", e.target.value)
+                              }
+                            >
+                              <option value="">Select All</option>
+                              {dropdownOptions.status.map((opt) => (
+                                <option key={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* ── 3. Payment Details ────────────────────────────────────── */}
+            <Accordion.Item
+              eventKey="payment"
+              className="custom-card mb-3"
+              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+            >
+              <Accordion.Header onClick={() => toggleAccordion("payment")}>
+                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+                  PAYMENT DETAILS
+                </span>
+              </Accordion.Header>
+
+              <Accordion.Body className="p-0">
+                <div
+                  className="d-flex justify-content-end px-3 pt-3 pb-2"
+                  style={{ borderBottom: "1px solid #f0f0f0" }}
+                >
+                  <div className="search-box">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table table-bordered table-hover app-table mb-0">
+                    <thead className="table-primary">
+                      <tr>
+                        <th>Value Received</th>
+                        <th>Amount Realised</th>
+                        <th>Realised Date</th>
+                        <th>Payment Status</th>
+                        <th>Fluctuation Difference</th>
+                        <th>Comments</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card.Body>
-          </Card>
+                    </thead>
+                    <tbody>
+                      {paymentData.map((row) => (
+                        <tr key={row.id}>
+                          {/* Value Received */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.valueReceived}
+                              onChange={(e) =>
+                                updatePaymentRow(row.id, "valueReceived", e.target.value)
+                              }
+                            />
+                          </td>
+
+                          {/* Amount Realised (currency + amount) */}
+                          <td>
+                            <div className="d-flex gap-1">
+                              <select
+                                className="form-select"
+                                style={{ maxWidth: "110px" }}
+                                value={row.status || ""}
+                                onChange={(e) =>
+                                  updatePaymentRow(row.id, "status", e.target.value)
+                                }
+                              >
+                                <option value="">Currency</option>
+                                {dropdownOptions.currecny.map((opt) => (
+                                  <option key={opt}>{opt}</option>
+                                ))}
+                              </select>
+                              <input className="form-control" placeholder="Amount" />
+                            </div>
+                          </td>
+
+                          {/* Realised Date */}
+                          <td>
+                            <SpkDatepickr
+                              className="form-control"
+                              dateFormat="yy/MM/dd"
+                              selected={
+                                dates[`realised_${row.id}`]
+                                  ? new Date(dates[`realised_${row.id}`] as string)
+                                  : null
+                              }
+                              onChange={(date: Date | null) =>
+                                handleDateChange(`realised_${row.id}`, date)
+                              }
+                              placeholderText="Choose date"
+                            />
+                          </td>
+
+                          {/* Payment Status */}
+                          <td>
+                            <select
+                              className="form-select"
+                              value={row.paymentStatus || ""}
+                              onChange={(e) =>
+                                updatePaymentRow(row.id, "paymentStatus", e.target.value)
+                              }
+                            >
+                              <option value="">Select All</option>
+                              <option>Received</option>
+                              <option>Pending</option>
+                              <option>Cancelled</option>
+                              <option>On Hold</option>
+                              <option>Partially Paid</option>
+                              <option>Extra Paid</option>
+                              <option>Credit Note Issued</option>
+                              <option>Advance Received</option>
+                              <option>Reversed</option>
+                            </select>
+                          </td>
+
+                          {/* Fluctuation */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.fluctuation}
+                              onChange={(e) =>
+                                updatePaymentRow(row.id, "fluctuation", e.target.value)
+                              }
+                            />
+                          </td>
+
+                          {/* Comments */}
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.comments}
+                              onChange={(e) =>
+                                updatePaymentRow(row.id, "comments", e.target.value)
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Accordion.Body>
+            </Accordion.Item>
+
+          </Accordion>
         </Col>
       </Row>
     </Fragment>
