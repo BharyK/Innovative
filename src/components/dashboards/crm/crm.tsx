@@ -94,11 +94,7 @@ const Crm = () => {
   const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
 
   // All three accordion panels open by default
-  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([
-    "purchase-order",
-    "invoice",
-    "payment",
-  ]);
+  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
 
   const dropdownOptions = {
     firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
