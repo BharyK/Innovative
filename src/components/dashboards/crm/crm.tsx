@@ -798,6 +798,7 @@ const Crm = () => {
                   <table className="table table-bordered app-table mb-0">
                     <thead className="table-primary">
                       <tr>
+                        <th>Proposal Number</th>
                         <th>Order No</th>
                         <th>Order Date</th>
                         <th>Order Value</th>
@@ -810,7 +811,23 @@ const Crm = () => {
                     <tbody>
                       {purchaseOrderData.map((poRow) => (
                         <tr key={poRow.id}>
+                          {/* Proposal Number */}
+                          <td> 
+                          <input
+                            className="form-control"
+                            value={poRow.proposalNumber}
+                            onChange={(e) =>
+                              updatePurchaseOrderRow(poRow.id, "proposalNumber", e.target.value)
+                            }
+                          />
+                          <FileUploadCell
+                            file={poRow.file}
+                            onUpload={(f) => updatePurchaseOrderRow(poRow.id, "file", f)}
+                            onRemove={() => updatePurchaseOrderRow(poRow.id, "file", null)}
+                          />
+                        </td>
                           {/* Order No + Upload */}
+                         
                           <td>
                             <input
                               className="form-control mb-1"
@@ -962,6 +979,7 @@ const Crm = () => {
                   <table className="table table-bordered app-table mb-0">
                     <thead className="table-primary">
                       <tr>
+                        <th>Proposal Number</th>
                         <th>Invoice Number</th>
                         <th>Invoice Date</th>
                         <th>Invoice Value</th>
@@ -976,6 +994,20 @@ const Crm = () => {
                       {invoiceData.map((row) => (
                         <tr key={row.id}>
                           {/* Invoice Number + Upload */}
+                          <td> 
+                          <input
+                            className="form-control"
+                            value={row.proposalNumber}
+                            onChange={(e) =>
+                              updatePurchaseOrderRow(row.id, "proposalNumber", e.target.value)
+                            }
+                          />
+                          <FileUploadCell
+                            file={row.file}
+                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
+                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
+                          />
+                        </td>
                           <td>
                             <input
                               className="form-control mb-1"
@@ -1133,6 +1165,8 @@ const Crm = () => {
                   <table className="table table-bordered table-hover app-table mb-0">
                     <thead className="table-primary">
                       <tr>
+                        <th>Proposal Number</th>
+                        <th>Documents</th>
                         <th>Value Received</th>
                         <th>Amount Realised</th>
                         <th>Realised Date</th>
@@ -1145,6 +1179,27 @@ const Crm = () => {
                       {paymentData.map((row) => (
                         <tr key={row.id}>
                           {/* Value Received */}
+                          <td> 
+                          <input
+                            className="form-control"
+                            value={row.proposalNumber}
+                            onChange={(e) =>
+                              updatePurchaseOrderRow(row.id, "proposalNumber", e.target.value)
+                            }
+                          />
+                          <FileUploadCell
+                            file={row.file}
+                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
+                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
+                          />
+                        </td>
+                        <td>
+                          <FileUploadCell
+                            file={row.file}
+                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
+                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
+                          />
+                        </td>
                           <td>
                             <input
                               className="form-control"
