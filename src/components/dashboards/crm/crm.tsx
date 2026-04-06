@@ -113,7 +113,9 @@ const initialData: OfferRow[] = [
 
 const Crm = () => {
   const [data, setData] = useState<OfferRow[]>(initialData);
-  const [dates, setDates] = useState<{ [key: string]: Date | string | null }>({});
+  const [dates, setDates] = useState<{ [key: string]: Date | string | null }>(
+    {},
+  );
   const [search, setSearch] = useState("");
   const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
 
@@ -204,42 +206,39 @@ const Crm = () => {
   ]);
 
   // Purchase Order rows — independent from offer rows
-  const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderRow[]>(
-    initialData.map((row) => createEmptyPurchaseOrderRow(row.id))
-  );
+  const [purchaseOrderData, setPurchaseOrderData] = useState<
+    PurchaseOrderRow[]
+  >(initialData.map((row) => createEmptyPurchaseOrderRow(row.id)));
 
   // ─── Filter ───────────────────────────────────────────────────────────────
 
   const filteredData = data.filter((row) =>
-    Object.values(row)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase())
+    Object.values(row).join(" ").toLowerCase().includes(search.toLowerCase()),
   );
 
   // ─── Update Helpers ───────────────────────────────────────────────────────
 
   const updateRow = (id: number, field: string, value: any) => {
     setData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
   const updatePurchaseOrderRow = (id: number, field: string, value: any) => {
     setPurchaseOrderData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
   const updateInvoiceRow = (id: number, field: string, value: any) => {
     setInvoiceData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
   const updatePaymentRow = (id: number, field: string, value: any) => {
     setPaymentData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -262,7 +261,10 @@ const Crm = () => {
       purchaseOrderData.length > 0
         ? Math.max(...purchaseOrderData.map((r) => r.id)) + 1
         : 1;
-    setPurchaseOrderData((prev) => [...prev, createEmptyPurchaseOrderRow(newId)]);
+    setPurchaseOrderData((prev) => [
+      ...prev,
+      createEmptyPurchaseOrderRow(newId),
+    ]);
   };
 
   // ─── Submit ───────────────────────────────────────────────────────────────
@@ -280,7 +282,7 @@ const Crm = () => {
 
   const toggleAccordion = (key: string) => {
     setActiveAccordionKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
 
@@ -415,7 +417,11 @@ const Crm = () => {
   return (
     <Fragment>
       <Seo title={"Revenue"} />
-      <Pageheader title="Dashboard" currentpage="Revenue" activepage="Revenue" />
+      <Pageheader
+        title="Dashboard"
+        currentpage="Revenue"
+        activepage="Revenue"
+      />
 
       {/* ══════════════════════════════════════════════════════════════════════
           OFFER DETAILS
@@ -424,7 +430,7 @@ const Crm = () => {
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title>OFFER DETAILS</Card.Title>
+              <Card.Title className="d-none">OFFER DETAILS</Card.Title>
               <div className="search-box">
                 <input
                   type="text"
@@ -441,17 +447,20 @@ const Crm = () => {
                   <thead className="table-primary">
                     <tr>
                       <th>ID</th>
+                      <th>Financial Year</th>
                       <th>Firm</th>
                       <th>Proposal No</th>
                       <th>Date</th>
                       <th>Customer</th>
                       <th>Lead Generator</th>
                       <th>Project Details</th>
-                      <th>Department</th>
-                      <th>Hours</th>
                       <th>Business Unit</th>
+                      <th>Department</th>
+                      <th>Efforts</th>
+
                       <th>Status</th>
                       <th>Actions</th>
+                      <th>Comments</th>
                     </tr>
                   </thead>
 
@@ -459,13 +468,36 @@ const Crm = () => {
                     {filteredData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.id}</td>
-
+                        <td>
+                          <SpkDatepickr
+                            className="form-control"
+                            dateFormat="yyyy"
+                            showYearPicker
+                            selected={
+                              dates[`offerDate_${row.id}`]
+                                ? new Date(
+                                    dates[`offerDate_${row.id}`] as string,
+                                  )
+                                : null
+                            }
+                            onChange={(date: Date | null) =>
+                              handleDateChange(`offerDate_${row.id}`, date)
+                            }
+                            maxDate={
+                              new Date(new Date().getFullYear() + 1, 11, 31)
+                            }
+                            placeholderText="Choose year"
+                            popperPlacement="bottom-start"
+                          />
+                        </td>
                         {/* Firm */}
                         <td>
                           <select
                             className="form-select"
                             value={row.firm}
-                            onChange={(e) => updateRow(row.id, "firm", e.target.value)}
+                            onChange={(e) =>
+                              updateRow(row.id, "firm", e.target.value)
+                            }
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.firm.map((opt) => (
@@ -480,7 +512,11 @@ const Crm = () => {
                             className="form-control"
                             value={row.proposalNumber}
                             onChange={(e) =>
-                              updateRow(row.id, "proposalNumber", e.target.value)
+                              updateRow(
+                                row.id,
+                                "proposalNumber",
+                                e.target.value,
+                              )
                             }
                           />
                           <FileUploadCell
@@ -497,7 +533,9 @@ const Crm = () => {
                             dateFormat="yy/MM/dd"
                             selected={
                               dates[`offerDate_${row.id}`]
-                                ? new Date(dates[`offerDate_${row.id}`] as string)
+                                ? new Date(
+                                    dates[`offerDate_${row.id}`] as string,
+                                  )
                                 : null
                             }
                             onChange={(date: Date | null) =>
@@ -541,9 +579,28 @@ const Crm = () => {
                             className="form-control"
                             value={row.projectDetails}
                             onChange={(e) =>
-                              updateRow(row.id, "projectDetails", e.target.value)
+                              updateRow(
+                                row.id,
+                                "projectDetails",
+                                e.target.value,
+                              )
                             }
                           />
+                        </td>
+                        {/* Business Unit */}
+                        <td>
+                          <select
+                            className="form-select"
+                            value={row.businessUnit}
+                            onChange={(e) =>
+                              updateRow(row.id, "businessUnit", e.target.value)
+                            }
+                          >
+                            <option value="">Select All</option>
+                            {dropdownOptions.businessUnit.map((opt) => (
+                              <option key={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </td>
 
                         {/* Department */}
@@ -574,22 +631,6 @@ const Crm = () => {
                           />
                         </td>
 
-                        {/* Business Unit */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.businessUnit}
-                            onChange={(e) =>
-                              updateRow(row.id, "businessUnit", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.businessUnit.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        </td>
-
                         {/* Status */}
                         <td>
                           <select
@@ -615,7 +656,29 @@ const Crm = () => {
                           >
                             Submit
                           </button>
+                          <br />
+                          <button
+                            className="btn btn-danger btn-sm mt-1"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Edit
+                          </button>
                         </td>
+                        <td>
+                            <input
+                              className="form-control"
+                              value={""}
+                              placeholder="Comments"
+                              onChange={(e) =>
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </td>
                       </tr>
                     ))}
                   </tbody>
@@ -640,12 +703,16 @@ const Crm = () => {
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#0d6efd";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#0d6efd";
+                    (e.currentTarget as HTMLButtonElement).style.borderColor =
+                      "#0d6efd";
+                    (e.currentTarget as HTMLButtonElement).style.color =
+                      "#0d6efd";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "#6c757d";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#495057";
+                    (e.currentTarget as HTMLButtonElement).style.borderColor =
+                      "#6c757d";
+                    (e.currentTarget as HTMLButtonElement).style.color =
+                      "#495057";
                   }}
                 >
                   <span style={{ fontSize: "18px", lineHeight: 1 }}>+</span>
@@ -657,7 +724,9 @@ const Crm = () => {
               {submittedJSON && (
                 <div className="mt-4">
                   <div className="d-flex align-items-center justify-content-between mb-2">
-                    <h6 className="mb-0 fw-semibold text-success">✓ Submitted Data</h6>
+                    <h6 className="mb-0 fw-semibold text-success">
+                      ✓ Submitted Data
+                    </h6>
                     <button
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() => setSubmittedJSON(null)}
@@ -692,21 +761,50 @@ const Crm = () => {
                           <th>Status</th>
                           <th>File Name</th>
                           <th>File Size</th>
+                          <th>Comments</th>
                         </tr>
                       </thead>
                       <tbody>
                         {submittedJSON.map((row: any) => (
                           <tr key={row.id}>
                             <td>{row.id}</td>
-                            <td>{row.firm || <span className="text-muted">—</span>}</td>
+                            <td>
+                              {row.firm || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
                             <td>{row.proposalNumber}</td>
                             <td>{row.proposalDate}</td>
-                            <td>{row.customer || <span className="text-muted">—</span>}</td>
-                            <td>{row.leadGenerator || <span className="text-muted">—</span>}</td>
-                            <td>{row.projectDetails || <span className="text-muted">—</span>}</td>
-                            <td>{row.department || <span className="text-muted">—</span>}</td>
-                            <td>{row.hours || <span className="text-muted">—</span>}</td>
-                            <td>{row.businessUnit || <span className="text-muted">—</span>}</td>
+                            <td>
+                              {row.customer || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.leadGenerator || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.projectDetails || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.department || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.hours || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.businessUnit || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
                             <td>
                               {row.status ? (
                                 <span
@@ -714,8 +812,8 @@ const Crm = () => {
                                     row.status === "Approved"
                                       ? "bg-success"
                                       : row.status === "Rejected"
-                                      ? "bg-danger"
-                                      : "bg-warning text-dark"
+                                        ? "bg-danger"
+                                        : "bg-warning text-dark"
                                   }`}
                                 >
                                   {row.status}
@@ -724,8 +822,30 @@ const Crm = () => {
                                 <span className="text-muted">—</span>
                               )}
                             </td>
-                            <td>{row.fileName || <span className="text-muted">—</span>}</td>
-                            <td>{row.fileSize || <span className="text-muted">—</span>}</td>
+                            <td>
+                              {row.fileName || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {row.fileSize || (
+                                <span className="text-muted">—</span>
+                              )}
+                            </td>
+                           <td>
+                            <input
+                              className="form-control"
+                              value={""}
+                              placeholder="Comments"
+                              onChange={(e) =>
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </td>
                           </tr>
                         ))}
                       </tbody>
@@ -733,7 +853,11 @@ const Crm = () => {
                   </div>
                   <details className="mt-2">
                     <summary
-                      style={{ fontSize: "12px", cursor: "pointer", color: "#6c757d" }}
+                      style={{
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        color: "#6c757d",
+                      }}
                     >
                       View raw JSON
                     </summary>
@@ -765,15 +889,19 @@ const Crm = () => {
       <Row>
         <Col xl={12}>
           <Accordion alwaysOpen activeKey={activeAccordionKeys}>
-
             {/* ── 1. Purchase Order Details ─────────────────────────────── */}
             <Accordion.Item
               eventKey="purchase-order"
               className="custom-card mb-3"
               style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
             >
-              <Accordion.Header onClick={() => toggleAccordion("purchase-order")}>
-                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+              <Accordion.Header
+                onClick={() => toggleAccordion("purchase-order")}
+              >
+                <span
+                  className="fw-semibold"
+                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                >
                   PURCHASE ORDER DETAILS
                 </span>
               </Accordion.Header>
@@ -799,6 +927,8 @@ const Crm = () => {
                     <thead className="table-primary">
                       <tr>
                         <th>Proposal Number</th>
+                        <th>Project ID</th>
+                         <th>Business Unit</th>
                         <th>Order No</th>
                         <th>Order Date</th>
                         <th>Order Value</th>
@@ -806,41 +936,89 @@ const Crm = () => {
                         <th>Order Value in INR</th>
                         <th>Invoice Milestones</th>
                         <th>Status</th>
+                         <th>Actions</th>
+                         <th>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
                       {purchaseOrderData.map((poRow) => (
                         <tr key={poRow.id}>
                           {/* Proposal Number */}
-                          <td> 
-                          <input
-                            className="form-control"
-                            value={poRow.proposalNumber}
-                            onChange={(e) =>
-                              updatePurchaseOrderRow(poRow.id, "proposalNumber", e.target.value)
-                            }
-                          />
-                          <FileUploadCell
-                            file={poRow.file}
-                            onUpload={(f) => updatePurchaseOrderRow(poRow.id, "file", f)}
-                            onRemove={() => updatePurchaseOrderRow(poRow.id, "file", null)}
-                          />
-                        </td>
+                          <td>
+                            <input
+                              className="form-control"
+                              value={poRow.proposalNumber}
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "proposalNumber",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <FileUploadCell
+                              file={poRow.file}
+                              onUpload={(f) =>
+                                updatePurchaseOrderRow(poRow.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updatePurchaseOrderRow(poRow.id, "file", null)
+                              }
+                            />
+                          </td>
                           {/* Order No + Upload */}
-                         
+                              <td><input
+                              className="form-control mb-1"
+                              value={poRow.orderNo}
+                              placeholder="Project ID"
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "orderNo",
+                                  e.target.value,
+                                )
+                              }
+                            /></td>
+                            <td>
+                            <select
+                              className="form-select"
+                              value={poRow.businessUnit}
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "businessUnit",
+                                  e.target.value,
+                                )
+                              }
+                            >
+                              <option value="">Select All</option>
+                              {dropdownOptions.businessUnit.map((opt) => (
+                                <option key={opt}>{opt}</option>
+                              ))}
+                            </select>
+
+                            </td>
                           <td>
                             <input
                               className="form-control mb-1"
                               value={poRow.orderNo}
                               placeholder="Order number"
                               onChange={(e) =>
-                                updatePurchaseOrderRow(poRow.id, "orderNo", e.target.value)
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "orderNo",
+                                  e.target.value,
+                                )
                               }
                             />
                             <FileUploadCell
                               file={poRow.file}
-                              onUpload={(f) => updatePurchaseOrderRow(poRow.id, "file", f)}
-                              onRemove={() => updatePurchaseOrderRow(poRow.id, "file", null)}
+                              onUpload={(f) =>
+                                updatePurchaseOrderRow(poRow.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updatePurchaseOrderRow(poRow.id, "file", null)
+                              }
                             />
                           </td>
 
@@ -851,7 +1029,9 @@ const Crm = () => {
                               dateFormat="yy/MM/dd"
                               selected={
                                 dates[`poDate_${poRow.id}`]
-                                  ? new Date(dates[`poDate_${poRow.id}`] as string)
+                                  ? new Date(
+                                      dates[`poDate_${poRow.id}`] as string,
+                                    )
                                   : null
                               }
                               onChange={(date: Date | null) =>
@@ -870,7 +1050,11 @@ const Crm = () => {
                                 style={{ maxWidth: "110px" }}
                                 value={poRow.orderValue}
                                 onChange={(e) =>
-                                  updatePurchaseOrderRow(poRow.id, "orderValue", e.target.value)
+                                  updatePurchaseOrderRow(
+                                    poRow.id,
+                                    "orderValue",
+                                    e.target.value,
+                                  )
                                 }
                               >
                                 <option value="">Currency</option>
@@ -884,7 +1068,11 @@ const Crm = () => {
                                 placeholder="Amount"
                                 value={poRow.orderAmount}
                                 onChange={(e) =>
-                                  updatePurchaseOrderRow(poRow.id, "orderAmount", e.target.value)
+                                  updatePurchaseOrderRow(
+                                    poRow.id,
+                                    "orderAmount",
+                                    e.target.value,
+                                  )
                                 }
                               />
                             </div>
@@ -897,7 +1085,11 @@ const Crm = () => {
                               value={poRow.conversionRate}
                               placeholder="Rate"
                               onChange={(e) =>
-                                updatePurchaseOrderRow(poRow.id, "conversionRate", e.target.value)
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "conversionRate",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -909,7 +1101,11 @@ const Crm = () => {
                               value={poRow.orderValueINR}
                               placeholder="INR value"
                               onChange={(e) =>
-                                updatePurchaseOrderRow(poRow.id, "orderValueINR", e.target.value)
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "orderValueINR",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -928,7 +1124,11 @@ const Crm = () => {
                               className="form-select"
                               value={poRow.status}
                               onChange={(e) =>
-                                updatePurchaseOrderRow(poRow.id, "status", e.target.value)
+                                updatePurchaseOrderRow(
+                                  poRow.id,
+                                  "status",
+                                  e.target.value,
+                                )
                               }
                             >
                               <option value="">Select All</option>
@@ -936,6 +1136,37 @@ const Crm = () => {
                                 <option key={opt}>{opt}</option>
                               ))}
                             </select>
+                          </td>
+                          <td className="text-center">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Submit
+                          </button>
+                          <br />
+                          <button
+                            className="btn btn-danger btn-sm mt-1"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                        <td>
+                            <input
+                              className="form-control"
+                              value={""}
+                              placeholder="Comments"
+                              onChange={(e) =>
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
+                              }
+                            />
                           </td>
                         </tr>
                       ))}
@@ -955,7 +1186,10 @@ const Crm = () => {
               style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
             >
               <Accordion.Header onClick={() => toggleAccordion("invoice")}>
-                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+                <span
+                  className="fw-semibold d-none"
+                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                >
                   INVOICE DETAILS
                 </span>
               </Accordion.Header>
@@ -988,38 +1222,56 @@ const Crm = () => {
                         <th>Payment Term</th>
                         <th>Due Date</th>
                         <th>Status</th>
+                        <th>Actions</th>
+                        <th>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
                       {invoiceData.map((row) => (
                         <tr key={row.id}>
                           {/* Invoice Number + Upload */}
-                          <td> 
-                          <input
-                            className="form-control"
-                            value={row.proposalNumber}
-                            onChange={(e) =>
-                              updatePurchaseOrderRow(row.id, "proposalNumber", e.target.value)
-                            }
-                          />
-                          <FileUploadCell
-                            file={row.file}
-                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
-                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
-                          />
-                        </td>
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.proposalNumber}
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(
+                                  row.id,
+                                  "proposalNumber",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <FileUploadCell
+                              file={row.file}
+                              onUpload={(f) =>
+                                updatePurchaseOrderRow(row.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updatePurchaseOrderRow(row.id, "file", null)
+                              }
+                            />
+                          </td>
                           <td>
                             <input
                               className="form-control mb-1"
                               value={row.invoiceNumber}
                               onChange={(e) =>
-                                updateInvoiceRow(row.id, "invoiceNumber", e.target.value)
+                                updateInvoiceRow(
+                                  row.id,
+                                  "invoiceNumber",
+                                  e.target.value,
+                                )
                               }
                             />
                             <FileUploadCell
                               file={row.file}
-                              onUpload={(f) => updateInvoiceRow(row.id, "file", f)}
-                              onRemove={() => updateInvoiceRow(row.id, "file", null)}
+                              onUpload={(f) =>
+                                updateInvoiceRow(row.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updateInvoiceRow(row.id, "file", null)
+                              }
                             />
                           </td>
 
@@ -1030,7 +1282,9 @@ const Crm = () => {
                               dateFormat="yy/MM/dd"
                               selected={
                                 dates[`invDate_${row.id}`]
-                                  ? new Date(dates[`invDate_${row.id}`] as string)
+                                  ? new Date(
+                                      dates[`invDate_${row.id}`] as string,
+                                    )
                                   : null
                               }
                               onChange={(date: Date | null) =>
@@ -1049,7 +1303,11 @@ const Crm = () => {
                                 style={{ maxWidth: "110px" }}
                                 value={row.invoiceValue}
                                 onChange={(e) =>
-                                  updateInvoiceRow(row.id, "invoiceValue", e.target.value)
+                                  updateInvoiceRow(
+                                    row.id,
+                                    "invoiceValue",
+                                    e.target.value,
+                                  )
                                 }
                               >
                                 <option value="">Currency</option>
@@ -1057,7 +1315,10 @@ const Crm = () => {
                                   <option key={opt}>{opt}</option>
                                 ))}
                               </select>
-                              <input className="form-control" placeholder="Amount" />
+                              <input
+                                className="form-control"
+                                placeholder="Amount"
+                              />
                             </div>
                           </td>
 
@@ -1067,7 +1328,11 @@ const Crm = () => {
                               className="form-control"
                               value={row.conversionRate}
                               onChange={(e) =>
-                                updateInvoiceRow(row.id, "conversionRate", e.target.value)
+                                updateInvoiceRow(
+                                  row.id,
+                                  "conversionRate",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -1088,7 +1353,11 @@ const Crm = () => {
                               className="form-control"
                               value={row.paymentTerm}
                               onChange={(e) =>
-                                updateInvoiceRow(row.id, "paymentTerm", e.target.value)
+                                updateInvoiceRow(
+                                  row.id,
+                                  "paymentTerm",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -1100,7 +1369,9 @@ const Crm = () => {
                               dateFormat="yy/MM/dd"
                               selected={
                                 dates[`dueDate_${row.id}`]
-                                  ? new Date(dates[`dueDate_${row.id}`] as string)
+                                  ? new Date(
+                                      dates[`dueDate_${row.id}`] as string,
+                                    )
                                   : null
                               }
                               onChange={(date: Date | null) =>
@@ -1117,7 +1388,11 @@ const Crm = () => {
                               className="form-select"
                               value={row.status || ""}
                               onChange={(e) =>
-                                updateInvoiceRow(row.id, "status", e.target.value)
+                                updateInvoiceRow(
+                                  row.id,
+                                  "status",
+                                  e.target.value,
+                                )
                               }
                             >
                               <option value="">Select All</option>
@@ -1125,6 +1400,37 @@ const Crm = () => {
                                 <option key={opt}>{opt}</option>
                               ))}
                             </select>
+                          </td>
+                          <td className="text-center">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Submit
+                          </button>
+                          <br />
+                          <button
+                            className="btn btn-danger btn-sm mt-1"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                        <td>
+                            <input
+                              className="form-control"
+                              value={""}
+                              placeholder="Comments"
+                              onChange={(e) =>
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
+                              }
+                            />
                           </td>
                         </tr>
                       ))}
@@ -1141,7 +1447,10 @@ const Crm = () => {
               style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
             >
               <Accordion.Header onClick={() => toggleAccordion("payment")}>
-                <span className="fw-semibold" style={{ fontSize: "13px", letterSpacing: "0.04em" }}>
+                <span
+                  className="fw-semibold d-none"
+                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                >
                   PAYMENT DETAILS
                 </span>
               </Accordion.Header>
@@ -1173,39 +1482,57 @@ const Crm = () => {
                         <th>Payment Status</th>
                         <th>Fluctuation Difference</th>
                         <th>Comments</th>
+                        <th>Actions</th>
+                         <th>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paymentData.map((row) => (
                         <tr key={row.id}>
                           {/* Value Received */}
-                          <td> 
-                          <input
-                            className="form-control"
-                            value={row.proposalNumber}
-                            onChange={(e) =>
-                              updatePurchaseOrderRow(row.id, "proposalNumber", e.target.value)
-                            }
-                          />
-                          <FileUploadCell
-                            file={row.file}
-                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
-                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
-                          />
-                        </td>
-                        <td>
-                          <FileUploadCell
-                            file={row.file}
-                            onUpload={(f) => updatePurchaseOrderRow(row.id, "file", f)}
-                            onRemove={() => updatePurchaseOrderRow(row.id, "file", null)}
-                          />
-                        </td>
+                          <td>
+                            <input
+                              className="form-control"
+                              value={row.proposalNumber}
+                              onChange={(e) =>
+                                updatePurchaseOrderRow(
+                                  row.id,
+                                  "proposalNumber",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <FileUploadCell
+                              file={row.file}
+                              onUpload={(f) =>
+                                updatePurchaseOrderRow(row.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updatePurchaseOrderRow(row.id, "file", null)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <FileUploadCell
+                              file={row.file}
+                              onUpload={(f) =>
+                                updatePurchaseOrderRow(row.id, "file", f)
+                              }
+                              onRemove={() =>
+                                updatePurchaseOrderRow(row.id, "file", null)
+                              }
+                            />
+                          </td>
                           <td>
                             <input
                               className="form-control"
                               value={row.valueReceived}
                               onChange={(e) =>
-                                updatePaymentRow(row.id, "valueReceived", e.target.value)
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -1218,7 +1545,11 @@ const Crm = () => {
                                 style={{ maxWidth: "110px" }}
                                 value={row.status || ""}
                                 onChange={(e) =>
-                                  updatePaymentRow(row.id, "status", e.target.value)
+                                  updatePaymentRow(
+                                    row.id,
+                                    "status",
+                                    e.target.value,
+                                  )
                                 }
                               >
                                 <option value="">Currency</option>
@@ -1226,7 +1557,10 @@ const Crm = () => {
                                   <option key={opt}>{opt}</option>
                                 ))}
                               </select>
-                              <input className="form-control" placeholder="Amount" />
+                              <input
+                                className="form-control"
+                                placeholder="Amount"
+                              />
                             </div>
                           </td>
 
@@ -1237,7 +1571,9 @@ const Crm = () => {
                               dateFormat="yy/MM/dd"
                               selected={
                                 dates[`realised_${row.id}`]
-                                  ? new Date(dates[`realised_${row.id}`] as string)
+                                  ? new Date(
+                                      dates[`realised_${row.id}`] as string,
+                                    )
                                   : null
                               }
                               onChange={(date: Date | null) =>
@@ -1253,7 +1589,11 @@ const Crm = () => {
                               className="form-select"
                               value={row.paymentStatus || ""}
                               onChange={(e) =>
-                                updatePaymentRow(row.id, "paymentStatus", e.target.value)
+                                updatePaymentRow(
+                                  row.id,
+                                  "paymentStatus",
+                                  e.target.value,
+                                )
                               }
                             >
                               <option value="">Select All</option>
@@ -1275,7 +1615,11 @@ const Crm = () => {
                               className="form-control"
                               value={row.fluctuation}
                               onChange={(e) =>
-                                updatePaymentRow(row.id, "fluctuation", e.target.value)
+                                updatePaymentRow(
+                                  row.id,
+                                  "fluctuation",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -1286,7 +1630,42 @@ const Crm = () => {
                               className="form-control"
                               value={row.comments}
                               onChange={(e) =>
-                                updatePaymentRow(row.id, "comments", e.target.value)
+                                updatePaymentRow(
+                                  row.id,
+                                  "comments",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="text-center">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Submit
+                          </button>
+                          <br />
+                          <button
+                            className="btn btn-danger btn-sm mt-1"
+                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                            onClick={handleSubmit}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                        <td>
+                            <input
+                              className="form-control"
+                              value={""}
+                              placeholder="Comments"
+                              onChange={(e) =>
+                                updatePaymentRow(
+                                  row.id,
+                                  "valueReceived",
+                                  e.target.value,
+                                )
                               }
                             />
                           </td>
@@ -1297,7 +1676,6 @@ const Crm = () => {
                 </div>
               </Accordion.Body>
             </Accordion.Item>
-
           </Accordion>
         </Col>
       </Row>
