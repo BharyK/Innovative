@@ -26,6 +26,7 @@
     "@simonwep/pickr": "^1.9.1",
     "@yaireo/tagify": "^4.35.4",
     "apexcharts": "^5.3.6",
+    "axios": "^1.14.0",
     "bootstrap": "^5.3.8",
     "dayjs": "^1.11.18",
     "dragula": "^3.7.3",
