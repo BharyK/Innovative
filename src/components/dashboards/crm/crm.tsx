@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef } from "react";
+import { Fragment, useState, useRef , useEffect} from "react";
 import Seo from "../../../shared/layouts-components/seo/seo";
 import Pageheader from "../../../shared/layouts-components/pageheader/pageheader";
 import {
@@ -13,6 +13,7 @@ import {
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
+import { getApi } from "../../../api/services";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -120,6 +121,10 @@ const Crm = () => {
   const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
 
   const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
+  const [bustinessUnits, setBusinessUnits] = useState<{ businessUnitId: string; businessUnitName: string }[]>([]);
+  const [ departments, setDepartments] = useState<{ departmentId: string; departmentName: string }[]>([]);
+  const [employees, setEmployees] = useState<{ employeeId: string; employeeName: string }[]>([]);
+  const [firms, setFirms] = useState<{ firmId: string; firmName: string }[]>([]);
 
   const dropdownOptions = {
     firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
@@ -412,8 +417,23 @@ const Crm = () => {
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    fetchData();
+  }, []);
 
+const fetchData = async () => {
+  try {
+    const res = await getApi("Uitility");
+    console.log("Hey this is the response",res.data);
+    setBusinessUnits(res.data.businessUnits);
+    setDepartments(res.data.departments);
+    setEmployees(res.data.employees);
+    setFirms(res.data.firms);
+  } catch (err) {
+    console.error(err);
+  }
+};
+console.log(firms, "firms from api");
   return (
     <Fragment>
       <Seo title={"Revenue"} />
@@ -500,9 +520,13 @@ const Crm = () => {
                             }
                           >
                             <option value="">Select All</option>
-                            {dropdownOptions.firm.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
+                            {firms.length > 0 ? (
+                              firms.map((opt) => (
+                                <option key={opt.firmId}>{opt.firmName}</option>
+                              ))
+                            ) : (
+                              <option value="">No options available</option>
+                            )}
                           </select>
                         </td>
 
@@ -567,9 +591,13 @@ const Crm = () => {
                             }
                           >
                             <option value="">Select All</option>
-                            {dropdownOptions.leadGenerator.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
+                            {employees.length > 0 ? (
+                              employees.map((opt) => (
+                                <option key={opt.employeeId}>{opt.employeeName}</option>
+                              ))
+                            ) : (
+                              <option value="">No options available</option>
+                            )}
                           </select>
                         </td>
 
@@ -597,9 +625,13 @@ const Crm = () => {
                             }
                           >
                             <option value="">Select All</option>
-                            {dropdownOptions.businessUnit.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
+                            {bustinessUnits.length > 0 ? (
+                              bustinessUnits.map((opt) => (
+                                <option key={opt.businessUnitId} value={opt.businessUnitName}>{opt.businessUnitName}</option>
+                              ))
+                            ) : (
+                              <option value="">No options available</option>
+                            )}
                           </select>
                         </td>
 
@@ -613,8 +645,10 @@ const Crm = () => {
                             }
                           >
                             <option value="">Select All</option>
-                            {dropdownOptions.department.map((opt) => (
-                              <option key={opt}>{opt}</option>
+                            {departments.map((opt) => (
+                              <option key={opt.departmentId} value={opt.departmentName}>
+                                {opt.departmentName}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -992,8 +1026,10 @@ const Crm = () => {
                               }
                             >
                               <option value="">Select All</option>
-                              {dropdownOptions.businessUnit.map((opt) => (
-                                <option key={opt}>{opt}</option>
+                              {bustinessUnits.map((opt) => (
+                                <option key={opt.businessUnitId} value={opt.businessUnitName}>
+                                  {opt.businessUnitName}
+                                </option>
                               ))}
                             </select>
 

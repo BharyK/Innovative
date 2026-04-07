@@ -17,7 +17,7 @@
 .app-table {
   width: max-content;     /* IMPORTANT: prevents shrink */
   min-width: 1200px;      /* base width */
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0;
 }
 
@@ -195,4 +195,16 @@
 .file-size {
   color: #666;
   font-size: 11px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+tbody tr {
+  border: 1px solid #ccc;
+}
+
+tbody tr td {
+  border: 1px solid #ccc;
 }
