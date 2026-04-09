@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef , useEffect} from "react";
+import { Fragment, useState, useRef, useEffect } from "react";
 import Seo from "../../../shared/layouts-components/seo/seo";
 import Pageheader from "../../../shared/layouts-components/pageheader/pageheader";
 import {
@@ -14,22 +14,26 @@ import {
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
 import { getApi } from "../../../api/services";
+import axios from "axios";
+import moment from "moment";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface OfferRow {
   id: number;
-  firm: string;
+  firmId: string;
   file: File | null;
   proposalNumber: string;
   proposalDate: string;
   customer: string;
   leadGenerator: string;
   projectDetails: string;
-  department: string;
+  departmentId: string;
   hours: number | string;
-  businessUnit: string;
+  businessUnitId: string;
   status: string;
+  financialYear?: string | Date | null;
+  comments?: string;
 }
 
 interface PurchaseOrderRow {
@@ -48,9 +52,9 @@ interface PurchaseOrderRow {
 
 const createEmptyOfferRow = (id: number): OfferRow => ({
   id,
-  firm: "",
+  firmId: "",
   file: null,
-  proposalNumber: `V24250${String(id).padStart(4, "0")}`,
+  proposalNumber: ``,
   proposalDate: new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "2-digit",
@@ -59,10 +63,12 @@ const createEmptyOfferRow = (id: number): OfferRow => ({
   customer: "",
   leadGenerator: "",
   projectDetails: "",
-  department: "",
+  departmentId: "",
   hours: "",
-  businessUnit: "",
+  businessUnitId: "",
   status: "",
+  financialYear: null,
+  comments: "",
 });
 
 const createEmptyPurchaseOrderRow = (id: number): PurchaseOrderRow => ({
@@ -84,29 +90,16 @@ const initialData: OfferRow[] = [
     id: 1,
     firm: "",
     file: null,
-    proposalNumber: "V242502001",
-    proposalDate: "02/04/24",
-    customer: "Vinnovative GmbH",
+    proposalNumber: "",
+    proposalDate: moment().format("DD/MM/YYYY"),
+    customer: "",
     leadGenerator: "",
-    projectDetails: "20381 ET MRA1 MFA Package 03",
+    projectDetails: "",
     department: "",
-    hours: 800,
+    hours: 0,
     businessUnit: "",
     status: "",
-  },
-  {
-    id: 2,
-    firm: "",
-    file: null,
-    proposalNumber: "V242502002",
-    proposalDate: "05/04/24",
-    customer: "iRob International",
-    leadGenerator: "",
-    projectDetails: "IR056589 BS1 L461 Staubli Approval",
-    department: "",
-    hours: 152,
-    businessUnit: "",
-    status: "",
+    financialYear: "",
   },
 ];
 
@@ -121,10 +114,18 @@ const Crm = () => {
   const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
 
   const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
-  const [bustinessUnits, setBusinessUnits] = useState<{ businessUnitId: string; businessUnitName: string }[]>([]);
-  const [ departments, setDepartments] = useState<{ departmentId: string; departmentName: string }[]>([]);
-  const [employees, setEmployees] = useState<{ employeeId: string; employeeName: string }[]>([]);
-  const [firms, setFirms] = useState<{ firmId: string; firmName: string }[]>([]);
+  const [bustinessUnits, setBusinessUnits] = useState<
+    { businessUnitId: string; businessUnitName: string }[]
+  >([]);
+  const [departments, setDepartments] = useState<
+    { departmentId: string; departmentName: string }[]
+  >([]);
+  const [employees, setEmployees] = useState<
+    { employeeId: string; employeeName: string }[]
+  >([]);
+  const [firms, setFirms] = useState<{ firmId: string; firmName: string }[]>(
+    [],
+  );
 
   const dropdownOptions = {
     firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
@@ -417,23 +418,82 @@ const Crm = () => {
     );
   }
 
+  const base64ToBlobUrl = (base64, mimeType = "application/pdf") => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length)
+      .fill(0)
+      .map((_, i) => byteCharacters.charCodeAt(i));
+
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: mimeType });
+
+    return URL.createObjectURL(blob);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
-const fetchData = async () => {
-  try {
-    const res = await getApi("Uitility");
-    console.log("Hey this is the response",res.data);
-    setBusinessUnits(res.data.businessUnits);
-    setDepartments(res.data.departments);
-    setEmployees(res.data.employees);
-    setFirms(res.data.firms);
-  } catch (err) {
-    console.error(err);
-  }
-};
-console.log(firms, "firms from api");
+  const fetchData = async () => {
+    try {
+      const [Uitility, Proposal] = await Promise.all([
+        getApi("Uitility"),
+        getApi("Proposal"),
+      ]);
+      setBusinessUnits(Uitility.data.businessUnits);
+      setDepartments(Uitility.data.departments);
+      setEmployees(Uitility.data.employees);
+      setFirms(Uitility.data.firms);
+      const mappedData = Proposal.data.map((item) => ({
+        ...item,
+        fileUrl: item.documentData ? base64ToBlobUrl(item.documentData) : null,
+      }));
+      setData(mappedData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleOfferDetails = (row: any) => {
+    const payload = {
+      proposalNumber: row.proposalNumber,
+      firmId: row.firmId,
+      customerId: 0,
+      proposalDate: moment(row.proposalDate).format("YYYY-MM-DD[T]HH:mm:ss"),
+      leadGenerator: row.leadGenerator,
+      projectDetails: row.projectDetails,
+      departmentId: row.departmentId,
+      estimatedHours: row.estimatedHours,
+      businessUnitId: row.businessUnitId,
+      status: row.status,
+      comments: row.comments,
+      documentData: row.documentData,
+    };
+
+    console.log("Submitting Row:", payload);
+  };
+
+  const handleOfferDetailsRemoveFile = (id) => {
+    setData((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          // cleanup blob URL
+          if (item.fileUrl) {
+            URL.revokeObjectURL(item.fileUrl);
+          }
+
+          return {
+            ...item,
+            file: null,
+            fileUrl: null,
+            documentData: null, // also clear API data
+          };
+        }
+        return item;
+      }),
+    );
+  };
+
   return (
     <Fragment>
       <Seo title={"Revenue"} />
@@ -450,7 +510,7 @@ console.log(firms, "firms from api");
         <Col xl={12}>
           <Card className="custom-card">
             <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title className="d-none">OFFER DETAILS</Card.Title>
+              <Card.Title className="">OFFER DETAILS</Card.Title>
               <div className="search-box">
                 <input
                   type="text"
@@ -477,10 +537,9 @@ console.log(firms, "firms from api");
                       <th>Business Unit</th>
                       <th>Department</th>
                       <th>Efforts</th>
-
                       <th>Status</th>
-                      <th>Actions</th>
                       <th>Comments</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
 
@@ -494,35 +553,34 @@ console.log(firms, "firms from api");
                             dateFormat="yyyy"
                             showYearPicker
                             selected={
-                              dates[`offerDate_${row.id}`]
-                                ? new Date(
-                                    dates[`offerDate_${row.id}`] as string,
-                                  )
+                              row.financialYear
+                                ? new Date(row.financialYear, 0)
                                 : null
                             }
-                            onChange={(date: Date | null) =>
-                              handleDateChange(`offerDate_${row.id}`, date)
+                            onChange={(date) =>
+                              updateRow(
+                                row.id,
+                                "financialYear",
+                                date ? date.getFullYear() : null,
+                              )
                             }
-                            maxDate={
-                              new Date(new Date().getFullYear() + 1, 11, 31)
-                            }
-                            placeholderText="Choose year"
-                            popperPlacement="bottom-start"
                           />
                         </td>
                         {/* Firm */}
                         <td>
                           <select
                             className="form-select"
-                            value={row.firm}
+                            value={row.firmId}
                             onChange={(e) =>
-                              updateRow(row.id, "firm", e.target.value)
+                              updateRow(row.id, "firmId", e.target.value)
                             }
                           >
                             <option value="">Select All</option>
                             {firms.length > 0 ? (
                               firms.map((opt) => (
-                                <option key={opt.firmId}>{opt.firmName}</option>
+                                <option key={opt.firmId} value={opt.firmId}>
+                                  {opt.firmName}
+                                </option>
                               ))
                             ) : (
                               <option value="">No options available</option>
@@ -543,11 +601,43 @@ console.log(firms, "firms from api");
                               )
                             }
                           />
+
+                          {/* Upload */}
                           <FileUploadCell
                             file={row.file}
                             onUpload={(f) => updateRow(row.id, "file", f)}
                             onRemove={() => updateRow(row.id, "file", null)}
                           />
+
+                          {/* ✅ Show File */}
+                          {(row.fileUrl || row.file) && (
+                            <div className="mt-1 d-flex gap-2 align-items-center">
+                              {/* View */}
+                              <button
+                                className="btn btn-sm btn-link p-0"
+                                onClick={() => {
+                                  if (row.fileUrl) {
+                                    window.open(row.fileUrl); // API file
+                                  } else if (row.file) {
+                                    const tempUrl = URL.createObjectURL(
+                                      row.file,
+                                    );
+                                    window.open(tempUrl); // uploaded file
+                                  }
+                                }}
+                              >
+                                📄 View
+                              </button>
+
+                              {/* Remove */}
+                              {/* <button
+                                className="btn btn-sm btn-danger p-0 px-2"
+                                onClick={() => handleOfferDetailsRemoveFile(row.id)}
+                              >
+                                ✖
+                              </button> */}
+                            </div>
+                          )}
                         </td>
 
                         {/* Date */}
@@ -556,14 +646,12 @@ console.log(firms, "firms from api");
                             className="form-control"
                             dateFormat="yy/MM/dd"
                             selected={
-                              dates[`offerDate_${row.id}`]
-                                ? new Date(
-                                    dates[`offerDate_${row.id}`] as string,
-                                  )
+                              row.proposalDate
+                                ? new Date(row.proposalDate)
                                 : null
                             }
                             onChange={(date: Date | null) =>
-                              handleDateChange(`offerDate_${row.id}`, date)
+                              updateRow(row.id, "proposalDate", date)
                             }
                             placeholderText="Choose date"
                             popperPlacement="bottom-start"
@@ -593,7 +681,12 @@ console.log(firms, "firms from api");
                             <option value="">Select All</option>
                             {employees.length > 0 ? (
                               employees.map((opt) => (
-                                <option key={opt.employeeId}>{opt.employeeName}</option>
+                                <option
+                                  key={opt.employeeId}
+                                  value={opt.employeeId}
+                                >
+                                  {opt.employeeName}
+                                </option>
                               ))
                             ) : (
                               <option value="">No options available</option>
@@ -619,15 +712,24 @@ console.log(firms, "firms from api");
                         <td>
                           <select
                             className="form-select"
-                            value={row.businessUnit}
+                            value={row.businessUnitId}
                             onChange={(e) =>
-                              updateRow(row.id, "businessUnit", e.target.value)
+                              updateRow(
+                                row.id,
+                                "businessUnitId",
+                                e.target.value,
+                              )
                             }
                           >
                             <option value="">Select All</option>
                             {bustinessUnits.length > 0 ? (
                               bustinessUnits.map((opt) => (
-                                <option key={opt.businessUnitId} value={opt.businessUnitName}>{opt.businessUnitName}</option>
+                                <option
+                                  key={opt.businessUnitId}
+                                  value={opt.businessUnitId}
+                                >
+                                  {opt.businessUnitName}
+                                </option>
                               ))
                             ) : (
                               <option value="">No options available</option>
@@ -639,14 +741,17 @@ console.log(firms, "firms from api");
                         <td>
                           <select
                             className="form-select"
-                            value={row.department}
+                            value={row.departmentId}
                             onChange={(e) =>
-                              updateRow(row.id, "department", e.target.value)
+                              updateRow(row.id, "departmentId", e.target.value)
                             }
                           >
                             <option value="">Select All</option>
                             {departments.map((opt) => (
-                              <option key={opt.departmentId} value={opt.departmentName}>
+                              <option
+                                key={opt.departmentId}
+                                value={opt.departmentId}
+                              >
                                 {opt.departmentName}
                               </option>
                             ))}
@@ -676,17 +781,28 @@ console.log(firms, "firms from api");
                           >
                             <option value="">Select All</option>
                             {dropdownOptions.status.map((opt) => (
-                              <option key={opt}>{opt}</option>
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
                             ))}
                           </select>
                         </td>
-
+                        <td>
+                          <input
+                            className="form-control"
+                            value={row.comments}
+                            placeholder="Comments"
+                            onChange={(e) =>
+                              updateRow(row.id, "comments", e.target.value)
+                            }
+                          />
+                        </td>
                         {/* Actions */}
                         <td className="text-center">
                           <button
                             className="btn btn-primary btn-sm"
                             style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
+                            onClick={() => handleOfferDetails(row)}
                           >
                             Submit
                           </button>
@@ -699,20 +815,6 @@ console.log(firms, "firms from api");
                             Edit
                           </button>
                         </td>
-                        <td>
-                            <input
-                              className="form-control"
-                              value={""}
-                              placeholder="Comments"
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
                       </tr>
                     ))}
                   </tbody>
@@ -866,20 +968,20 @@ console.log(firms, "firms from api");
                                 <span className="text-muted">—</span>
                               )}
                             </td>
-                           <td>
-                            <input
-                              className="form-control"
-                              value={""}
-                              placeholder="Comments"
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
+                            <td>
+                              <input
+                                className="form-control"
+                                value={""}
+                                placeholder="Comments"
+                                onChange={(e) =>
+                                  updatePaymentRow(
+                                    row.id,
+                                    "valueReceived",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -962,7 +1064,7 @@ console.log(firms, "firms from api");
                       <tr>
                         <th>Proposal Number</th>
                         <th>Project ID</th>
-                         <th>Business Unit</th>
+                        <th>Business Unit</th>
                         <th>Order No</th>
                         <th>Order Date</th>
                         <th>Order Value</th>
@@ -970,8 +1072,8 @@ console.log(firms, "firms from api");
                         <th>Order Value in INR</th>
                         <th>Invoice Milestones</th>
                         <th>Status</th>
-                         <th>Actions</th>
-                         <th>Comments</th>
+                        <th>Actions</th>
+                        <th>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1001,7 +1103,8 @@ console.log(firms, "firms from api");
                             />
                           </td>
                           {/* Order No + Upload */}
-                              <td><input
+                          <td>
+                            <input
                               className="form-control mb-1"
                               value={poRow.orderNo}
                               placeholder="Project ID"
@@ -1012,8 +1115,9 @@ console.log(firms, "firms from api");
                                   e.target.value,
                                 )
                               }
-                            /></td>
-                            <td>
+                            />
+                          </td>
+                          <td>
                             <select
                               className="form-select"
                               value={poRow.businessUnit}
@@ -1027,13 +1131,15 @@ console.log(firms, "firms from api");
                             >
                               <option value="">Select All</option>
                               {bustinessUnits.map((opt) => (
-                                <option key={opt.businessUnitId} value={opt.businessUnitName}>
+                                <option
+                                  key={opt.businessUnitId}
+                                  value={opt.businessUnitName}
+                                >
                                   {opt.businessUnitName}
                                 </option>
                               ))}
                             </select>
-
-                            </td>
+                          </td>
                           <td>
                             <input
                               className="form-control mb-1"
@@ -1174,23 +1280,23 @@ console.log(firms, "firms from api");
                             </select>
                           </td>
                           <td className="text-center">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Submit
-                          </button>
-                          <br />
-                          <button
-                            className="btn btn-danger btn-sm mt-1"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                        <td>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Submit
+                            </button>
+                            <br />
+                            <button
+                              className="btn btn-danger btn-sm mt-1"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                          <td>
                             <input
                               className="form-control"
                               value={""}
@@ -1438,23 +1544,23 @@ console.log(firms, "firms from api");
                             </select>
                           </td>
                           <td className="text-center">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Submit
-                          </button>
-                          <br />
-                          <button
-                            className="btn btn-danger btn-sm mt-1"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                        <td>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Submit
+                            </button>
+                            <br />
+                            <button
+                              className="btn btn-danger btn-sm mt-1"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                          <td>
                             <input
                               className="form-control"
                               value={""}
@@ -1519,7 +1625,7 @@ console.log(firms, "firms from api");
                         <th>Fluctuation Difference</th>
                         <th>Comments</th>
                         <th>Actions</th>
-                         <th>Comments</th>
+                        <th>Comments</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1675,23 +1781,23 @@ console.log(firms, "firms from api");
                             />
                           </td>
                           <td className="text-center">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Submit
-                          </button>
-                          <br />
-                          <button
-                            className="btn btn-danger btn-sm mt-1"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                        <td>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Submit
+                            </button>
+                            <br />
+                            <button
+                              className="btn btn-danger btn-sm mt-1"
+                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
+                              onClick={handleSubmit}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                          <td>
                             <input
                               className="form-control"
                               value={""}
