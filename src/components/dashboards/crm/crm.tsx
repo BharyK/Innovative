@@ -13,8 +13,7 @@ import {
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
-import { getApi } from "../../../api/services";
-import axios from "axios";
+import { getApi, postApi } from "../../../api/services";
 import moment from "moment";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -88,7 +87,7 @@ const createEmptyPurchaseOrderRow = (id: number): PurchaseOrderRow => ({
 const initialData: OfferRow[] = [
   {
     id: 1,
-    firm: "",
+    firmId: "",
     file: null,
     proposalNumber: "",
     proposalDate: moment().format("DD/MM/YYYY"),
@@ -256,7 +255,12 @@ const Crm = () => {
   // ─── Add Row — Offer Details ──────────────────────────────────────────────
 
   const addNewRow = () => {
-    const newId = data.length > 0 ? Math.max(...data.map((r) => r.id)) + 1 : 1;
+    const validIds = data.map((r) => Number(r.id)).filter((id) => !isNaN(id));
+
+    const newId = validIds.length > 0 ? Math.max(...validIds) + 1 : 1;
+
+    console.log("validIds:", validIds, "newId:", newId);
+
     setData((prev) => [...prev, createEmptyOfferRow(newId)]);
   };
 
@@ -454,7 +458,7 @@ const Crm = () => {
     }
   };
 
-  const handleOfferDetails = (row: any) => {
+  const handleOfferDetails = async (row: any) => {
     const payload = {
       proposalNumber: row.proposalNumber,
       firmId: row.firmId,
@@ -470,7 +474,12 @@ const Crm = () => {
       documentData: row.documentData,
     };
 
-    console.log("Submitting Row:", payload);
+    try {
+      const [postData] = await Promise.all([postApi("Proposal", payload)]);
+      console.log("data", postData);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleOfferDetailsRemoveFile = (id) => {
@@ -544,7 +553,7 @@ const Crm = () => {
                   </thead>
 
                   <tbody>
-                    {filteredData.map((row) => (
+                    {data.map((row) => (
                       <tr key={row.id}>
                         <td>{row.id}</td>
                         <td>
