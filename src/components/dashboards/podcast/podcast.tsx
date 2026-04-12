@@ -1,70 +1,50 @@
 import { Card, Col, Dropdown, Row } from "react-bootstrap";
-import { Fragment , useState} from "react";
+import { Fragment, useState } from "react";
 import Seo from "../../../shared/layouts-components/seo/seo";
 import Pageheader from "../../../shared/layouts-components/pageheader/pageheader";
-import ExcelMultiTab from '../../utilities/excel-reader/excel-multi-tab'
+import ExcelMultiTab from "../../utilities/excel-reader/excel-multi-tab";
 import { Link } from "react-router-dom";
 
 const Podcast = () => {
-     const [excelData, setExcelData] = useState({});
-          const [activeSheet, setActiveSheet] = useState("");
-        
-            const handleExcelData = (data) => {
-            console.log("🔥 Full Excel JSON:", data);
-        
-            setExcelData(data);
-        
-            const firstSheet = Object.keys(data)[3];
-            setActiveSheet(firstSheet);
-          };
-        
-          // 🔥 Dynamic data
-          const dyanmicaContent = excelData[activeSheet] || [];
-          const headers =
-            dyanmicaContent.length > 0
-              ? Object.keys(dyanmicaContent[3])
-              : [];
-    return (
-       <Fragment>
-            {/* <!-- Start::page-header --> */}
-            <Seo title={"Expenses"} />
-        <ExcelMultiTab onDataExtracted={handleExcelData} />
-            <Pageheader title="Dashboard" currentpage="Expenses" activepage="Expenses" />
-<Col xl={12}>
-        <Card className="custom-card overflow-hidden">
+  const [excelData, setExcelData] = useState({});
+  const [activeSheet, setActiveSheet] = useState("");
 
+  const handleExcelData = (data) => {
+    console.log("🔥 Full Excel JSON:", data);
+
+    setExcelData(data);
+
+    const firstSheet = Object.keys(data)[3];
+    setActiveSheet(firstSheet);
+  };
+
+  // 🔥 Dynamic data
+  const dyanmicaContent = excelData[activeSheet] || [];
+  const headers =
+    dyanmicaContent.length > 0 ? Object.keys(dyanmicaContent[3]) : [];
+  return (
+    <Fragment>
+      {/* <!-- Start::page-header --> */}
+      <Seo title={"Expenses"} />
+      <ExcelMultiTab onDataExtracted={handleExcelData} />
+      <Pageheader
+        title="Dashboard"
+        currentpage="Expenses"
+        activepage="Expenses"
+      />
+      <Col xl={12}>
+        <Card className="custom-card overflow-hidden">
           {/* HEADER */}
           <Card.Header className="pb-2 justify-content-between">
             <Card.Title>
               {activeSheet} - {dyanmicaContent.length}
             </Card.Title>
-
-            <div className="d-flex flex-wrap gap-2 align-items-center">
-              <input
-                className="form-control form-control-sm"
-                type="text"
-                placeholder="Search Here"
-              />
-
-              <Dropdown>
-                <Dropdown.Toggle className="btn btn-primary btn-sm">
-                  Sort By
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item>New</Dropdown.Item>
-                  <Dropdown.Item>Popular</Dropdown.Item>
-                  <Dropdown.Item>Relevant</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </div>
           </Card.Header>
 
           {/* BODY */}
           <Card.Body className="p-0">
             <div className="table-responsive">
               <table className="table table-bordered text-nowrap table-hover">
-
                 <thead>
                   <tr>
                     {headers.map((header, index) => (
@@ -76,25 +56,58 @@ const Podcast = () => {
 
                 <tbody>
                   {dyanmicaContent.length > 0 ? (
-                    dyanmicaContent.map((row: { [x: string]: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }, rowIndex: Key | null | undefined) => (
-                      <tr key={rowIndex}>
-                        {headers.map((key, colIndex) => (
-                          <td key={colIndex}>{row[key]}</td>
-                        ))}
+                    dyanmicaContent.map(
+                      (
+                        row: {
+                          [x: string]:
+                            | string
+                            | number
+                            | bigint
+                            | boolean
+                            | ReactElement<
+                                unknown,
+                                string | JSXElementConstructor<any>
+                              >
+                            | Iterable<ReactNode>
+                            | ReactPortal
+                            | Promise<
+                                | string
+                                | number
+                                | bigint
+                                | boolean
+                                | ReactPortal
+                                | ReactElement<
+                                    unknown,
+                                    string | JSXElementConstructor<any>
+                                  >
+                                | Iterable<ReactNode>
+                                | null
+                                | undefined
+                              >
+                            | null
+                            | undefined;
+                        },
+                        rowIndex: Key | null | undefined,
+                      ) => (
+                        <tr key={rowIndex}>
+                          {headers.map((key, colIndex) => (
+                            <td key={colIndex}>{row[key]}</td>
+                          ))}
 
-                        <td>
-                          <div className="btn-list">
-                            <button className="btn btn-icon btn-sm btn-primary-light">
-                              <i className="ri-eye-line"></i>
-                            </button>
+                          <td>
+                            <div className="btn-list">
+                              <button className="btn btn-icon btn-sm btn-primary-light">
+                                <i className="ri-eye-line"></i>
+                              </button>
 
-                            <button className="btn btn-icon btn-sm btn-danger-light">
-                              <i className="ri-download-2-line"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              <button className="btn btn-icon btn-sm btn-danger-light">
+                                <i className="ri-download-2-line"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ),
+                    )
                   ) : (
                     <tr>
                       <td colSpan={headers.length + 1} className="text-center">
@@ -135,12 +148,10 @@ const Podcast = () => {
               </div>
             </div>
           </Card.Footer>
-
         </Card>
       </Col>
-         
-        </Fragment >
-    );
+    </Fragment>
+  );
 };
 
 export default Podcast;

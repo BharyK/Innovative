@@ -15,7 +15,11 @@ import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plug
 import "./crm.css";
 import { getApi, postApi } from "../../../api/services";
 import moment from "moment";
-
+import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
+import Swal from "sweetalert2";
+import AddCustomer from "../../apps/ecommerce/add-products/add-products";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface OfferRow {
@@ -459,19 +463,20 @@ const Crm = () => {
   };
 
   const handleOfferDetails = async (row: any) => {
+    console.log("row", row);
     const payload = {
       proposalNumber: row.proposalNumber,
-      firmId: row.firmId,
-      customerId: 0,
+      firmId: Number(row.firmId),
+      customerId: 1,
       proposalDate: moment(row.proposalDate).format("YYYY-MM-DD[T]HH:mm:ss"),
       leadGenerator: row.leadGenerator,
       projectDetails: row.projectDetails,
-      departmentId: row.departmentId,
-      estimatedHours: row.estimatedHours,
-      businessUnitId: row.businessUnitId,
+      departmentId: Number(row.departmentId),
+      estimatedHours: Number(row.estimatedHours), //Null
+      businessUnitId: Number(row.businessUnitId),
       status: row.status,
       comments: row.comments,
-      documentData: row.documentData,
+      documentData: row.file,
     };
 
     try {
@@ -501,6 +506,35 @@ const Crm = () => {
         return item;
       }),
     );
+  };
+
+  const handleUpload = (rowId: any, f) => {
+    const blob = new Blob([f], { type: f.type });
+
+    updateRow(rowId.id, "file", blob);
+  };
+
+  const Imagealert = () => {
+    let root;
+
+    Swal.fire({
+      html: `<div id="react-child"></div>`,
+      width: "90%",
+      padding: "1rem",
+      didOpen: () => {
+        const container = document.getElementById("react-child");
+        root = ReactDOM.createRoot(container);
+
+        root.render(
+          <BrowserRouter>
+            <AddCustomer />
+          </BrowserRouter>,
+        );
+      },
+      willClose: () => {
+        if (root) root.unmount();
+      },
+    });
   };
 
   return (
@@ -614,7 +648,7 @@ const Crm = () => {
                           {/* Upload */}
                           <FileUploadCell
                             file={row.file}
-                            onUpload={(f) => updateRow(row.id, "file", f)}
+                            onUpload={(f) => handleUpload(row.id, f)}
                             onRemove={() => updateRow(row.id, "file", null)}
                           />
 
@@ -635,7 +669,7 @@ const Crm = () => {
                                   }
                                 }}
                               >
-                                📄 View
+                                📄 Upload file
                               </button>
 
                               {/* Remove */}
@@ -676,6 +710,15 @@ const Crm = () => {
                               updateRow(row.id, "customer", e.target.value)
                             }
                           />
+                          <SpkButton
+                            Buttonvariant="danger"
+                            Size="sm"
+                            Customclass="btn"
+                            Id="alert-image"
+                            onClickfunc={Imagealert}
+                          >
+                            Add User
+                          </SpkButton>
                         </td>
 
                         {/* Lead Generator */}
