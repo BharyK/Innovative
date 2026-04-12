@@ -134,12 +134,12 @@ const AddProduct = () => {
                               </svg>
                             </span>
                           </span>
-                          <div>
+                          <div className="text-start">
                             <p className="mb-1 fs-15 fw-semibold text-left">
                               Basic Information
                             </p>
                             <span className="text-muted fs-13">
-                              Add Basic Product Details
+                              Add Basic Customer Details
                             </span>
                           </div>
                         </Nav.Link>
@@ -183,10 +183,10 @@ const AddProduct = () => {
                           </span>
                           <div>
                             <p className="mb-1 fs-15 fw-semibold">
-                              Product Images
+                              Purchase Department Information
                             </p>
                             <span className="text-muted fs-13">
-                              Add Product Images
+                              Add Purchase Department Info
                             </span>
                           </div>
                         </Nav.Link>
@@ -229,9 +229,11 @@ const AddProduct = () => {
                             </span>
                           </span>
                           <div>
-                            <p className="mb-1 fs-15 fw-semibold">Pricing</p>
+                            <p className="mb-1 fs-15 fw-semibold">
+                              Account Department Information
+                            </p>
                             <span className="text-muted fs-13">
-                              Add Product Pricing Details
+                              Add Department Details
                             </span>
                           </div>
                         </Nav.Link>
@@ -274,10 +276,10 @@ const AddProduct = () => {
                           </span>
                           <div>
                             <p className="mb-1 fs-15 fw-semibold">
-                              Specification
+                              Techinical Department Information
                             </p>
                             <span className="text-muted fs-13">
-                              Add Product Specification
+                              Techinical Department Info
                             </span>
                           </div>
                         </Nav.Link>
@@ -321,10 +323,10 @@ const AddProduct = () => {
                           </span>
                           <div>
                             <p className="mb-1 fs-15 fw-semibold">
-                              Other Information
+                              Add Customer Address
                             </p>
                             <span className="text-muted fs-13">
-                              Add Any Other Information
+                              Add Customer Info
                             </span>
                           </div>
                         </Nav.Link>
