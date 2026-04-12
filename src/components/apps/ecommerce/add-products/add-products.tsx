@@ -181,7 +181,7 @@ const AddProduct = () => {
                               </svg>
                             </span>
                           </span>
-                          <div>
+                          <div className="text-start">
                             <p className="mb-1 fs-15 fw-semibold">
                               Purchase Department Information
                             </p>
@@ -228,7 +228,7 @@ const AddProduct = () => {
                               </svg>
                             </span>
                           </span>
-                          <div>
+                          <div className="text-start">
                             <p className="mb-1 fs-15 fw-semibold">
                               Account Department Information
                             </p>
@@ -274,7 +274,7 @@ const AddProduct = () => {
                               </svg>
                             </span>
                           </span>
-                          <div>
+                          <div className="text-start">
                             <p className="mb-1 fs-15 fw-semibold">
                               Techinical Department Information
                             </p>
@@ -321,12 +321,12 @@ const AddProduct = () => {
                               </svg>
                             </span>
                           </span>
-                          <div>
+                          <div className="text-start">
                             <p className="mb-1 fs-15 fw-semibold">
                               Add Customer Address
                             </p>
                             <span className="text-muted fs-13">
-                              Add Customer Info
+                              Add Customer Address
                             </span>
                           </div>
                         </Nav.Link>
@@ -350,12 +350,12 @@ const AddProduct = () => {
                             </div>
                           </div>
                           <Row className="gy-3">
-                            <Col xl={12}>
+                            <Col xl={12} className="text-start">
                               <Form.Label
                                 htmlFor="product-name-add"
-                                className=""
+                                className="text-start"
                               >
-                                Product Name
+                                Customer Name
                               </Form.Label>
                               <Form.Control
                                 type="text"
@@ -363,83 +363,77 @@ const AddProduct = () => {
                                 id="product-name-add"
                                 placeholder="Name"
                               />
+                            </Col>
+                            <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-name-add"
-                                className="form-label mt-1 fs-12 text-muted mb-0"
-                              >
-                                *Product Name should not exceed 30 characters
-                              </Form.Label>
-                            </Col>
-                            <Col xl={6}>
-                              <Form.Label
-                                htmlFor="product-size-add"
                                 className=""
                               >
-                                Size
+                                Geography
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={sizeTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Geography"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-brand-add"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Brand
+                                Internal Customer Number
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={brandTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Internal Customer Number"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-category-add"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Category
+                                Trading Currency
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={categoryTagOption}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Category"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Trading Currency"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
                                 className=""
                               >
-                                Sub Category
+                                Date
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={subCategoryTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Category"
+                              <SpkDatepickr
+                                className="form-control"
+                                dateFormat="yy/MM/dd"
+                                // selected={
+                                //   row.proposalDate
+                                //     ? new Date(row.proposalDate)
+                                //     : null
+                                // }
+                                // onChange={(date: Date | null) =>
+                                //   updateRow(row.id, "proposalDate", date)
+                                // }
+                                placeholderText="Choose date"
+                                // popperPlacement="bottom-start"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-gender-add"
                                 className=""
                               >
-                                Gender
+                                Service Offered
                               </Form.Label>
                               <SpkSelect
                                 name="colors"
@@ -450,29 +444,12 @@ const AddProduct = () => {
                                 placeholder="Select"
                               />
                             </Col>
-                            <Col xl={6} className="color-selection">
-                              <Form.Label
-                                htmlFor="product-color-add"
-                                className=""
-                              >
-                                Colors
-                              </Form.Label>
-                              <SpkSelect
-                                multi
-                                name="colors"
-                                option={colorTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
-                              />
-                            </Col>
-                            <Col xl={12}>
+                            <Col xl={12} className="text-start">
                               <Form.Label
                                 htmlFor="product-description-add1"
                                 className=""
                               >
-                                Product Description
+                                Customer Description
                               </Form.Label>
                               <textarea
                                 className="form-control"
@@ -498,67 +475,170 @@ const AddProduct = () => {
                         >
                           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1">
                             <div className="fw-semibold d-block fs-15">
-                              Pricing Details:
+                              Purchase Department Information
                             </div>
                           </div>
-                          <div className="row gy-3">
-                            <Col xl={12}>
-                              <Form.Label htmlFor="product-tags" className="">
-                                Product Tags
+                          <Row className="gy-3">
+                            <Col xl={12} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className="text-start"
+                              >
+                                Primary Contact Person
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                multi
-                                option={productTagOptions}
-                                defaultvalue={[
-                                  productTagOptions[3],
-                                  productTagOptions[1],
-                                ]}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter Primary Contact Person"
                               />
                             </Col>
-                            <Col xl={12}>
-                              <div className="product-dropzone">
-                                <p className="fw-medium mb-3 fs-14">
-                                  Select Images :
-                                </p>
-                                <div className="mb-3">
-                                  {updateImages.map((idx, index) => (
-                                    <span
-                                      className="avatar avatar-xl border me-2 bg-light"
-                                      key={index}
-                                    >
-                                      <img
-                                        src={idx.imageUrl}
-                                        alt=""
-                                        className="w-100 h-100"
-                                      />
-                                      <Link
-                                        to="#!"
-                                        className="badge rounded-pill bg-danger avatar-badge"
-                                        onClick={() => deleteFunction(idx.id)}
-                                      >
-                                        <i className="fe fe-x"></i>
-                                      </Link>
-                                    </span>
-                                  ))}
-                                </div>
-                                <FilePond
-                                  className="multiple-filepond"
-                                  files={files}
-                                  onupdatefiles={setFiles}
-                                  allowMultiple={true}
-                                  maxFiles={6}
-                                  server="/api"
-                                  name="files"
-                                  labelIdle="Drag & Drop your file here or click "
-                                />
-                              </div>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className=""
+                              >
+                                Designation
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
+                              />
                             </Col>
-                          </div>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className=""
+                              >
+                                Primacy Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Internal Customer Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className=""
+                              >
+                                Secondary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Trading Currency"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Email Address
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email Address"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Person"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Designation
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Primary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Primary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Email
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email"
+                              />
+                            </Col>
+                            <Col xl={12} className="text-start">
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className=""
+                              >
+                                Purchase Description
+                              </Form.Label>
+                              <textarea
+                                className="form-control"
+                                id="product-description-add1"
+                                rows={2}
+                              ></textarea>
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className="form-label mt-1 fs-12 text-muted mb-0"
+                              >
+                                *Description should not exceed 500 letters
+                              </Form.Label>
+                            </Col>
+                          </Row>
                         </Tab.Pane>
                         <Tab.Pane
                           eventKey="third"
@@ -570,162 +650,170 @@ const AddProduct = () => {
                         >
                           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1">
                             <div className="fw-semibold d-block fs-15">
-                              Pricing Details:
+                              Account Department Information
                             </div>
                           </div>
-                          <div className="row gy-3">
-                            <Col xl={6}>
+                          <Row className="gy-3">
+                            <Col xl={12} className="text-start">
                               <Form.Label
-                                htmlFor="product-cost-add"
+                                htmlFor="product-name-add"
+                                className="text-start"
+                              >
+                                Primary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter Primary Contact Person"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Enter Actual Price
+                                Designation
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-cost-add"
-                                placeholder="Cost"
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-cost-add1"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Enter Dealer Price
+                                Primacy Contact Number
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-cost-add1"
-                                placeholder="Cost"
+                                id="product-name-add"
+                                placeholder="Enter the Internal Customer Number"
                               />
                             </Col>
-                            <Col xl={6}>
-                              <Form.Label className="">
-                                Discount Type
-                              </Form.Label>
-                              <div className="row gy-2">
-                                <Col xxl={4}>
-                                  <Card className="custom-card mb-0 border card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          No Discount
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address1"
-                                              name="default-address"
-                                              defaultChecked
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                                <Col xxl={4}>
-                                  <Card className="custom-card border mb-0 card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          Percentage %
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address5"
-                                              name="default-address"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                                <Col xxl={4}>
-                                  <Card className="custom-card border mb-0 card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          Fixed Price
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address3"
-                                              name="default-address"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                              </div>
-                            </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-discount"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Discount Percentage
+                                Secondary Contact Person
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-discount"
-                                placeholder="Discount in %"
+                                id="product-name-add"
+                                placeholder="Enter the Trading Currency"
                               />
                             </Col>
-                            <Col xl={6}>
-                              <Form.Label htmlFor="Stock-quantity" className="">
-                                Stock Quantity
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="Stock-quantity"
-                                placeholder="Enter Quanity"
-                              />
-                            </Col>
-                            <Col xl={6}>
-                              <Form.Label htmlFor="shiping-cost" className="">
-                                Shipping Cost
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="shiping-cost"
-                                placeholder="Enter Shipping Cost"
-                              />
-                            </Col>
-                            <Col xl={12}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-avaialability"
+                                htmlFor="product-category-add1"
                                 className=""
                               >
-                                Availability Status
+                                Email Address
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={avaialabilityTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email Address"
                               />
                             </Col>
-                          </div>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Person"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Designation
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Primary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Primary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Email
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email"
+                              />
+                            </Col>
+                            <Col xl={12} className="text-start">
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className=""
+                              >
+                                Purchase Description
+                              </Form.Label>
+                              <textarea
+                                className="form-control"
+                                id="product-description-add1"
+                                rows={2}
+                              ></textarea>
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className="form-label mt-1 fs-12 text-muted mb-0"
+                              >
+                                *Description should not exceed 500 letters
+                              </Form.Label>
+                            </Col>
+                          </Row>
                         </Tab.Pane>
                         <Tab.Pane
                           eventKey="fourth"
@@ -737,113 +825,168 @@ const AddProduct = () => {
                         >
                           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1">
                             <div className="fw-semibold d-block fs-15">
-                              Product Specification :
+                              Technical Department Information
                             </div>
                           </div>
                           <Row className="gy-3">
-                            <Col xl={6}>
-                              <Form.Label htmlFor="product-type" className="">
-                                Packaging Type
+                            <Col xl={12} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className="text-start"
+                              >
+                                Primary Contact Person
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-type"
-                                placeholder="Type"
+                                id="product-name-add"
+                                placeholder="Enter Primary Contact Person"
                               />
                             </Col>
-                            <Col xl={6}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-discount"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Item Weight
+                                Designation
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-discount1"
-                                placeholder="Weight in gms"
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={12}>
-                              <Form.Label className="">
-                                Product Features
-                              </Form.Label>
-                              <div id="product-features">
-                                <SpkSunEditor />
-                              </div>
-                            </Col>
-                            <Col xl={4} className="custom-inputfield">
-                              <Form.Label htmlFor="publish-date" className="">
-                                Publish Date
-                              </Form.Label>
-                              <SpkDatepickr
-                                className="form-control"
-                                selected={
-                                  dates["PublishDate"]
-                                    ? new Date(dates["PublishDate"])
-                                    : null
-                                }
-                                onChange={(date: Date | null) =>
-                                  handleDateChange("PublishDate", date)
-                                }
-                                placeholderText="Choose date"
-                              />
-                            </Col>
-                            <Col xl={4} className="custom-inputfield">
-                              <Form.Label htmlFor="publish-time" className="">
-                                Publish Time
-                              </Form.Label>
-                              <SpkDatepickr
-                                className="form-control"
-                                showTimeSelect
-                                dateFormat="h:mm aa"
-                                showTimeSelectOnly
-                                selected={
-                                  dates["PublishTime"]
-                                    ? new Date(dates["PublishTime"])
-                                    : null
-                                }
-                                onChange={(date: Date | null) =>
-                                  handleDateChange("PublishTime", date)
-                                }
-                                placeholderText="Choose time"
-                              />
-                            </Col>
-                            <Col xl={4}>
+                            <Col xl={6} className="text-start">
                               <Form.Label
-                                htmlFor="product-status-add"
+                                htmlFor="product-name-add"
                                 className=""
                               >
-                                Published Status
+                                Primacy Contact Number
                               </Form.Label>
-                              <SpkSelect
-                                name="colors"
-                                option={PublishedStatusTagOptions}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
-                                placeholder="Select"
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Internal Customer Number"
                               />
                             </Col>
-                            <Col
-                              xl={12}
-                              className="col-xl-12 product-documents-container"
-                            >
-                              <p className="fw-medium mb-2 fs-14">
-                                Warrenty Documents :
-                              </p>
-                              <FilePond
-                                className="multiple-filepond"
-                                files={files1}
-                                onupdatefiles={setFiles1}
-                                allowMultiple={true}
-                                maxFiles={6}
-                                server="/api"
-                                name="files" /* sets the file input name, it's filepond by default */
-                                labelIdle="Drag & Drop your file here or click "
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className=""
+                              >
+                                Secondary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Trading Currency"
                               />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Email Address
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email Address"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Person"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Designation
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Designation"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Primary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Primary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Number"
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Email
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Email"
+                              />
+                            </Col>
+                            <Col xl={12} className="text-start">
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className=""
+                              >
+                                Purchase Description
+                              </Form.Label>
+                              <textarea
+                                className="form-control"
+                                id="product-description-add1"
+                                rows={2}
+                              ></textarea>
+                              <Form.Label
+                                htmlFor="product-description-add1"
+                                className="form-label mt-1 fs-12 text-muted mb-0"
+                              >
+                                *Description should not exceed 500 letters
+                              </Form.Label>
                             </Col>
                           </Row>
                         </Tab.Pane>
@@ -857,172 +1000,98 @@ const AddProduct = () => {
                         >
                           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1">
                             <div className="fw-semibold d-block fs-15">
-                              Product Shipping & Handling :
+                              Add Customer Address
                             </div>
                           </div>
-                          <Row className="gy-3">
-                            <Col xl={6}>
-                              <Form.Label htmlFor="product-type1" className="">
-                                Product Type
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-type1"
-                                placeholder="Type"
-                              />
-                            </Col>
-                            <Col xl={6}>
+                          <Col xl={12} className="text-start">
+                            <Form.Label
+                              htmlFor="product-description-add1"
+                              className=""
+                            >
+                              Registered Address
+                            </Form.Label>
+                            <textarea
+                              className="form-control"
+                              id="product-description-add1"
+                              rows={4}
+                            ></textarea>
+                          </Col>
+                          <Col xl={12} className="text-start mt-4">
+                            <Form.Label
+                              htmlFor="product-description-add1"
+                              className=""
+                            >
+                              Billing Address
+                            </Form.Label>
+                            <textarea
+                              className="form-control"
+                              id="product-description-add1"
+                              rows={4}
+                            ></textarea>
+                          </Col>
+                          <Col xl={12} className="text-start mt-4">
+                            <Form.Label
+                              htmlFor="product-description-add1"
+                              className=""
+                            >
+                              Shipping Address
+                            </Form.Label>
+                            <textarea
+                              className="form-control"
+                              id="product-description-add1"
+                              rows={4}
+                            ></textarea>
+                          </Col>
+                          <Row>
+                            <Col xl={6} className="text-start mt-3">
                               <Form.Label
-                                htmlFor="product-discount"
+                                htmlFor="product-category-add1"
                                 className=""
                               >
-                                Packaging Details
+                                GST Number
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="Packaging-Details"
-                                placeholder="Enter Packaging Details"
+                                id="product-name-add"
+                                placeholder="Enter the GST NO"
                               />
                             </Col>
-                            <Col xl={12}>
-                              <Form.Label className="">
-                                Handling Instructions
-                              </Form.Label>
-                              <textarea
-                                className="form-control"
-                                id="product-description-add"
-                                rows={2}
-                              ></textarea>
-                            </Col>
-                            <Col xl={7} className="product-documents-container">
-                              <p className="fw-medium mb-2 fs-14">
-                                Shipping Methods :
-                              </p>
-                              <Row className="gy-2">
-                                <Col xxl={4}>
-                                  <Card className="custom-card mb-0 border card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          Standard Shipping
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address2"
-                                              name="default-address1"
-                                              defaultChecked
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                                <Col xxl={4}>
-                                  <Card className="custom-card border mb-0 card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          Expedited Shipping
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address4"
-                                              name="default-address1"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                                <Col xxl={4}>
-                                  <Card className="custom-card border mb-0 card-style-6">
-                                    <Card.Body className="px-3 py-2">
-                                      <div className="d-flex align-items-center justify-content-between mb-0 flex-wrap">
-                                        <div className="flex-grow-1">
-                                          Overnight Shipping
-                                        </div>
-                                        <div className="min-w-fit-content">
-                                          <div className="d-flex gap-2">
-                                            <input
-                                              className="form-check-input m-0"
-                                              type="radio"
-                                              id="address6"
-                                              name="default-address1"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card.Body>
-                                  </Card>
-                                </Col>
-                              </Row>
-                            </Col>
-                            <Col xl={5} className="product-documents-container">
-                              <Form.Label className="">
-                                Shipping Restrictions
+                            <Col xl={6} className="text-start mt-3">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                VAT Number
                               </Form.Label>
                               <Form.Control
                                 type="text"
                                 className=""
-                                id="product-shipping"
-                                placeholder="Enter Shipping Restrictions"
+                                id="product-name-add"
+                                placeholder="Enter the VAT NO"
                               />
                             </Col>
                           </Row>
-                          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1 mt-4">
-                            <div className="fw-semibold d-block fs-15">
-                              Compliance and Legal :
-                            </div>
-                          </div>
-                          <div className="row gy-3">
-                            <Col xl={12}>
-                              <Form.Label htmlFor="Return-Policy" className="">
-                                Return Policy
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="Return-Policy"
-                                placeholder="Enter Return Policy"
-                              />
-                            </Col>
-                            <Col xl={12}>
-                              <Form.Label className="">
-                                Safety Information
-                              </Form.Label>
-                              <textarea
-                                className="form-control"
-                                id="product-description-add5"
-                                rows={2}
-                              ></textarea>
-                            </Col>
-                            <Col xl={12}>
-                              <Form.Label className="">
-                                Certifications
-                              </Form.Label>
-                              <Form.Control
-                                className=""
-                                type="file"
-                                id="formFile"
-                              />
-                            </Col>
-                          </div>
+
+                          <Col xl={12} className="text-start mt-4">
+                            <Form.Label
+                              htmlFor="product-description-add1"
+                              className=""
+                            >
+                              Payment Terms
+                            </Form.Label>
+                            <textarea
+                              className="form-control"
+                              id="product-description-add1"
+                              rows={4}
+                            ></textarea>
+                          </Col>
                         </Tab.Pane>
                       </Tab.Content>
                       <Card.Footer className="border-top-0">
                         <div className="btn-list float-end">
                           <SpkButton Buttonvariant="primary" Customclass="btn">
-                            Save Product
+                            Save Customer Information
                             <i className="bi bi-download ms-2"></i>
                           </SpkButton>
                         </div>
