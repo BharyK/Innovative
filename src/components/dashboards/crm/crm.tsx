@@ -94,7 +94,7 @@ const initialData: OfferRow[] = [
     firmId: "",
     file: null,
     proposalNumber: "",
-    proposalDate: moment().format("DD/MM/YYYY"),
+    proposalDate: "",
     customer: "",
     leadGenerator: "",
     projectDetails: "",
@@ -468,7 +468,7 @@ const Crm = () => {
       proposalNumber: row.proposalNumber,
       firmId: Number(row.firmId),
       customerId: 1,
-      proposalDate: moment(row.proposalDate).format("YYYY-MM-DD[T]HH:mm:ss"),
+      proposalDate: "",
       leadGenerator: row.leadGenerator,
       projectDetails: row.projectDetails,
       departmentId: Number(row.departmentId),
@@ -590,25 +590,7 @@ const Crm = () => {
                     {data.map((row) => (
                       <tr key={row.id}>
                         <td>{row.id}</td>
-                        <td>
-                          <SpkDatepickr
-                            className="form-control"
-                            dateFormat="yyyy"
-                            showYearPicker
-                            selected={
-                              row.financialYear
-                                ? new Date(row.financialYear, 0)
-                                : null
-                            }
-                            onChange={(date) =>
-                              updateRow(
-                                row.id,
-                                "financialYear",
-                                date ? date.getFullYear() : null,
-                              )
-                            }
-                          />
-                        </td>
+                        <td>2026-2027</td>
                         {/* Firm */}
                         <td>
                           <select
@@ -687,7 +669,7 @@ const Crm = () => {
                         <td>
                           <SpkDatepickr
                             className="form-control"
-                            dateFormat="yy/MM/dd"
+                            //dateFormat="yy/MM/dd"
                             selected={
                               row.proposalDate
                                 ? new Date(row.proposalDate)
@@ -697,7 +679,7 @@ const Crm = () => {
                               updateRow(row.id, "proposalDate", date)
                             }
                             placeholderText="Choose date"
-                            popperPlacement="bottom-start"
+                            // popperPlacement="bottom-start"
                           />
                         </td>
 
@@ -1070,7 +1052,6 @@ const Crm = () => {
           </Card>
         </Col>
       </Row>
-
       {/* ══════════════════════════════════════════════════════════════════════
           ACCORDION  —  Purchase Order  |  Invoice  |  Payment Details
       ══════════════════════════════════════════════════════════════════════ */}
