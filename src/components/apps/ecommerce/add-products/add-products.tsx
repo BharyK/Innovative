@@ -1,85 +1,11 @@
 import { Fragment, useState } from "react";
 import { Card, Col, Form, Nav, Row, Tab } from "react-bootstrap";
-import { FilePond } from "react-filepond";
-import Seo from "../../../../shared/layouts-components/seo/seo";
-import Pageheader from "../../../../shared/layouts-components/pageheader/pageheader";
 import SpkButton from "../../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
 import SpkSelect from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-reactselect";
-import { Link } from "react-router-dom";
-import SpkSunEditor from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-suneditor";
 import SpkDatepickr from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
-import {
-  avaialabilityTagOptions,
-  brandTagOptions,
-  categoryTagOption,
-  colorTagOptions,
-  genderTagOption,
-  productTagOptions,
-  PublishedStatusTagOptions,
-  sizeTagOptions,
-  subCategoryTagOptions,
-} from "../../../../shared/data/apps/ecommerce/editproductsdata";
-import png1 from "../../../../assets/images/ecommerce/png/1.png";
-import png4 from "../../../../assets/images/ecommerce/png/4.png";
-import png12 from "../../../../assets/images/ecommerce/png/12.png";
-import png16 from "../../../../assets/images/ecommerce/png/16.png";
+import { genderTagOption } from "../../../../shared/data/apps/ecommerce/editproductsdata";
 
 const AddProduct = () => {
-  const [files, setFiles] = useState<any>([]);
-  const [files1, setFiles1] = useState<any>([]);
-
-  const [dates, setDates] = useState<{ [key: string]: Date | string | null }>(
-    {},
-  );
-  const handleDateChange = (key: string, date: Date | null) => {
-    if (date) {
-      setDates((prevDates) => ({
-        ...prevDates,
-        [key]: date,
-      }));
-    } else {
-      setDates((prevDates) => {
-        const { [key]: removedKey, ...rest } = prevDates;
-        return rest;
-      });
-    }
-  };
-
-  const [updateImages, setUpdateImages] = useState([
-    {
-      id: 1,
-      imageUrl: png1,
-      altText: "",
-      badgeClass: "bg-danger",
-      badgeIcon: "fe fe-x",
-    },
-    {
-      id: 2,
-      imageUrl: png4,
-      altText: "",
-      badgeClass: "bg-danger",
-      badgeIcon: "fe fe-x",
-    },
-    {
-      id: 3,
-      imageUrl: png12,
-      altText: "",
-      badgeClass: "bg-danger",
-      badgeIcon: "fe fe-x",
-    },
-    {
-      id: 4,
-      imageUrl: png16,
-      altText: "",
-      badgeClass: "bg-danger",
-      badgeIcon: "fe fe-x",
-    },
-  ]);
-
-  const deleteFunction = (id: number) => {
-    const updatedAvatars = updateImages.filter((images) => images.id !== id);
-    setUpdateImages(updatedAvatars);
-  };
   return (
     <Fragment>
       <Row>
