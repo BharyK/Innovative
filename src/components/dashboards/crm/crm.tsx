@@ -416,6 +416,7 @@ const Crm = () => {
 
   // ── Fetch ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState<boolean>(true);
+  const [customerInfo, setCustomerInfo] = useState<any>([]);
   const base64ToBlobUrl = (base64: string, mimeType = "application/pdf") => {
     const byteCharacters = atob(base64);
     const byteArray = new Uint8Array(
@@ -431,13 +432,15 @@ const Crm = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [Utility, Proposal] = await Promise.all([
+      const [Utility, Proposal, customer] = await Promise.all([
         getApi("Uitility"),
         getApi("Proposal"),
+        getApi("api/Customers"),
       ]);
       setBusinessUnits(Utility.data.businessUnits);
       setDepartments(Utility.data.departments);
       setEmployees(Utility.data.employees);
+      setCustomerInfo(customer.data);
       setFirms(Utility.data.firms);
 
       const mapped: OfferRow[] = Proposal.data.map(
@@ -798,7 +801,32 @@ const Crm = () => {
 
                             {/* Customer */}
                             <td>
-                              <input
+                              <select
+                                className="form-select"
+                                value={row.firmId}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "firmId",
+                                    e.target.value,
+                                  )
+                                }
+                              >
+                                <option value="">Select</option>
+                                {customerInfo.length > 0 ? (
+                                  customerInfo.map((opt) => (
+                                    <option
+                                      key={opt.customerId}
+                                      value={opt.customerId}
+                                    >
+                                      {opt.customerName}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled>No options available</option>
+                                )}
+                              </select>
+                              {/* <input
                                 className="form-control mb-1"
                                 value={row.customer}
                                 onChange={(e) =>
@@ -808,7 +836,7 @@ const Crm = () => {
                                     e.target.value,
                                   )
                                 }
-                              />
+                              /> */}
                               <SpkButton
                                 Buttonvariant="danger"
                                 Size="sm"
@@ -922,7 +950,7 @@ const Crm = () => {
                               <input
                                 type="number"
                                 className="form-control"
-                                value={row.hours}
+                                value={row.estimatedHours}
                                 onChange={(e) =>
                                   updateOfferRow(
                                     row.id,
