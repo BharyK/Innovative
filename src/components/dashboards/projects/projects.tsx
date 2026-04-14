@@ -23,20 +23,21 @@ const Projects = () => {
   }, []);
 
   const fetchData = async () => {
-    const fields = JSON.stringify(["name", "owner"]);
     try {
-      const [employeeDeatailsData] = await Promise.all([
-        getApi(
-          `https://vrp.vinnovative.co.in/api/resource/Timesheet?fields=${fields}`,
-          {
-            headers: {
-              Authorization: "token e6754f4d92fb8aa:600b46ec1ad5896",
-            },
+      const res = await fetch(
+        'https://vrp.vinnovative.co.in/api/resource/Timesheet?fields=["name","owner"]',
+        {
+          method: "GET",
+          headers: {
+            Authorization: "token e6754f4d92fb8aa:600b46ec1ad5896",
+            "Content-Type": "application/json",
           },
-        ),
-      ]);
+        },
+      );
 
-      setEmployeeDetails(employeeDeatailsData.data);
+      const data = await res.json();
+      console.log(data);
+      setEmployeeDetails(data.data);
     } catch (err) {
       console.error(err);
     }

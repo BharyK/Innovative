@@ -14,20 +14,23 @@ import {
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
 import { getApi, postApi } from "../../../api/services";
-import moment from "moment";
 import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
 import Swal from "sweetalert2";
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { toast } from "react-toastify";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface OfferRow {
   id: number;
   firmId: string;
   file: File | null;
+  fileUrl?: string | null;
+  documentData?: string | null;
   proposalNumber: string;
-  proposalDate: string;
+  proposalDate: string | Date | null;
   customer: string;
   leadGenerator: string;
   projectDetails: string;
@@ -41,28 +44,64 @@ interface OfferRow {
 
 interface PurchaseOrderRow {
   id: number;
+  proposalNumber: string;
+  projectId: string;
+  businessUnit: string;
   orderNo: string;
-  orderValue: string;
+  orderDate: string | Date | null;
+  orderValue: string; // currency
   orderAmount: string;
   conversionRate: string;
   orderValueINR: string;
   invoiceMilestone: string;
   status: string;
   file: File | null;
+  comments: string;
+}
+
+interface InvoiceRow {
+  id: number;
+  proposalNumber: string;
+  invoiceNumber: string;
+  invoiceDate: string | Date | null;
+  invoiceValue: string; // currency
+  invoiceAmount: string;
+  conversionRate: string;
+  invoiceValueINR: string;
+  paymentTerm: string;
+  dueDate: string | Date | null;
+  status: string;
+  file: File | null;
+  comments: string;
+}
+
+interface PaymentRow {
+  id: number;
+  proposalNumber: string;
+  file: File | null;
+  valueReceived: string;
+  amountCurrency: string;
+  amountValue: string;
+  realisedDate: string | Date | null;
+  paymentStatus: string;
+  fluctuation: string;
+  comments: string;
+  actionComments: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const createEmptyOfferRow = (id: number): OfferRow => ({
-  id,
+let _nextOfferId = 2;
+const nextOfferId = () => _nextOfferId++;
+
+const createEmptyOfferRow = (): OfferRow => ({
+  id: nextOfferId(),
   firmId: "",
   file: null,
-  proposalNumber: ``,
-  proposalDate: new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  }),
+  fileUrl: null,
+  documentData: null,
+  proposalNumber: "",
+  proposalDate: null,
   customer: "",
   leadGenerator: "",
   projectDetails: "",
@@ -74,9 +113,16 @@ const createEmptyOfferRow = (id: number): OfferRow => ({
   comments: "",
 });
 
-const createEmptyPurchaseOrderRow = (id: number): PurchaseOrderRow => ({
-  id,
+let _nextPoId = 2;
+const nextPoId = () => _nextPoId++;
+
+const createEmptyPurchaseOrderRow = (): PurchaseOrderRow => ({
+  id: nextPoId(),
+  proposalNumber: "",
+  projectId: "",
+  businessUnit: "",
   orderNo: "",
+  orderDate: null,
   orderValue: "",
   orderAmount: "",
   conversionRate: "",
@@ -84,40 +130,259 @@ const createEmptyPurchaseOrderRow = (id: number): PurchaseOrderRow => ({
   invoiceMilestone: "",
   status: "",
   file: null,
+  comments: "",
 });
 
-// ─── Initial Data ─────────────────────────────────────────────────────────────
+const createEmptyInvoiceRow = (): InvoiceRow => ({
+  id: Date.now(),
+  proposalNumber: "",
+  invoiceNumber: "",
+  invoiceDate: null,
+  invoiceValue: "",
+  invoiceAmount: "",
+  conversionRate: "",
+  invoiceValueINR: "",
+  paymentTerm: "30",
+  dueDate: null,
+  status: "",
+  file: null,
+  comments: "",
+});
 
-const initialData: OfferRow[] = [
-  {
-    id: 1,
-    firmId: "",
-    file: null,
-    proposalNumber: "",
-    proposalDate: "",
-    customer: "",
-    leadGenerator: "",
-    projectDetails: "",
-    department: "",
-    hours: 0,
-    businessUnit: "",
-    status: "",
-    financialYear: "",
-  },
-];
+const createEmptyPaymentRow = (): PaymentRow => ({
+  id: Date.now(),
+  proposalNumber: "",
+  file: null,
+  valueReceived: "",
+  amountCurrency: "",
+  amountValue: "",
+  realisedDate: null,
+  paymentStatus: "",
+  fluctuation: "",
+  comments: "",
+  actionComments: "",
+});
+
+// ─── Reusable File Upload Cell ────────────────────────────────────────────────
+
+const FileUploadCell = ({
+  file,
+  fileUrl,
+  onUpload,
+  onRemove,
+  value,
+}: {
+  file: File | null;
+  fileUrl?: string | null;
+  onUpload: (f: File) => void;
+  onRemove: () => void;
+}) => (
+  <div className="file-upload-cell">
+    <label className="upload-btn">
+      {file || fileUrl ? "Replace" : "Upload"}
+      <input
+        type="file"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onUpload(f);
+        }}
+      />
+    </label>
+    {(file || fileUrl) && (
+      <div className="file-info">
+        <div className="file-top">
+          <button
+            className="btn btn-sm btn-link p-0"
+            onClick={() => {
+              if (file) {
+                const url = URL.createObjectURL(file);
+                window.open(url);
+              } else if (fileUrl) {
+                window.open(fileUrl);
+              }
+            }}
+          >
+            📄 {file ? file.name : value.fileName}
+          </button>
+          <button className="remove-file-btn" onClick={onRemove}>
+            ✕
+          </button>
+        </div>
+        {file && (
+          <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+// ─── Invoice Milestone Cell ───────────────────────────────────────────────────
+
+function InvoiceMilestoneCell({
+  rowId,
+  value,
+  onSave,
+}: {
+  rowId: number;
+  value: string;
+  onSave: (val: string) => void;
+}) {
+  const [tempValue, setTempValue] = useState(value);
+  const overlayRef = useRef<any>(null);
+
+  return (
+    <OverlayTrigger
+      trigger="click"
+      placement="bottom"
+      rootClose
+      ref={overlayRef}
+      onToggle={(show) => {
+        if (show) setTempValue(value);
+      }}
+      overlay={
+        <Popover>
+          <Popover.Header as="h3">Edit Invoice Milestone</Popover.Header>
+          <Popover.Body>
+            <Form.Control
+              type="text"
+              value={tempValue}
+              onChange={(e) => setTempValue(e.target.value)}
+              autoFocus
+            />
+            <Button
+              size="sm"
+              className="mt-2 w-100"
+              onClick={() => {
+                onSave(tempValue);
+                document.body.click(); // close popover
+              }}
+            >
+              Save
+            </Button>
+          </Popover.Body>
+        </Popover>
+      }
+    >
+      <Form.Control
+        value={value}
+        readOnly
+        placeholder="Click to edit..."
+        style={{ cursor: "pointer" }}
+      />
+    </OverlayTrigger>
+  );
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Crm = () => {
-  const [data, setData] = useState<OfferRow[]>(initialData);
-  const [dates, setDates] = useState<{ [key: string]: Date | string | null }>(
-    {},
-  );
-  const [search, setSearch] = useState("");
-  const [submittedJSON, setSubmittedJSON] = useState<any[] | null>(null);
+  // ── Offer Details state ──────────────────────────────────────────────────
+  const [offerData, setOfferData] = useState<OfferRow[]>([
+    {
+      id: 1,
+      firmId: "",
+      file: null,
+      fileUrl: null,
+      documentData: null,
+      proposalNumber: "",
+      proposalDate: null,
+      customer: "",
+      leadGenerator: "",
+      projectDetails: "",
+      departmentId: "",
+      hours: "",
+      businessUnitId: "",
+      status: "",
+      financialYear: null,
+      comments: "",
+    },
+  ]);
 
-  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
-  const [bustinessUnits, setBusinessUnits] = useState<
+  // ── Purchase Order state ─────────────────────────────────────────────────
+  const [purchaseOrderData, setPurchaseOrderData] = useState<
+    PurchaseOrderRow[]
+  >([createEmptyPurchaseOrderRow()]);
+
+  // ── Invoice state ────────────────────────────────────────────────────────
+  const [invoiceData, setInvoiceData] = useState<InvoiceRow[]>([
+    {
+      id: 1,
+      proposalNumber: "",
+      invoiceNumber: "V224251020",
+      invoiceDate: null,
+      invoiceValue: "",
+      invoiceAmount: "",
+      conversionRate: "",
+      invoiceValueINR: "",
+      paymentTerm: "30",
+      dueDate: null,
+      status: "",
+      file: null,
+      comments: "",
+    },
+    {
+      id: 2,
+      proposalNumber: "",
+      invoiceNumber: "V224251001",
+      invoiceDate: null,
+      invoiceValue: "",
+      invoiceAmount: "",
+      conversionRate: "",
+      invoiceValueINR: "",
+      paymentTerm: "30",
+      dueDate: null,
+      status: "",
+      file: null,
+      comments: "",
+    },
+  ]);
+
+  // ── Payment state ────────────────────────────────────────────────────────
+  const [paymentData, setPaymentData] = useState<PaymentRow[]>([
+    {
+      id: 1,
+      proposalNumber: "",
+      file: null,
+      valueReceived: "₹ 1,480,000.00",
+      amountCurrency: "",
+      amountValue: "",
+      realisedDate: null,
+      paymentStatus: "Received",
+      fluctuation: "₹ 252,600.00",
+      comments: "",
+      actionComments: "",
+    },
+    {
+      id: 2,
+      proposalNumber: "",
+      file: null,
+      valueReceived: "₹ 239,400.00",
+      amountCurrency: "",
+      amountValue: "",
+      realisedDate: null,
+      paymentStatus: "Received",
+      fluctuation: "₹ 9,120.00",
+      comments: "",
+      actionComments: "",
+    },
+    {
+      id: 3,
+      proposalNumber: "",
+      file: null,
+      valueReceived: "13,000 €",
+      amountCurrency: "",
+      amountValue: "",
+      realisedDate: null,
+      paymentStatus: "Received",
+      fluctuation: "0.00 €",
+      comments: "",
+      actionComments: "",
+    },
+  ]);
+
+  // ── Lookup data ──────────────────────────────────────────────────────────
+  const [businessUnits, setBusinessUnits] = useState<
     { businessUnitId: string; businessUnitName: string }[]
   >([]);
   const [departments, setDepartments] = useState<
@@ -130,177 +395,195 @@ const Crm = () => {
     [],
   );
 
+  const [search, setSearch] = useState("");
+  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>([]);
+
   const dropdownOptions = {
-    firm: ["Vinnovative India", "Vinnovative GmbH", "Vinnovative LLC"],
-    leadGenerator: ["Vijay", "Guru", "Santhosh", "Ashok", "Chandan"],
-    department: [
-      "Design Engineering",
-      "Robotics Simulation",
-      "Manufacturing",
-      "Control Engineering",
-      "Staffing Engineering",
-      "IT",
-      "Plant Support",
-      "Onsite Support",
-      "Tech Pub",
-      "Documentation",
-      "NPD",
-      "Aerospace",
-      "Design team",
-      "Simulation team",
-      "Company",
-    ],
-    businessUnit: [
-      "Management BU1",
-      "Company BU2",
-      "Vijay BU3",
-      "Guru BU4",
-      "Santhosh BU5",
-      "Ashok BU6",
-      "Design team BU7",
-      "Simulation team BU8",
-    ],
     status: ["Approved", "Pending", "Rejected"],
-    currecny: ["INR", "USD", "EURO", "GBP", "Chinese Yuan", "Japanese Yen"],
+    currency: ["INR", "USD", "EURO", "GBP", "Chinese Yuan", "Japanese Yen"],
+    paymentStatus: [
+      "Received",
+      "Pending",
+      "Cancelled",
+      "On Hold",
+      "Partially Paid",
+      "Extra Paid",
+      "Credit Note Issued",
+      "Advance Received",
+      "Reversed",
+    ],
   };
 
-  const [invoiceData, setInvoiceData] = useState([
-    {
-      id: 1,
-      invoiceNumber: "V224251020",
-      invoiceValue: "",
-      conversionRate: "",
-      invoiceValueINR: "",
-      paymentTerm: "30",
-      status: "",
-      file: null as File | null,
-    },
-    {
-      id: 2,
-      invoiceNumber: "V224251001",
-      invoiceValue: "",
-      conversionRate: "",
-      invoiceValueINR: "",
-      paymentTerm: "30",
-      status: "",
-      file: null as File | null,
-    },
-  ]);
-
-  const [paymentData, setPaymentData] = useState([
-    {
-      id: 1,
-      valueReceived: "₹ 1,480,000.00",
-      paymentStatus: "Received",
-      fluctuation: "₹ 252,600.00",
-      comments: "",
-      status: "",
-    },
-    {
-      id: 2,
-      valueReceived: "₹ 239,400.00",
-      paymentStatus: "Received",
-      fluctuation: "₹ 9,120.00",
-      comments: "",
-      status: "",
-    },
-    {
-      id: 3,
-      valueReceived: "13,000 €",
-      paymentStatus: "Received",
-      fluctuation: "0.00 €",
-      comments: "",
-      status: "",
-    },
-  ]);
-
-  // Purchase Order rows — independent from offer rows
-  const [purchaseOrderData, setPurchaseOrderData] = useState<
-    PurchaseOrderRow[]
-  >(initialData.map((row) => createEmptyPurchaseOrderRow(row.id)));
-
-  // ─── Filter ───────────────────────────────────────────────────────────────
-
-  const filteredData = data.filter((row) =>
-    Object.values(row).join(" ").toLowerCase().includes(search.toLowerCase()),
-  );
-
-  // ─── Update Helpers ───────────────────────────────────────────────────────
-
-  const updateRow = (id: number, field: string, value: any) => {
-    setData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+  // ── Fetch ────────────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState<boolean>(true);
+  const base64ToBlobUrl = (base64: string, mimeType = "application/pdf") => {
+    const byteCharacters = atob(base64);
+    const byteArray = new Uint8Array(
+      Array.from(byteCharacters, (c) => c.charCodeAt(0)),
     );
+    return URL.createObjectURL(new Blob([byteArray], { type: mimeType }));
   };
 
-  const updatePurchaseOrderRow = (id: number, field: string, value: any) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [Utility, Proposal] = await Promise.all([
+        getApi("Uitility"),
+        getApi("Proposal"),
+      ]);
+      setBusinessUnits(Utility.data.businessUnits);
+      setDepartments(Utility.data.departments);
+      setEmployees(Utility.data.employees);
+      setFirms(Utility.data.firms);
+
+      const mapped: OfferRow[] = Proposal.data.map(
+        (item: any, index: number) => ({
+          ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
+          id: item.id || Date.now() + index,
+          file: null,
+          fileUrl: item.documentData
+            ? base64ToBlobUrl(item.documentData)
+            : null,
+        }),
+      );
+      setOfferData(mapped);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ── Generic row updaters (each touches only its own state) ───────────────
+
+  const updateOfferRow = (id: number, field: keyof OfferRow, value: any) =>
+    setOfferData((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+
+  const updatePoRow = (id: number, field: keyof PurchaseOrderRow, value: any) =>
     setPurchaseOrderData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
-  };
 
-  const updateInvoiceRow = (id: number, field: string, value: any) => {
+  const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
     setInvoiceData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
-  };
 
-  const updatePaymentRow = (id: number, field: string, value: any) => {
+  const updatePaymentRow = (id: number, field: keyof PaymentRow, value: any) =>
     setPaymentData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+
+  // ── Add Row ──────────────────────────────────────────────────────────────
+
+  const addOfferRow = () =>
+    setOfferData((prev) => [...prev, createEmptyOfferRow()]);
+  const addPoRow = () =>
+    setPurchaseOrderData((prev) => [...prev, createEmptyPurchaseOrderRow()]);
+  const addInvoiceRow = () =>
+    setInvoiceData((prev) => [...prev, createEmptyInvoiceRow()]);
+  const addPaymentRow = () =>
+    setPaymentData((prev) => [...prev, createEmptyPaymentRow()]);
+
+  // ── Submit offer row ─────────────────────────────────────────────────────
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.readAsDataURL(file);
+
+      reader.onload = () => {
+        const result = reader.result;
+
+        // ✅ remove prefix
+        const base64 = result.split(",")[1];
+
+        resolve(base64);
+      };
+
+      reader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  }
+
+  const handleOfferSubmit = async (row: OfferRow) => {
+    console.log("row", row);
+    const payload = {
+      proposalNumber: row.proposalNumber,
+      firmId: Number(row.firmId),
+      customerId: 0,
+      proposalDate: row.proposalDate,
+      leadGenerator: row.leadGenerator,
+      projectDetails: row.projectDetails,
+      departmentId: Number(row.departmentId),
+      estimatedHours: Number(row.hours),
+      businessUnitId: Number(row.businessUnitId),
+      status: row.status,
+      comments: row.comments,
+      documentData: row.file?.file,
+    };
+    console.log("row", payload);
+    try {
+      await postApi("Proposal", payload);
+      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      fetchData();
+    } catch (err) {
+      toast.error("Sucessfully proposal data updated", { autoClose: 1500 });
+    }
+  };
+
+  // ── Remove file (offer) ──────────────────────────────────────────────────
+
+  const removeOfferFile = (id: number) => {
+    setOfferData((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        if (r.fileUrl) URL.revokeObjectURL(r.fileUrl);
+        return { ...r, file: null, fileUrl: null, documentData: null };
+      }),
     );
   };
 
-  const handleDateChange = (key: string, date: Date | null) => {
-    const formatted = date ? date.toISOString().split("T")[0] : null;
-    setDates((prev) => ({ ...prev, [key]: formatted }));
-  };
+  // ── Accordion ────────────────────────────────────────────────────────────
 
-  // ─── Add Row — Offer Details ──────────────────────────────────────────────
-
-  const addNewRow = () => {
-    const validIds = data.map((r) => Number(r.id)).filter((id) => !isNaN(id));
-
-    const newId = validIds.length > 0 ? Math.max(...validIds) + 1 : 1;
-
-    console.log("validIds:", validIds, "newId:", newId);
-
-    setData((prev) => [...prev, createEmptyOfferRow(newId)]);
-  };
-
-  // ─── Add Row — Purchase Order ─────────────────────────────────────────────
-
-  const addNewPurchaseOrderRow = () => {
-    const newId =
-      purchaseOrderData.length > 0
-        ? Math.max(...purchaseOrderData.map((r) => r.id)) + 1
-        : 1;
-    setPurchaseOrderData((prev) => [
-      ...prev,
-      createEmptyPurchaseOrderRow(newId),
-    ]);
-  };
-
-  // ─── Submit ───────────────────────────────────────────────────────────────
-
-  const handleSubmit = () => {
-    const payload = data.map(({ file, ...rest }) => ({
-      ...rest,
-      fileName: file ? file.name : null,
-      fileSize: file ? `${(file.size / 1024).toFixed(1)} KB` : null,
-    }));
-    setSubmittedJSON(payload);
-  };
-
-  // ─── Accordion Toggle ─────────────────────────────────────────────────────
-
-  const toggleAccordion = (key: string) => {
+  const toggleAccordion = (key: string) =>
     setActiveAccordionKeys((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
+
+  // ── Add Customer popup ───────────────────────────────────────────────────
+
+  const openAddCustomer = () => {
+    let root: ReactDOM.Root | null = null;
+    Swal.fire({
+      html: `<div id="react-child"></div>`,
+      width: "90%",
+      padding: "1rem",
+      didOpen: () => {
+        const container = document.getElementById("react-child");
+        if (container) {
+          root = ReactDOM.createRoot(container);
+          root.render(
+            <BrowserRouter>
+              <AddCustomer />
+            </BrowserRouter>,
+          );
+        }
+      },
+      willClose: () => {
+        root?.unmount();
+      },
+    });
   };
 
-  // ─── Add Row Button (reusable style) ──────────────────────────────────────
+  // ── Add Row Button ───────────────────────────────────────────────────────
 
   const AddRowButton = ({ onClick }: { onClick: () => void }) => (
     <div className="px-3 py-2">
@@ -334,1526 +617,1216 @@ const Crm = () => {
     </div>
   );
 
-  // ─── Reusable File Upload Cell ────────────────────────────────────────────
+  // ── Filtered offer data ──────────────────────────────────────────────────
 
-  const FileUploadCell = ({
-    file,
-    onUpload,
-    onRemove,
-  }: {
-    file: File | null;
-    onUpload: (f: File) => void;
-    onRemove: () => void;
-  }) => (
-    <div className="file-upload-cell">
-      <label className="upload-btn">
-        {file ? "Replace" : "Upload"}
-        <input
-          type="file"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onUpload(f);
-          }}
-        />
-      </label>
-      {file && (
-        <div className="file-info">
-          <div className="file-top">
-            <span className="file-name">📄 {file.name}</span>
-            <button className="remove-file-btn" onClick={onRemove}>
-              ✕
-            </button>
-          </div>
-          <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
-        </div>
-      )}
-    </div>
+  const filteredOfferData = offerData.filter((row) =>
+    Object.values(row).join(" ").toLowerCase().includes(search.toLowerCase()),
   );
 
-  // ─── Invoice Milestone Cell ───────────────────────────────────────────────
+  const getFinancialYears = (): string[] => {
+    const currentYear = new Date().getFullYear();
 
-  function InvoiceMilestoneCell({
-    row,
-    updateRow,
-  }: {
-    row: any;
-    updateRow: (id: number, field: string, value: any) => void;
-  }) {
-    const [tempValue, setTempValue] = useState(row.invoiceMilestone ?? "");
-    const overlayRef = useRef<any>(null);
+    const startYear = currentYear - 10;
+    const endYear = currentYear + 3;
 
-    return (
-      <OverlayTrigger
-        trigger="click"
-        placement="bottom"
-        rootClose
-        ref={overlayRef}
-        onToggle={(show) => {
-          if (show) setTempValue(row.invoiceMilestone ?? "");
-        }}
-        overlay={
-          <Popover>
-            <Popover.Header as="h3">Edit Invoice Milestone</Popover.Header>
-            <Popover.Body>
-              <Form.Control
-                type="text"
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                autoFocus
-              />
-              <Button
-                size="sm"
-                className="mt-2 w-100"
-                onClick={() => {
-                  updateRow(row.id, "invoiceMilestone", tempValue);
-                  overlayRef.current?.hide();
-                }}
-              >
-                Save
-              </Button>
-            </Popover.Body>
-          </Popover>
-        }
-      >
-        <Form.Control
-          value={row.invoiceMilestone ?? ""}
-          readOnly
-          placeholder="Click to edit..."
-          style={{ cursor: "pointer" }}
-        />
-      </OverlayTrigger>
-    );
-  }
+    const years: string[] = [];
 
-  const base64ToBlobUrl = (base64, mimeType = "application/pdf") => {
-    const byteCharacters = atob(base64);
-    const byteNumbers = new Array(byteCharacters.length)
-      .fill(0)
-      .map((_, i) => byteCharacters.charCodeAt(i));
-
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-
-    return URL.createObjectURL(blob);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [Uitility, Proposal] = await Promise.all([
-        getApi("Uitility"),
-        getApi("Proposal"),
-      ]);
-      setBusinessUnits(Uitility.data.businessUnits);
-      setDepartments(Uitility.data.departments);
-      setEmployees(Uitility.data.employees);
-      setFirms(Uitility.data.firms);
-      const mappedData = Proposal.data.map((item) => ({
-        ...item,
-        fileUrl: item.documentData ? base64ToBlobUrl(item.documentData) : null,
-      }));
-      setData(mappedData);
-    } catch (err) {
-      console.error(err);
+    for (let year = startYear; year <= endYear; year++) {
+      years.push(`${year}-${year + 1}`);
     }
+
+    return years;
   };
-
-  const handleOfferDetails = async (row: any) => {
-    console.log("row", row);
-    const payload = {
-      proposalNumber: row.proposalNumber,
-      firmId: Number(row.firmId),
-      customerId: 1,
-      proposalDate: "",
-      leadGenerator: row.leadGenerator,
-      projectDetails: row.projectDetails,
-      departmentId: Number(row.departmentId),
-      estimatedHours: Number(row.estimatedHours), //Null
-      businessUnitId: Number(row.businessUnitId),
-      status: row.status,
-      comments: row.comments,
-      documentData: row.file,
-    };
-
-    try {
-      const [postData] = await Promise.all([postApi("Proposal", payload)]);
-      console.log("data", postData);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleOfferDetailsRemoveFile = (id) => {
-    setData((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          // cleanup blob URL
-          if (item.fileUrl) {
-            URL.revokeObjectURL(item.fileUrl);
-          }
-
-          return {
-            ...item,
-            file: null,
-            fileUrl: null,
-            documentData: null, // also clear API data
-          };
-        }
-        return item;
-      }),
-    );
-  };
-
-  const handleUpload = (rowId: any, f) => {
-    const blob = new Blob([f], { type: f.type });
-
-    updateRow(rowId.id, "file", blob);
-  };
-
-  const Imagealert = () => {
-    let root;
-
-    Swal.fire({
-      html: `<div id="react-child"></div>`,
-      width: "90%",
-      padding: "1rem",
-      didOpen: () => {
-        const container = document.getElementById("react-child");
-        root = ReactDOM.createRoot(container);
-
-        root.render(
-          <BrowserRouter>
-            <AddCustomer />
-          </BrowserRouter>,
-        );
-      },
-      willClose: () => {
-        if (root) root.unmount();
-      },
-    });
-  };
+  const financialYears = getFinancialYears();
+  // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
     <Fragment>
-      <Seo title={"Revenue"} />
-      <Pageheader
-        title="Dashboard"
-        currentpage="Revenue"
-        activepage="Revenue"
-      />
+      {!loading ? (
+        <Fragment>
+          <Seo title={"Revenue"} />
+          <Pageheader
+            title="Dashboard"
+            currentpage="Revenue"
+            activepage="Revenue"
+          />
 
-      {/* ══════════════════════════════════════════════════════════════════════
+          {/* ════════════════════════════════════════════════════════════════════
           OFFER DETAILS
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Row>
-        <Col xl={12}>
-          <Card className="custom-card">
-            <Card.Header className="pb-2 justify-content-between table-toolbar">
-              <Card.Title className="">OFFER DETAILS</Card.Title>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </Card.Header>
-
-            <Card.Body>
-              <div className="table-responsive app-table-wrapper">
-                <table className="table table-bordered table-hover app-table">
-                  <thead className="table-primary">
-                    <tr>
-                      <th>ID</th>
-                      <th>Financial Year</th>
-                      <th>Firm</th>
-                      <th>Proposal No</th>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Lead Generator</th>
-                      <th>Project Details</th>
-                      <th>Business Unit</th>
-                      <th>Department</th>
-                      <th>Efforts</th>
-                      <th>Status</th>
-                      <th>Comments</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {data.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.id}</td>
-                        <td>2026-2027</td>
-                        {/* Firm */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.firmId}
-                            onChange={(e) =>
-                              updateRow(row.id, "firmId", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {firms.length > 0 ? (
-                              firms.map((opt) => (
-                                <option key={opt.firmId} value={opt.firmId}>
-                                  {opt.firmName}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">No options available</option>
-                            )}
-                          </select>
-                        </td>
-
-                        {/* Proposal No + Upload */}
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.proposalNumber}
-                            onChange={(e) =>
-                              updateRow(
-                                row.id,
-                                "proposalNumber",
-                                e.target.value,
-                              )
-                            }
-                          />
-
-                          {/* Upload */}
-                          <FileUploadCell
-                            file={row.file}
-                            onUpload={(f) => handleUpload(row.id, f)}
-                            onRemove={() => updateRow(row.id, "file", null)}
-                          />
-
-                          {/* ✅ Show File */}
-                          {(row.fileUrl || row.file) && (
-                            <div className="mt-1 d-flex gap-2 align-items-center">
-                              {/* View */}
-                              <button
-                                className="btn btn-sm btn-link p-0"
-                                onClick={() => {
-                                  if (row.fileUrl) {
-                                    window.open(row.fileUrl); // API file
-                                  } else if (row.file) {
-                                    const tempUrl = URL.createObjectURL(
-                                      row.file,
-                                    );
-                                    window.open(tempUrl); // uploaded file
-                                  }
-                                }}
-                              >
-                                📄 Upload file
-                              </button>
-
-                              {/* Remove */}
-                              {/* <button
-                                className="btn btn-sm btn-danger p-0 px-2"
-                                onClick={() => handleOfferDetailsRemoveFile(row.id)}
-                              >
-                                ✖
-                              </button> */}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Date */}
-                        <td>
-                          <SpkDatepickr
-                            className="form-control"
-                            //dateFormat="yy/MM/dd"
-                            selected={
-                              row.proposalDate
-                                ? new Date(row.proposalDate)
-                                : null
-                            }
-                            onChange={(date: Date | null) =>
-                              updateRow(row.id, "proposalDate", date)
-                            }
-                            placeholderText="Choose date"
-                            // popperPlacement="bottom-start"
-                          />
-                        </td>
-
-                        {/* Customer */}
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.customer}
-                            onChange={(e) =>
-                              updateRow(row.id, "customer", e.target.value)
-                            }
-                          />
-                          <SpkButton
-                            Buttonvariant="danger"
-                            Size="sm"
-                            Customclass="btn"
-                            Id="alert-image"
-                            onClickfunc={Imagealert}
-                          >
-                            Add User
-                          </SpkButton>
-                        </td>
-
-                        {/* Lead Generator */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.leadGenerator}
-                            onChange={(e) =>
-                              updateRow(row.id, "leadGenerator", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {employees.length > 0 ? (
-                              employees.map((opt) => (
-                                <option
-                                  key={opt.employeeId}
-                                  value={opt.employeeId}
-                                >
-                                  {opt.employeeName}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">No options available</option>
-                            )}
-                          </select>
-                        </td>
-
-                        {/* Project Details */}
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.projectDetails}
-                            onChange={(e) =>
-                              updateRow(
-                                row.id,
-                                "projectDetails",
-                                e.target.value,
-                              )
-                            }
-                          />
-                        </td>
-                        {/* Business Unit */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.businessUnitId}
-                            onChange={(e) =>
-                              updateRow(
-                                row.id,
-                                "businessUnitId",
-                                e.target.value,
-                              )
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {bustinessUnits.length > 0 ? (
-                              bustinessUnits.map((opt) => (
-                                <option
-                                  key={opt.businessUnitId}
-                                  value={opt.businessUnitId}
-                                >
-                                  {opt.businessUnitName}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="">No options available</option>
-                            )}
-                          </select>
-                        </td>
-
-                        {/* Department */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.departmentId}
-                            onChange={(e) =>
-                              updateRow(row.id, "departmentId", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {departments.map((opt) => (
-                              <option
-                                key={opt.departmentId}
-                                value={opt.departmentId}
-                              >
-                                {opt.departmentName}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* Hours */}
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={row.hours}
-                            onChange={(e) =>
-                              updateRow(row.id, "hours", e.target.value)
-                            }
-                          />
-                        </td>
-
-                        {/* Status */}
-                        <td>
-                          <select
-                            className="form-select"
-                            value={row.status}
-                            onChange={(e) =>
-                              updateRow(row.id, "status", e.target.value)
-                            }
-                          >
-                            <option value="">Select All</option>
-                            {dropdownOptions.status.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <input
-                            className="form-control"
-                            value={row.comments}
-                            placeholder="Comments"
-                            onChange={(e) =>
-                              updateRow(row.id, "comments", e.target.value)
-                            }
-                          />
-                        </td>
-                        {/* Actions */}
-                        <td className="text-center">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={() => handleOfferDetails(row)}
-                          >
-                            Submit
-                          </button>
-                          <br />
-                          <button
-                            className="btn btn-danger btn-sm mt-1"
-                            style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                            onClick={handleSubmit}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Add Row */}
-              <div className="d-flex align-items-center justify-content-between mt-3">
-                <button
-                  onClick={addNewRow}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    border: "1.5px dashed #6c757d",
-                    borderRadius: "6px",
-                    background: "transparent",
-                    color: "#495057",
-                    padding: "6px 16px",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                      "#0d6efd";
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      "#0d6efd";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                      "#6c757d";
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      "#495057";
-                  }}
-                >
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>+</span>
-                  Add Row
-                </button>
-              </div>
-
-              {/* JSON Output Table */}
-              {submittedJSON && (
-                <div className="mt-4">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <h6 className="mb-0 fw-semibold text-success">
-                      ✓ Submitted Data
-                    </h6>
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => setSubmittedJSON(null)}
-                    >
-                      Clear
-                    </button>
+      ════════════════════════════════════════════════════════════════════ */}
+          <Row>
+            <Col xl={12}>
+              <Card className="custom-card">
+                <Card.Header className="pb-2 justify-content-between table-toolbar">
+                  <Card.Title>OFFER DETAILS</Card.Title>
+                  <div className="search-box">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
                   </div>
-                  <div
-                    className="table-responsive"
-                    style={{
-                      border: "1px solid #d1e7dd",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <table
-                      className="table table-sm table-bordered mb-0"
-                      style={{ fontSize: "12px" }}
-                    >
-                      <thead style={{ background: "#d1e7dd" }}>
+                </Card.Header>
+
+                <Card.Body>
+                  <div className="table-responsive app-table-wrapper">
+                    <table className="table table-bordered table-hover app-table">
+                      <thead className="table-primary">
                         <tr>
                           <th>ID</th>
+                          <th>Financial Year</th>
                           <th>Firm</th>
                           <th>Proposal No</th>
                           <th>Date</th>
                           <th>Customer</th>
                           <th>Lead Generator</th>
                           <th>Project Details</th>
-                          <th>Department</th>
-                          <th>Hours</th>
                           <th>Business Unit</th>
+                          <th>Department</th>
+                          <th>Efforts</th>
                           <th>Status</th>
-                          <th>File Name</th>
-                          <th>File Size</th>
                           <th>Comments</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {submittedJSON.map((row: any) => (
+                        {filteredOfferData.map((row) => (
                           <tr key={row.id}>
+                            {/* ID */}
                             <td>{row.id}</td>
+
+                            {/* Financial Year */}
                             <td>
-                              {row.firm || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <select
+                                className="form-control"
+                                value={row.financialYear || ""}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "financialYear",
+                                    e.target.value,
+                                  )
+                                }
+                              >
+                                <option value="">Select Financial Year</option>
+
+                                {financialYears.map((fy) => (
+                                  <option key={fy} value={fy}>
+                                    {fy}
+                                  </option>
+                                ))}
+                              </select>
                             </td>
-                            <td>{row.proposalNumber}</td>
-                            <td>{row.proposalDate}</td>
+
+                            {/* Firm */}
                             <td>
-                              {row.customer || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <select
+                                className="form-select"
+                                value={row.firmId}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "firmId",
+                                    e.target.value,
+                                  )
+                                }
+                              >
+                                <option value="">Select</option>
+                                {firms.length > 0 ? (
+                                  firms.map((opt) => (
+                                    <option key={opt.firmId} value={opt.firmId}>
+                                      {opt.firmName}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled>No options available</option>
+                                )}
+                              </select>
                             </td>
+
+                            {/* Proposal No + Upload */}
                             <td>
-                              {row.leadGenerator || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <input
+                                className="form-control mb-1"
+                                value={row.proposalNumber}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "proposalNumber",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <FileUploadCell
+                                file={row.file}
+                                fileUrl={row.fileUrl}
+                                value={row}
+                                onUpload={async (f) => {
+                                  console.log("original file:", f);
+
+                                  const base64 = await fileToBase64(f);
+
+                                  console.log("base64:", base64);
+
+                                  updateOfferRow(row.id, "file", {
+                                    file: base64,
+                                    base64: base64, // store base64 if needed
+                                  });
+                                }}
+                                onRemove={() => removeOfferFile(row.id)}
+                              />
                             </td>
+
+                            {/* Date */}
                             <td>
-                              {row.projectDetails || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <SpkDatepickr
+                                className="form-control"
+                                selected={
+                                  row.proposalDate
+                                    ? new Date(row.proposalDate)
+                                    : null
+                                }
+                                onChange={(date) => {
+                                  updateOfferRow(row.id, "proposalDate", date);
+
+                                  console.log(date); // ✅ correct
+                                }}
+                                placeholderText="Choose date"
+                              />
                             </td>
+
+                            {/* Customer */}
                             <td>
-                              {row.department || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <input
+                                className="form-control mb-1"
+                                value={row.customer}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "customer",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <SpkButton
+                                Buttonvariant="danger"
+                                Size="sm"
+                                Customclass="btn"
+                                onClickfunc={openAddCustomer}
+                              >
+                                Add User
+                              </SpkButton>
                             </td>
+
+                            {/* Lead Generator */}
                             <td>
-                              {row.hours || (
-                                <span className="text-muted">—</span>
-                              )}
+                              <select
+                                className="form-select"
+                                value={row.leadGenerator}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "leadGenerator",
+                                    e.target.value,
+                                  )
+                                }
+                              >
+                                <option value="">Select</option>
+                                {employees.length > 0 ? (
+                                  employees.map((opt) => (
+                                    <option
+                                      key={opt.employeeId}
+                                      value={opt.employeeId}
+                                    >
+                                      {opt.employeeName}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled>No options available</option>
+                                )}
+                              </select>
                             </td>
-                            <td>
-                              {row.businessUnit || (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                            <td>
-                              {row.status ? (
-                                <span
-                                  className={`badge ${
-                                    row.status === "Approved"
-                                      ? "bg-success"
-                                      : row.status === "Rejected"
-                                        ? "bg-danger"
-                                        : "bg-warning text-dark"
-                                  }`}
-                                >
-                                  {row.status}
-                                </span>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                            <td>
-                              {row.fileName || (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                            <td>
-                              {row.fileSize || (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
+
+                            {/* Project Details */}
                             <td>
                               <input
                                 className="form-control"
-                                value={""}
-                                placeholder="Comments"
+                                value={row.projectDetails}
                                 onChange={(e) =>
-                                  updatePaymentRow(
+                                  updateOfferRow(
                                     row.id,
-                                    "valueReceived",
+                                    "projectDetails",
                                     e.target.value,
                                   )
                                 }
                               />
                             </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <details className="mt-2">
-                    <summary
-                      style={{
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        color: "#6c757d",
-                      }}
-                    >
-                      View raw JSON
-                    </summary>
-                    <pre
-                      style={{
-                        background: "#f8f9fa",
-                        border: "1px solid #dee2e6",
-                        borderRadius: "6px",
-                        padding: "12px",
-                        fontSize: "11px",
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        marginTop: "6px",
-                      }}
-                    >
-                      {JSON.stringify(submittedJSON, null, 2)}
-                    </pre>
-                  </details>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      {/* ══════════════════════════════════════════════════════════════════════
-          ACCORDION  —  Purchase Order  |  Invoice  |  Payment Details
-      ══════════════════════════════════════════════════════════════════════ */}
-      <Row>
-        <Col xl={12}>
-          <Accordion alwaysOpen activeKey={activeAccordionKeys}>
-            {/* ── 1. Purchase Order Details ─────────────────────────────── */}
-            <Accordion.Item
-              eventKey="purchase-order"
-              className="custom-card mb-3"
-              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
-            >
-              <Accordion.Header
-                onClick={() => toggleAccordion("purchase-order")}
-              >
-                <span
-                  className="fw-semibold"
-                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
-                >
-                  PURCHASE ORDER DETAILS
-                </span>
-              </Accordion.Header>
 
-              <Accordion.Body className="p-0">
-                {/* Search inside accordion */}
-                <div
-                  className="d-flex justify-content-end px-3 pt-3 pb-2"
-                  style={{ borderBottom: "1px solid #f0f0f0" }}
-                >
-                  <div className="search-box">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="table-responsive">
-                  <table className="table table-bordered app-table mb-0">
-                    <thead className="table-primary">
-                      <tr>
-                        <th>Proposal Number</th>
-                        <th>Project ID</th>
-                        <th>Business Unit</th>
-                        <th>Order No</th>
-                        <th>Order Date</th>
-                        <th>Order Value</th>
-                        <th>Conversion Rate</th>
-                        <th>Order Value in INR</th>
-                        <th>Invoice Milestones</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                        <th>Comments</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {purchaseOrderData.map((poRow) => (
-                        <tr key={poRow.id}>
-                          {/* Proposal Number */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={poRow.proposalNumber}
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "proposalNumber",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <FileUploadCell
-                              file={poRow.file}
-                              onUpload={(f) =>
-                                updatePurchaseOrderRow(poRow.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updatePurchaseOrderRow(poRow.id, "file", null)
-                              }
-                            />
-                          </td>
-                          {/* Order No + Upload */}
-                          <td>
-                            <input
-                              className="form-control mb-1"
-                              value={poRow.orderNo}
-                              placeholder="Project ID"
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "orderNo",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                          <td>
-                            <select
-                              className="form-select"
-                              value={poRow.businessUnit}
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "businessUnit",
-                                  e.target.value,
-                                )
-                              }
-                            >
-                              <option value="">Select All</option>
-                              {bustinessUnits.map((opt) => (
-                                <option
-                                  key={opt.businessUnitId}
-                                  value={opt.businessUnitName}
-                                >
-                                  {opt.businessUnitName}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              className="form-control mb-1"
-                              value={poRow.orderNo}
-                              placeholder="Order number"
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "orderNo",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <FileUploadCell
-                              file={poRow.file}
-                              onUpload={(f) =>
-                                updatePurchaseOrderRow(poRow.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updatePurchaseOrderRow(poRow.id, "file", null)
-                              }
-                            />
-                          </td>
-
-                          {/* Order Date */}
-                          <td>
-                            <SpkDatepickr
-                              className="form-control"
-                              dateFormat="yy/MM/dd"
-                              selected={
-                                dates[`poDate_${poRow.id}`]
-                                  ? new Date(
-                                      dates[`poDate_${poRow.id}`] as string,
-                                    )
-                                  : null
-                              }
-                              onChange={(date: Date | null) =>
-                                handleDateChange(`poDate_${poRow.id}`, date)
-                              }
-                              placeholderText="Choose date"
-                              popperPlacement="bottom-start"
-                            />
-                          </td>
-
-                          {/* Order Value (currency + amount) */}
-                          <td>
-                            <div className="d-flex gap-1">
+                            {/* Business Unit */}
+                            <td>
                               <select
                                 className="form-select"
-                                style={{ maxWidth: "110px" }}
-                                value={poRow.orderValue}
+                                value={row.businessUnitId}
                                 onChange={(e) =>
-                                  updatePurchaseOrderRow(
-                                    poRow.id,
-                                    "orderValue",
+                                  updateOfferRow(
+                                    row.id,
+                                    "businessUnitId",
                                     e.target.value,
                                   )
                                 }
                               >
-                                <option value="">Currency</option>
-                                {dropdownOptions.currecny.map((opt) => (
-                                  <option key={opt}>{opt}</option>
+                                <option value="">Select</option>
+                                {businessUnits.length > 0 ? (
+                                  businessUnits.map((opt) => (
+                                    <option
+                                      key={opt.businessUnitId}
+                                      value={opt.businessUnitId}
+                                    >
+                                      {opt.businessUnitName}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled>No options available</option>
+                                )}
+                              </select>
+                            </td>
+
+                            {/* Department */}
+                            <td>
+                              <select
+                                className="form-select"
+                                value={row.departmentId}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "departmentId",
+                                    e.target.value,
+                                  )
+                                }
+                              >
+                                <option value="">Select</option>
+                                {departments.map((opt) => (
+                                  <option
+                                    key={opt.departmentId}
+                                    value={opt.departmentId}
+                                  >
+                                    {opt.departmentName}
+                                  </option>
                                 ))}
                               </select>
+                            </td>
+
+                            {/* Efforts / Hours */}
+                            <td>
                               <input
-                                className="form-control"
                                 type="number"
-                                placeholder="Amount"
-                                value={poRow.orderAmount}
-                                onChange={(e) =>
-                                  updatePurchaseOrderRow(
-                                    poRow.id,
-                                    "orderAmount",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                          </td>
-
-                          {/* Conversion Rate */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={poRow.conversionRate}
-                              placeholder="Rate"
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "conversionRate",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-
-                          {/* Order Value INR */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={poRow.orderValueINR}
-                              placeholder="INR value"
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "orderValueINR",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-
-                          {/* Invoice Milestones */}
-                          <td>
-                            <InvoiceMilestoneCell
-                              row={poRow}
-                              updateRow={updatePurchaseOrderRow}
-                            />
-                          </td>
-
-                          {/* Status */}
-                          <td>
-                            <select
-                              className="form-select"
-                              value={poRow.status}
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  poRow.id,
-                                  "status",
-                                  e.target.value,
-                                )
-                              }
-                            >
-                              <option value="">Select All</option>
-                              {dropdownOptions.status.map((opt) => (
-                                <option key={opt}>{opt}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="text-center">
-                            <button
-                              className="btn btn-primary btn-sm"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Submit
-                            </button>
-                            <br />
-                            <button
-                              className="btn btn-danger btn-sm mt-1"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                          <td>
-                            <input
-                              className="form-control"
-                              value={""}
-                              placeholder="Comments"
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* ── Add Row — Purchase Order ── */}
-                <AddRowButton onClick={addNewPurchaseOrderRow} />
-              </Accordion.Body>
-            </Accordion.Item>
-
-            {/* ── 2. Invoice Details ────────────────────────────────────── */}
-            <Accordion.Item
-              eventKey="invoice"
-              className="custom-card mb-3"
-              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
-            >
-              <Accordion.Header onClick={() => toggleAccordion("invoice")}>
-                <span
-                  className="fw-semibold d-none"
-                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
-                >
-                  INVOICE DETAILS
-                </span>
-              </Accordion.Header>
-
-              <Accordion.Body className="p-0">
-                <div
-                  className="d-flex justify-content-end px-3 pt-3 pb-2"
-                  style={{ borderBottom: "1px solid #f0f0f0" }}
-                >
-                  <div className="search-box">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="table-responsive">
-                  <table className="table table-bordered app-table mb-0">
-                    <thead className="table-primary">
-                      <tr>
-                        <th>Proposal Number</th>
-                        <th>Invoice Number</th>
-                        <th>Invoice Date</th>
-                        <th>Invoice Value</th>
-                        <th>Conversion Rate</th>
-                        <th>Invoice Value (INR)</th>
-                        <th>Payment Term</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                        <th>Comments</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoiceData.map((row) => (
-                        <tr key={row.id}>
-                          {/* Invoice Number + Upload */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.proposalNumber}
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  row.id,
-                                  "proposalNumber",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <FileUploadCell
-                              file={row.file}
-                              onUpload={(f) =>
-                                updatePurchaseOrderRow(row.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updatePurchaseOrderRow(row.id, "file", null)
-                              }
-                            />
-                          </td>
-                          <td>
-                            <input
-                              className="form-control mb-1"
-                              value={row.invoiceNumber}
-                              onChange={(e) =>
-                                updateInvoiceRow(
-                                  row.id,
-                                  "invoiceNumber",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <FileUploadCell
-                              file={row.file}
-                              onUpload={(f) =>
-                                updateInvoiceRow(row.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updateInvoiceRow(row.id, "file", null)
-                              }
-                            />
-                          </td>
-
-                          {/* Invoice Date */}
-                          <td>
-                            <SpkDatepickr
-                              className="form-control"
-                              dateFormat="yy/MM/dd"
-                              selected={
-                                dates[`invDate_${row.id}`]
-                                  ? new Date(
-                                      dates[`invDate_${row.id}`] as string,
-                                    )
-                                  : null
-                              }
-                              onChange={(date: Date | null) =>
-                                handleDateChange(`invDate_${row.id}`, date)
-                              }
-                              placeholderText="Choose date"
-                              popperPlacement="bottom-start"
-                            />
-                          </td>
-
-                          {/* Invoice Value (currency + amount) */}
-                          <td>
-                            <div className="d-flex gap-1">
-                              <select
-                                className="form-select"
-                                style={{ maxWidth: "110px" }}
-                                value={row.invoiceValue}
-                                onChange={(e) =>
-                                  updateInvoiceRow(
-                                    row.id,
-                                    "invoiceValue",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Currency</option>
-                                {dropdownOptions.currecny.map((opt) => (
-                                  <option key={opt}>{opt}</option>
-                                ))}
-                              </select>
-                              <input
                                 className="form-control"
-                                placeholder="Amount"
+                                value={row.hours}
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "hours",
+                                    e.target.value,
+                                  )
+                                }
                               />
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Conversion Rate */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.conversionRate}
-                              onChange={(e) =>
-                                updateInvoiceRow(
-                                  row.id,
-                                  "conversionRate",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-
-                          {/* Invoice Value INR (read-only) */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.invoiceValueINR}
-                              readOnly
-                            />
-                          </td>
-
-                          {/* Payment Term */}
-                          <td>
-                            <input
-                              type="number"
-                              className="form-control"
-                              value={row.paymentTerm}
-                              onChange={(e) =>
-                                updateInvoiceRow(
-                                  row.id,
-                                  "paymentTerm",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-
-                          {/* Due Date */}
-                          <td>
-                            <SpkDatepickr
-                              className="form-control"
-                              dateFormat="yy/MM/dd"
-                              selected={
-                                dates[`dueDate_${row.id}`]
-                                  ? new Date(
-                                      dates[`dueDate_${row.id}`] as string,
-                                    )
-                                  : null
-                              }
-                              onChange={(date: Date | null) =>
-                                handleDateChange(`dueDate_${row.id}`, date)
-                              }
-                              placeholderText="Choose date"
-                              popperPlacement="bottom-start"
-                            />
-                          </td>
-
-                          {/* Status */}
-                          <td>
-                            <select
-                              className="form-select"
-                              value={row.status || ""}
-                              onChange={(e) =>
-                                updateInvoiceRow(
-                                  row.id,
-                                  "status",
-                                  e.target.value,
-                                )
-                              }
-                            >
-                              <option value="">Select All</option>
-                              {dropdownOptions.status.map((opt) => (
-                                <option key={opt}>{opt}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="text-center">
-                            <button
-                              className="btn btn-primary btn-sm"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Submit
-                            </button>
-                            <br />
-                            <button
-                              className="btn btn-danger btn-sm mt-1"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                          <td>
-                            <input
-                              className="form-control"
-                              value={""}
-                              placeholder="Comments"
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Accordion.Body>
-            </Accordion.Item>
-
-            {/* ── 3. Payment Details ────────────────────────────────────── */}
-            <Accordion.Item
-              eventKey="payment"
-              className="custom-card mb-3"
-              style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
-            >
-              <Accordion.Header onClick={() => toggleAccordion("payment")}>
-                <span
-                  className="fw-semibold d-none"
-                  style={{ fontSize: "13px", letterSpacing: "0.04em" }}
-                >
-                  PAYMENT DETAILS
-                </span>
-              </Accordion.Header>
-
-              <Accordion.Body className="p-0">
-                <div
-                  className="d-flex justify-content-end px-3 pt-3 pb-2"
-                  style={{ borderBottom: "1px solid #f0f0f0" }}
-                >
-                  <div className="search-box">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover app-table mb-0">
-                    <thead className="table-primary">
-                      <tr>
-                        <th>Proposal Number</th>
-                        <th>Documents</th>
-                        <th>Value Received</th>
-                        <th>Amount Realised</th>
-                        <th>Realised Date</th>
-                        <th>Payment Status</th>
-                        <th>Fluctuation Difference</th>
-                        <th>Comments</th>
-                        <th>Actions</th>
-                        <th>Comments</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paymentData.map((row) => (
-                        <tr key={row.id}>
-                          {/* Value Received */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.proposalNumber}
-                              onChange={(e) =>
-                                updatePurchaseOrderRow(
-                                  row.id,
-                                  "proposalNumber",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <FileUploadCell
-                              file={row.file}
-                              onUpload={(f) =>
-                                updatePurchaseOrderRow(row.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updatePurchaseOrderRow(row.id, "file", null)
-                              }
-                            />
-                          </td>
-                          <td>
-                            <FileUploadCell
-                              file={row.file}
-                              onUpload={(f) =>
-                                updatePurchaseOrderRow(row.id, "file", f)
-                              }
-                              onRemove={() =>
-                                updatePurchaseOrderRow(row.id, "file", null)
-                              }
-                            />
-                          </td>
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.valueReceived}
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-
-                          {/* Amount Realised (currency + amount) */}
-                          <td>
-                            <div className="d-flex gap-1">
+                            {/* Status */}
+                            <td>
                               <select
                                 className="form-select"
-                                style={{ maxWidth: "110px" }}
-                                value={row.status || ""}
+                                value={row.status}
                                 onChange={(e) =>
-                                  updatePaymentRow(
+                                  updateOfferRow(
                                     row.id,
                                     "status",
                                     e.target.value,
                                   )
                                 }
                               >
-                                <option value="">Currency</option>
-                                {dropdownOptions.currecny.map((opt) => (
-                                  <option key={opt}>{opt}</option>
+                                <option value="">Select</option>
+                                {dropdownOptions.status.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
                                 ))}
                               </select>
+                            </td>
+
+                            {/* Comments */}
+                            <td>
                               <input
                                 className="form-control"
-                                placeholder="Amount"
+                                value={row.comments ?? ""}
+                                placeholder="Comments"
+                                onChange={(e) =>
+                                  updateOfferRow(
+                                    row.id,
+                                    "comments",
+                                    e.target.value,
+                                  )
+                                }
                               />
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Realised Date */}
-                          <td>
-                            <SpkDatepickr
-                              className="form-control"
-                              dateFormat="yy/MM/dd"
-                              selected={
-                                dates[`realised_${row.id}`]
-                                  ? new Date(
-                                      dates[`realised_${row.id}`] as string,
+                            {/* Actions */}
+                            <td className="text-center">
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  fontSize: "12px",
+                                }}
+                                onClick={() => handleOfferSubmit(row)}
+                              >
+                                Submit
+                              </button>
+                              <br />
+                              <button
+                                className="btn btn-danger btn-sm mt-1"
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Add Row */}
+                  <AddRowButton onClick={addOfferRow} />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* ════════════════════════════════════════════════════════════════════
+          ACCORDION  —  Purchase Order | Invoice | Payment Details
+      ════════════════════════════════════════════════════════════════════ */}
+          <Row>
+            <Col xl={12}>
+              <Accordion alwaysOpen activeKey={activeAccordionKeys}>
+                {/* ── 1. Purchase Order Details ──────────────────────────────── */}
+                <Accordion.Item
+                  eventKey="purchase-order"
+                  className="custom-card mb-3"
+                  style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+                >
+                  <Accordion.Header
+                    onClick={() => toggleAccordion("purchase-order")}
+                  >
+                    <span
+                      className="fw-semibold"
+                      style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                    >
+                      PURCHASE ORDER DETAILS
+                    </span>
+                  </Accordion.Header>
+
+                  <Accordion.Body className="p-0">
+                    <div
+                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      style={{ borderBottom: "1px solid #f0f0f0" }}
+                    >
+                      <div className="search-box">
+                        <input type="text" placeholder="Search..." />
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Project ID</th>
+                            <th>Business Unit</th>
+                            <th>Order No</th>
+                            <th>Order Date</th>
+                            <th>Order Value</th>
+                            <th>Conversion Rate</th>
+                            <th>Order Value in INR</th>
+                            <th>Invoice Milestones</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                            <th>Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {purchaseOrderData.map((poRow) => (
+                            <tr key={poRow.id}>
+                              {/* Proposal Number + Upload */}
+                              <td>
+                                <input
+                                  className="form-control mb-1"
+                                  value={poRow.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "proposalNumber",
+                                      e.target.value,
                                     )
-                                  : null
-                              }
-                              onChange={(date: Date | null) =>
-                                handleDateChange(`realised_${row.id}`, date)
-                              }
-                              placeholderText="Choose date"
-                            />
-                          </td>
+                                  }
+                                />
+                                <FileUploadCell
+                                  file={poRow.file}
+                                  onUpload={(f) =>
+                                    updatePoRow(poRow.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updatePoRow(poRow.id, "file", null)
+                                  }
+                                />
+                              </td>
 
-                          {/* Payment Status */}
-                          <td>
-                            <select
-                              className="form-select"
-                              value={row.paymentStatus || ""}
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "paymentStatus",
-                                  e.target.value,
-                                )
-                              }
-                            >
-                              <option value="">Select All</option>
-                              <option>Received</option>
-                              <option>Pending</option>
-                              <option>Cancelled</option>
-                              <option>On Hold</option>
-                              <option>Partially Paid</option>
-                              <option>Extra Paid</option>
-                              <option>Credit Note Issued</option>
-                              <option>Advance Received</option>
-                              <option>Reversed</option>
-                            </select>
-                          </td>
+                              {/* Project ID */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={poRow.projectId}
+                                  placeholder="Project ID"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "projectId",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
 
-                          {/* Fluctuation */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.fluctuation}
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "fluctuation",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
+                              {/* Business Unit */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={poRow.businessUnit}
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "businessUnit",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {businessUnits.map((opt) => (
+                                    <option
+                                      key={opt.businessUnitId}
+                                      value={opt.businessUnitId}
+                                    >
+                                      {opt.businessUnitName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
 
-                          {/* Comments */}
-                          <td>
-                            <input
-                              className="form-control"
-                              value={row.comments}
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "comments",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                          <td className="text-center">
-                            <button
-                              className="btn btn-primary btn-sm"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Submit
-                            </button>
-                            <br />
-                            <button
-                              className="btn btn-danger btn-sm mt-1"
-                              style={{ whiteSpace: "nowrap", fontSize: "12px" }}
-                              onClick={handleSubmit}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                          <td>
-                            <input
-                              className="form-control"
-                              value={""}
-                              placeholder="Comments"
-                              onChange={(e) =>
-                                updatePaymentRow(
-                                  row.id,
-                                  "valueReceived",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Accordion.Body>
-            </Accordion.Item>
-          </Accordion>
-        </Col>
-      </Row>
+                              {/* Order No */}
+                              <td>
+                                <input
+                                  className="form-control mb-1"
+                                  value={poRow.orderNo}
+                                  placeholder="Order number"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "orderNo",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Order Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    poRow.orderDate
+                                      ? new Date(poRow.orderDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updatePoRow(poRow.id, "orderDate", date)
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+
+                              {/* Order Value (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                  <select
+                                    className="form-select"
+                                    style={{ maxWidth: "110px" }}
+                                    value={poRow.orderValue}
+                                    onChange={(e) =>
+                                      updatePoRow(
+                                        poRow.id,
+                                        "orderValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Currency</option>
+                                    {dropdownOptions.currency.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={poRow.orderAmount}
+                                    onChange={(e) =>
+                                      updatePoRow(
+                                        poRow.id,
+                                        "orderAmount",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Conversion Rate */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={poRow.conversionRate}
+                                  placeholder="Rate"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "conversionRate",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Order Value INR */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={poRow.orderValueINR}
+                                  placeholder="INR value"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "orderValueINR",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Milestone */}
+                              <td>
+                                <InvoiceMilestoneCell
+                                  rowId={poRow.id}
+                                  value={poRow.invoiceMilestone}
+                                  onSave={(val) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "invoiceMilestone",
+                                      val,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={poRow.status}
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "status",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.status.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Submit
+                                </button>
+                                <br />
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              </td>
+
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={poRow.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <AddRowButton onClick={addPoRow} />
+                  </Accordion.Body>
+                </Accordion.Item>
+
+                {/* ── 2. Invoice Details ─────────────────────────────────────── */}
+                <Accordion.Item
+                  eventKey="invoice"
+                  className="custom-card mb-3"
+                  style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+                >
+                  <Accordion.Header onClick={() => toggleAccordion("invoice")}>
+                    <span
+                      className="fw-semibold"
+                      style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                    >
+                      INVOICE DETAILS
+                    </span>
+                  </Accordion.Header>
+
+                  <Accordion.Body className="p-0">
+                    <div
+                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      style={{ borderBottom: "1px solid #f0f0f0" }}
+                    >
+                      <div className="search-box">
+                        <input type="text" placeholder="Search..." />
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Invoice Number</th>
+                            <th>Invoice Date</th>
+                            <th>Invoice Value</th>
+                            <th>Conversion Rate</th>
+                            <th>Invoice Value (INR)</th>
+                            <th>Payment Term</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                            <th>Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoiceData.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number + Upload */}
+                              <td>
+                                <input
+                                  className="form-control mb-1"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                                <FileUploadCell
+                                  file={row.file}
+                                  onUpload={(f) =>
+                                    updateInvoiceRow(row.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updateInvoiceRow(row.id, "file", null)
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceNumber}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.invoiceDate
+                                      ? new Date(row.invoiceDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+
+                              {/* Invoice Value (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                  <select
+                                    className="form-select"
+                                    style={{ maxWidth: "110px" }}
+                                    value={row.invoiceValue}
+                                    onChange={(e) =>
+                                      updateInvoiceRow(
+                                        row.id,
+                                        "invoiceValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Currency</option>
+                                    {dropdownOptions.currency.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.invoiceAmount}
+                                    onChange={(e) =>
+                                      updateInvoiceRow(
+                                        row.id,
+                                        "invoiceAmount",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Conversion Rate */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.conversionRate}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "conversionRate",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Value INR (read-only) */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceValueINR}
+                                  readOnly
+                                />
+                              </td>
+
+                              {/* Payment Term */}
+                              <td>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={row.paymentTerm}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "paymentTerm",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Due Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.dueDate
+                                      ? new Date(row.dueDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(row.id, "dueDate", date)
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+
+                              {/* Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.status}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "status",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.status.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Submit
+                                </button>
+                                <br />
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              </td>
+
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <AddRowButton onClick={addInvoiceRow} />
+                  </Accordion.Body>
+                </Accordion.Item>
+
+                {/* ── 3. Payment Details ─────────────────────────────────────── */}
+                <Accordion.Item
+                  eventKey="payment"
+                  className="custom-card mb-3"
+                  style={{ border: "1px solid #dee2e6", borderRadius: "8px" }}
+                >
+                  <Accordion.Header onClick={() => toggleAccordion("payment")}>
+                    <span
+                      className="fw-semibold"
+                      style={{ fontSize: "13px", letterSpacing: "0.04em" }}
+                    >
+                      PAYMENT DETAILS
+                    </span>
+                  </Accordion.Header>
+
+                  <Accordion.Body className="p-0">
+                    <div
+                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      style={{ borderBottom: "1px solid #f0f0f0" }}
+                    >
+                      <div className="search-box">
+                        <input type="text" placeholder="Search..." />
+                      </div>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Documents</th>
+                            <th>Value Received</th>
+                            <th>Amount Realised</th>
+                            <th>Realised Date</th>
+                            <th>Payment Status</th>
+                            <th>Fluctuation Difference</th>
+                            <th>Comments</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paymentData.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Documents */}
+                              <td>
+                                <FileUploadCell
+                                  file={row.file}
+                                  onUpload={(f) =>
+                                    updatePaymentRow(row.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updatePaymentRow(row.id, "file", null)
+                                  }
+                                />
+                              </td>
+
+                              {/* Value Received */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.valueReceived}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "valueReceived",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Amount Realised (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                  <select
+                                    className="form-select"
+                                    style={{ maxWidth: "110px" }}
+                                    value={row.amountCurrency}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountCurrency",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Currency</option>
+                                    {dropdownOptions.currency.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.amountValue}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Realised Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.realisedDate
+                                      ? new Date(row.realisedDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "realisedDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                />
+                              </td>
+
+                              {/* Payment Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.paymentStatus}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "paymentStatus",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.paymentStatus.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Fluctuation */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.fluctuation}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "fluctuation",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Actions */}
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Submit
+                                </button>
+                                <br />
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <AddRowButton onClick={addPaymentRow} />
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+            </Col>
+          </Row>
+        </Fragment>
+      ) : (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-light"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="spinner-border text-primary" role="status" />
+        </div>
+      )}
     </Fragment>
   );
 };

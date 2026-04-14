@@ -507,34 +507,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Primacy Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Internal Customer Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Secondary Contact Person
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Trading Currency"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
@@ -549,7 +522,8 @@ const AddProduct = () => {
                                 placeholder="Enter the Email Address"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
+                            <hr className="my-2 mt-4" />
+                            <Col xl={12} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
                                 className=""
@@ -577,34 +551,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Primary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Primary Contact Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Secondary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Secondary Contact Number"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
@@ -682,34 +629,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Primacy Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Internal Customer Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Secondary Contact Person
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Trading Currency"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
@@ -724,7 +644,8 @@ const AddProduct = () => {
                                 placeholder="Enter the Email Address"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
+                            <hr className="my-2 mt-4" />
+                            <Col xl={12} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
                                 className=""
@@ -752,34 +673,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Primary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Primary Contact Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Secondary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Secondary Contact Number"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
@@ -857,34 +751,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Primacy Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Internal Customer Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
-                                Secondary Contact Person
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Trading Currency"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
@@ -899,7 +766,8 @@ const AddProduct = () => {
                                 placeholder="Enter the Email Address"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
+                            <hr className="my-2 mt-4" />
+                            <Col xl={12} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
                                 className=""
@@ -927,34 +795,7 @@ const AddProduct = () => {
                                 placeholder="Enter the Designation"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Primary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Primary Contact Number"
-                              />
-                            </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
-                                Secondary Contact Number
-                              </Form.Label>
-                              <Form.Control
-                                type="text"
-                                className=""
-                                id="product-name-add"
-                                placeholder="Enter the Secondary Contact Number"
-                              />
-                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
