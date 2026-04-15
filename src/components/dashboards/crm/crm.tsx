@@ -10,6 +10,7 @@ import {
   Button,
   Form,
   Accordion,
+  Modal,
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
@@ -19,7 +20,7 @@ import Swal from "sweetalert2";
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -193,11 +194,11 @@ const FileUploadCell = ({
       window.open(fileUrl);
     }
   };
-
+  console.log(file, value?.fileName);
   return (
     <div className="file-upload-cell">
       <label className="upload-btn">
-        {file || fileUrl || value?.fileName ? "Replace" : "Upload"}
+        {file || fileUrl || value?.fileName ? "upload" : "Upload"}
         <input
           type="file"
           hidden
@@ -453,7 +454,7 @@ const Crm = () => {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
+    setLoading(false);
     try {
       const [Utility, Proposal, customer] = await Promise.all([
         getApi("Uitility"),
@@ -480,6 +481,7 @@ const Crm = () => {
       setLoading(false);
     } catch (err) {
       console.error(err);
+      setLoading(false);
     }
   };
 
@@ -539,6 +541,41 @@ const Crm = () => {
     });
   }
 
+  const [btnLoading, setBtnLoading] = useState(false);
+
+  const modalSubmit = async () => {
+    setBtnLoading(true);
+    console.log("proposalData", proposalData);
+    const row = proposalData[0];
+    const payload = {
+      proposalNumber: row.proposalNumber,
+      firmId: Number(row.firmId),
+      customerId: 0,
+      proposalDate: row.proposalDate,
+      leadGenerator: row.leadGenerator,
+      projectDetails: row.projectDetails,
+      departmentId: Number(row.departmentId),
+      estimatedHours: Number(row.estimatedHours),
+      businessUnitId: Number(row.businessUnitId),
+      status: row.status,
+      comments: row.comments,
+      documentData: row.file?.base64,
+      year: row.year,
+      fileName: row.file.fileName,
+    };
+    console.log("row", payload);
+    try {
+      await postApi("Proposal", payload);
+
+      fetchData();
+      setBtnLoading(false);
+      setShowProposalModal(false);
+      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+    } catch (err) {
+      setBtnLoading(false);
+      toast.error("Pease try again", { autoClose: 1500 });
+    }
+  };
   const handleOfferSubmit = async (row: OfferRow) => {
     console.log("row", row);
     const payload = {
@@ -610,7 +647,86 @@ const Crm = () => {
       },
     });
   };
+  const createEmptyRow = () => ({
+    id: Date.now(),
+    year: "",
+    firmId: "",
+    proposalNumber: "",
+    proposalDate: "",
+    customerId: "",
+    leadGenerator: "",
+    projectDetails: "",
+    businessUnitId: "",
+    departmentId: "",
+    estimatedHours: "",
+    status: "",
+    comments: "",
+    file: null,
+    fileUrl: null,
+  });
 
+  const updateModalRow = (id, field, value) => {
+    setEditProposalData((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+  };
+
+  const updateAddProposalRow = (id, field, value) => {
+    setProposalData((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+  };
+
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [proposalData, setProposalData] = useState([]);
+  const addProposal = () => {
+    setProposalData([createEmptyRow()]); // or [] if no row needed
+    setShowProposalModal(true);
+  };
+  //------Edit row table --------//
+  const [showEditModal, setEditModal] = useState(false);
+  const [editPropodaData, setEditProposalData] = useState([]);
+
+  const handleEditProposalData = (row) => {
+    setEditProposalData([{ ...row }]);
+    setEditModal(true);
+  };
+
+  const handleUpdateProposalData = async () => {
+    try {
+      const row = editPropodaData[0];
+      console.log("wor", row);
+      const payload = {
+        proposalNumber: row.proposalNumber,
+        firmId: Number(row.firmId),
+        customerId: 0,
+        proposalDate: row.proposalDate,
+        leadGenerator: row.leadGenerator,
+        projectDetails: row.projectDetails,
+        departmentId: Number(row.departmentId),
+        estimatedHours: Number(row.estimatedHours),
+        businessUnitId: Number(row.businessUnitId),
+        status: row.status,
+        comments: row.comments,
+        documentData: row.documentData,
+        year: row.year,
+        fileName: "test", //row.fileName,
+      };
+
+      await postApi("Proposal", payload);
+
+      // ✅ Update main table instantly
+      setOfferData((prev) =>
+        prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
+      );
+
+      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+
+      setEditModal(false);
+    } catch (err) {
+      toast.error("Update failed", { autoClose: 1500 });
+    }
+  };
   // ── Add Row Button ───────────────────────────────────────────────────────
 
   const AddRowButton = ({ onClick }: { onClick: () => void }) => (
@@ -672,6 +788,7 @@ const Crm = () => {
     <Fragment>
       {!loading ? (
         <Fragment>
+          <ToastContainer />
           <Seo title={"Revenue"} />
           <Pageheader
             title="Dashboard"
@@ -687,13 +804,23 @@ const Crm = () => {
               <Card className="custom-card">
                 <Card.Header className="pb-2 justify-content-between table-toolbar">
                   <Card.Title>OFFER DETAILS</Card.Title>
-                  <div className="search-box">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
+                  <div className="d-flex justify-content-between gap-2">
+                    <SpkButton
+                      Buttonvariant="danger"
+                      Size="sm"
+                      Customclass="btn"
+                      onClickfunc={addProposal}
+                    >
+                      Add Proposal
+                    </SpkButton>
+                    <div className="search-box ml-2 mr-2">
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </Card.Header>
 
@@ -719,16 +846,17 @@ const Crm = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredOfferData.map((row) => (
+                        {filteredOfferData.map((row, index) => (
                           <tr key={row.id}>
                             {/* ID */}
-                            <td>{row.id}</td>
+                            <td>{index + 1}</td>
 
                             {/* Financial Year */}
                             <td>
                               <select
                                 className="form-control"
                                 value={row.year || ""}
+                                disabled
                                 onChange={(e) =>
                                   updateOfferRow(row.id, "year", e.target.value)
                                 }
@@ -748,6 +876,7 @@ const Crm = () => {
                               <select
                                 className="form-select"
                                 value={row.firmId}
+                                disabled
                                 onChange={(e) =>
                                   updateOfferRow(
                                     row.id,
@@ -773,6 +902,7 @@ const Crm = () => {
                             <td>
                               <input
                                 className="form-control mb-1"
+                                disabled
                                 value={row.proposalNumber}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -795,7 +925,7 @@ const Crm = () => {
                                     fileUrl: null,
                                   });
                                 }}
-                                onRemove={() => removeOfferFile(row.id)}
+                                //onRemove={() => removeOfferFile(row.id)}
                               />
                             </td>
 
@@ -803,6 +933,7 @@ const Crm = () => {
                             <td>
                               <SpkDatepickr
                                 className="form-control"
+                                disabled
                                 selected={
                                   row.proposalDate
                                     ? new Date(row.proposalDate)
@@ -821,6 +952,7 @@ const Crm = () => {
                             <td>
                               <select
                                 className="form-select"
+                                disabled
                                 value={row.firmId}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -844,31 +976,13 @@ const Crm = () => {
                                   <option disabled>No options available</option>
                                 )}
                               </select>
-                              {/* <input
-                                className="form-control mb-1"
-                                value={row.customer}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "customer",
-                                    e.target.value,
-                                  )
-                                }
-                              /> */}
-                              <SpkButton
-                                Buttonvariant="danger"
-                                Size="sm"
-                                Customclass="btn"
-                                onClickfunc={openAddCustomer}
-                              >
-                                Add User
-                              </SpkButton>
                             </td>
 
                             {/* Lead Generator */}
                             <td>
                               <select
                                 className="form-select"
+                                disabled
                                 value={row.leadGenerator}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -898,6 +1012,7 @@ const Crm = () => {
                             <td>
                               <input
                                 className="form-control"
+                                disabled
                                 value={row.projectDetails}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -913,6 +1028,7 @@ const Crm = () => {
                             <td>
                               <select
                                 className="form-select"
+                                disabled
                                 value={row.businessUnitId}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -942,6 +1058,7 @@ const Crm = () => {
                             <td>
                               <select
                                 className="form-select"
+                                disabled
                                 value={row.departmentId}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -967,6 +1084,7 @@ const Crm = () => {
                             <td>
                               <input
                                 type="number"
+                                disabled
                                 className="form-control"
                                 value={row.estimatedHours}
                                 onChange={(e) =>
@@ -983,6 +1101,7 @@ const Crm = () => {
                             <td>
                               <select
                                 className="form-select"
+                                disabled
                                 value={row.status}
                                 onChange={(e) =>
                                   updateOfferRow(
@@ -1005,6 +1124,7 @@ const Crm = () => {
                             <td>
                               <input
                                 className="form-control"
+                                disabled
                                 value={row.comments ?? ""}
                                 placeholder="Comments"
                                 onChange={(e) =>
@@ -1019,19 +1139,10 @@ const Crm = () => {
 
                             {/* Actions */}
                             <td className="text-center">
-                              <button
-                                className="btn btn-primary btn-sm"
-                                style={{
-                                  whiteSpace: "nowrap",
-                                  fontSize: "12px",
-                                }}
-                                onClick={() => handleOfferSubmit(row)}
-                              >
-                                Submit
-                              </button>
                               <br />
                               <button
                                 className="btn btn-danger btn-sm mt-1"
+                                onClick={() => handleEditProposalData(row)}
                                 style={{
                                   whiteSpace: "nowrap",
                                   fontSize: "12px",
@@ -1047,7 +1158,7 @@ const Crm = () => {
                   </div>
 
                   {/* Add Row */}
-                  <AddRowButton onClick={addOfferRow} />
+                  {/* <AddRowButton onClick={addOfferRow} /> */}
                 </Card.Body>
               </Card>
             </Col>
@@ -1078,9 +1189,17 @@ const Crm = () => {
 
                   <Accordion.Body className="p-0">
                     <div
-                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      className="d-flex justify-content-end px-3 pt-3 pb-2 gap-3"
                       style={{ borderBottom: "1px solid #f0f0f0" }}
                     >
+                      <SpkButton
+                        Buttonvariant="danger"
+                        Size="sm"
+                        Customclass="btn"
+                        //onClickfunc={addProposal}
+                      >
+                        Add Order Details
+                      </SpkButton>
                       <div className="search-box">
                         <input type="text" placeholder="Search..." />
                       </div>
@@ -1119,15 +1238,6 @@ const Crm = () => {
                                       "proposalNumber",
                                       e.target.value,
                                     )
-                                  }
-                                />
-                                <FileUploadCell
-                                  file={poRow.file}
-                                  onUpload={(f) =>
-                                    updatePoRow(poRow.id, "file", f)
-                                  }
-                                  onRemove={() =>
-                                    updatePoRow(poRow.id, "file", null)
                                   }
                                 />
                               </td>
@@ -1689,6 +1799,15 @@ const Crm = () => {
                                     )
                                   }
                                 />
+                                <FileUploadCell
+                                  file={row.file}
+                                  onUpload={(f) =>
+                                    updateInvoiceRow(row.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updateInvoiceRow(row.id, "file", null)
+                                  }
+                                />
                               </td>
 
                               {/* Documents */}
@@ -1873,6 +1992,661 @@ const Crm = () => {
           <div className="spinner-border text-primary" role="status" />
         </div>
       )}
+      <Modal
+        show={showProposalModal}
+        onHide={() => setShowProposalModal(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Proposal</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover">
+              <thead className="table-primary">
+                <tr>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Financial Year
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Firm
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Proposal No
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Date
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Customer
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Lead Generator
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Project Details
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Business Unit
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Department
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Efforts
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Status
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Comments
+                  </th>
+                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {proposalData.map((row) => (
+                  <tr key={row.id}>
+                    {/* Financial Year */}
+                    <td>
+                      <select
+                        className="form-control"
+                        value={row.year || ""}
+                        onChange={(e) =>
+                          updateAddProposalRow(row.id, "year", e.target.value)
+                        }
+                      >
+                        <option value="">Select Financial Year</option>
+                        {financialYears.map((fy) => (
+                          <option key={fy} value={fy}>
+                            {fy}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Firm */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.firmId}
+                        onChange={(e) =>
+                          updateAddProposalRow(row.id, "firmId", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        {firms.length > 0 ? (
+                          firms.map((opt) => (
+                            <option key={opt.firmId} value={opt.firmId}>
+                              {opt.firmName}
+                            </option>
+                          ))
+                        ) : (
+                          <option disabled>No options available</option>
+                        )}
+                      </select>
+                    </td>
+
+                    {/* Proposal No */}
+                    <td>
+                      <input
+                        className="form-control mb-1"
+                        value={row.proposalNumber}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "proposalNumber",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <FileUploadCell
+                        file={row.file}
+                        fileUrl={row.fileUrl}
+                        value={row}
+                        onUpload={async (f) => {
+                          const base64 = await fileToBase64(f);
+                          updateAddProposalRow(row.id, "file", {
+                            file: f,
+                            base64: base64,
+                            fileName: f.name, // store base64 if needed
+                            fileUrl: null,
+                          });
+                        }}
+                        onRemove={() => removeOfferFile(row.id)}
+                      />
+                    </td>
+
+                    {/* Date */}
+                    <td>
+                      <SpkDatepickr
+                        className="form-control"
+                        selected={
+                          row.proposalDate ? new Date(row.proposalDate) : null
+                        }
+                        onChange={(date) =>
+                          updateAddProposalRow(row.id, "proposalDate", date)
+                        }
+                        placeholderText="Choose date"
+                      />
+                    </td>
+
+                    {/* Customer */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.customerId || ""}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "customerId",
+                            e.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Select</option>
+                        {customerInfo.map((opt) => (
+                          <option key={opt.customerId} value={opt.customerId}>
+                            {opt.customerName}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        className="btn btn-danger btn-sm mt-1"
+                        onClick={openAddCustomer}
+                      >
+                        Add User
+                      </button>
+                    </td>
+
+                    {/* Lead Generator */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.leadGenerator}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "leadGenerator",
+                            e.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Select</option>
+                        {employees.map((opt) => (
+                          <option key={opt.employeeId} value={opt.employeeId}>
+                            {opt.employeeName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Project Details */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={row.projectDetails}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "projectDetails",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Business Unit */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.businessUnitId}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "businessUnitId",
+                            e.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Select</option>
+                        {businessUnits.map((opt) => (
+                          <option
+                            key={opt.businessUnitId}
+                            value={opt.businessUnitId}
+                          >
+                            {opt.businessUnitName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Department */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.departmentId}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "departmentId",
+                            e.target.value,
+                          )
+                        }
+                      >
+                        <option value="">Select</option>
+                        {departments.map((opt) => (
+                          <option
+                            key={opt.departmentId}
+                            value={opt.departmentId}
+                          >
+                            {opt.departmentName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Efforts */}
+                    <td>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={row.estimatedHours}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "estimatedHours",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={row.status}
+                        onChange={(e) =>
+                          updateAddProposalRow(row.id, "status", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        {dropdownOptions.status.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Comments */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={row.comments || ""}
+                        onChange={(e) =>
+                          updateAddProposalRow(
+                            row.id,
+                            "comments",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Actions */}
+                    <td className="text-center">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={modalSubmit}
+                        disabled={btnLoading}
+                      >
+                        {btnLoading ? (
+                          <>
+                            <span
+                              className="spinner-border spinner-border-sm me-1"
+                              role="status"
+                            ></span>
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit"
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+      </Modal>
+
+      <Modal
+        show={showEditModal}
+        onHide={() => setEditModal(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Proposal</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div className="table-responsive">
+            <div className="table-responsive app-table-wrapper">
+              <table className="table table-bordered table-hover app-table">
+                <thead className="table-primary">
+                  <tr>
+                    <th>Financial Year</th>
+                    <th>Firm</th>
+                    <th>Proposal No</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Lead Generator</th>
+                    <th>Project Details</th>
+                    <th>Business Unit</th>
+                    <th>Department</th>
+                    <th>Efforts</th>
+                    <th>Status</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editPropodaData.map((row) => (
+                    <tr key={row.id}>
+                      {/* ID */}
+
+                      {/* Financial Year */}
+                      <td>
+                        <select
+                          className="form-control"
+                          value={row.year || ""}
+                          onChange={(e) => {
+                            updateModalRow(row.id, "year", e.target.value);
+                            console.log("working", e.target.value);
+                          }}
+                        >
+                          <option value="">Select Financial Year</option>
+
+                          {financialYears.map((fy) => (
+                            <option key={fy} value={fy}>
+                              {fy}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Firm */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.firmId}
+                          onChange={(e) =>
+                            updateModalRow(row.id, "firmId", e.target.value)
+                          }
+                        >
+                          <option value="">Select</option>
+                          {firms.length > 0 ? (
+                            firms.map((opt) => (
+                              <option key={opt.firmId} value={opt.firmId}>
+                                {opt.firmName}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No options available</option>
+                          )}
+                        </select>
+                      </td>
+
+                      {/* Proposal No + Upload */}
+                      <td>
+                        <input
+                          className="form-control mb-1"
+                          value={row.proposalNumber}
+                          onChange={(e) =>
+                            updateModalRow(
+                              row.id,
+                              "proposalNumber",
+                              e.target.value,
+                            )
+                          }
+                        />
+                        <FileUploadCell
+                          file={row.file}
+                          fileUrl={row.fileUrl}
+                          value={row}
+                          onUpload={async (f) => {
+                            const base64 = await fileToBase64(f);
+                            updateAddProposalRow(row.id, "file", {
+                              file: f,
+                              base64: base64,
+                              fileName: f.name, // store base64 if needed
+                              fileUrl: null,
+                            });
+                          }}
+                          onRemove={() => removeOfferFile(row.id)}
+                        />
+                      </td>
+
+                      {/* Date */}
+                      <td>
+                        <SpkDatepickr
+                          className="form-control"
+                          selected={
+                            row.proposalDate ? new Date(row.proposalDate) : null
+                          }
+                          onChange={(date) => {
+                            updateModalRow(row.id, "proposalDate", date);
+
+                            console.log(date); // ✅ correct
+                          }}
+                          placeholderText="Choose date"
+                        />
+                      </td>
+
+                      {/* Customer */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.firmId}
+                          onChange={(e) =>
+                            updateModalRow(row.id, "firmId", e.target.value)
+                          }
+                        >
+                          <option value="">Select</option>
+                          {customerInfo.length > 0 ? (
+                            customerInfo.map((opt) => (
+                              <option
+                                key={opt.customerId}
+                                value={opt.customerId}
+                              >
+                                {opt.customerName}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No options available</option>
+                          )}
+                        </select>
+                      </td>
+
+                      {/* Lead Generator */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.leadGenerator}
+                          onChange={(e) =>
+                            updateModalRow(
+                              row.id,
+                              "leadGenerator",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {employees.length > 0 ? (
+                            employees.map((opt) => (
+                              <option
+                                key={opt.employeeId}
+                                value={opt.employeeId}
+                              >
+                                {opt.employeeName}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No options available</option>
+                          )}
+                        </select>
+                      </td>
+
+                      {/* Project Details */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={row.projectDetails}
+                          onChange={(e) =>
+                            updateModalRow(
+                              row.id,
+                              "projectDetails",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Business Unit */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.businessUnitId}
+                          onChange={(e) =>
+                            updateModalRow(
+                              row.id,
+                              "businessUnitId",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {businessUnits.length > 0 ? (
+                            businessUnits.map((opt) => (
+                              <option
+                                key={opt.businessUnitId}
+                                value={opt.businessUnitId}
+                              >
+                                {opt.businessUnitName}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No options available</option>
+                          )}
+                        </select>
+                      </td>
+
+                      {/* Department */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.departmentId}
+                          onChange={(e) =>
+                            updateModalRow(
+                              row.id,
+                              "departmentId",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {departments.map((opt) => (
+                            <option
+                              key={opt.departmentId}
+                              value={opt.departmentId}
+                            >
+                              {opt.departmentName}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Efforts / Hours */}
+                      <td>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={row.estimatedHours}
+                          onChange={(e) =>
+                            updateModalRow(row.id, "hours", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={row.status}
+                          onChange={(e) =>
+                            updateModalRow(row.id, "status", e.target.value)
+                          }
+                        >
+                          <option value="">Select</option>
+                          {dropdownOptions.status.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Comments */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={row.comments ?? ""}
+                          placeholder="Comments"
+                          onChange={(e) =>
+                            updateModalRow(row.id, "comments", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      {/* Actions */}
+                      <td className="text-center">
+                        <br />
+                        <button
+                          className="btn btn-danger btn-sm mt-1"
+                          onClick={() => handleUpdateProposalData(row)}
+                          style={{
+                            whiteSpace: "nowrap",
+                            fontSize: "12px",
+                          }}
+                        >
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </Fragment>
   );
 };
