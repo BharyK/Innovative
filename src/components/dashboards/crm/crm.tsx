@@ -24,6 +24,7 @@ import { toast } from "react-toastify";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface OfferRow {
+  year: string;
   id: number;
   firmId: string;
   file: File | null;
@@ -165,57 +166,79 @@ const createEmptyPaymentRow = (): PaymentRow => ({
 
 // ─── Reusable File Upload Cell ────────────────────────────────────────────────
 
+type FileUploadCellProps = {
+  file: File | null;
+  fileUrl?: string | null;
+  value?: {
+    fileName?: string;
+  };
+  onUpload: (f: File) => void;
+  onRemove: () => void;
+};
+
 const FileUploadCell = ({
   file,
   fileUrl,
+  value,
   onUpload,
   onRemove,
-  value,
-}: {
-  file: File | null;
-  fileUrl?: string | null;
-  onUpload: (f: File) => void;
-  onRemove: () => void;
-}) => (
-  <div className="file-upload-cell">
-    <label className="upload-btn">
-      {file || fileUrl ? "Replace" : "Upload"}
-      <input
-        type="file"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onUpload(f);
-        }}
-      />
-    </label>
-    {(file || fileUrl) && (
-      <div className="file-info">
-        <div className="file-top">
-          <button
-            className="btn btn-sm btn-link p-0"
-            onClick={() => {
-              if (file) {
-                const url = URL.createObjectURL(file);
-                window.open(url);
-              } else if (fileUrl) {
-                window.open(fileUrl);
-              }
-            }}
-          >
-            📄 {file ? file.name : value.fileName}
-          </button>
-          <button className="remove-file-btn" onClick={onRemove}>
-            ✕
-          </button>
+}: FileUploadCellProps) => {
+  const fileName = file?.name || value?.fileName || "No file";
+
+  const handlePreview = () => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      window.open(url);
+    } else if (fileUrl) {
+      window.open(fileUrl);
+    }
+  };
+
+  return (
+    <div className="file-upload-cell">
+      <label className="upload-btn">
+        {file || fileUrl || value?.fileName ? "Replace" : "Upload"}
+        <input
+          type="file"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onUpload(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+
+      {(file || fileUrl || value?.fileName) && (
+        <div className="file-info">
+          <div className="file-top">
+            <button
+              type="button"
+              className="btn btn-sm btn-link p-0"
+              onClick={handlePreview}
+            >
+              📄 {fileName}
+            </button>
+
+            <button
+              type="button"
+              className="remove-file-btn"
+              onClick={onRemove}
+            >
+              ✕
+            </button>
+          </div>
+
+          {file && (
+            <span className="file-size">
+              {(file.size / 1024).toFixed(1)} KB
+            </span>
+          )}
         </div>
-        {file && (
-          <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
-        )}
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+};
 
 // ─── Invoice Milestone Cell ───────────────────────────────────────────────────
 
@@ -530,7 +553,9 @@ const Crm = () => {
       businessUnitId: Number(row.businessUnitId),
       status: row.status,
       comments: row.comments,
-      documentData: row.file?.file,
+      documentData: row.file?.base64,
+      year: row.year,
+      fileName: row.fileName,
     };
     console.log("row", payload);
     try {
@@ -703,13 +728,9 @@ const Crm = () => {
                             <td>
                               <select
                                 className="form-control"
-                                value={row.financialYear || ""}
+                                value={row.year || ""}
                                 onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "financialYear",
-                                    e.target.value,
-                                  )
+                                  updateOfferRow(row.id, "year", e.target.value)
                                 }
                               >
                                 <option value="">Select Financial Year</option>
@@ -766,15 +787,12 @@ const Crm = () => {
                                 fileUrl={row.fileUrl}
                                 value={row}
                                 onUpload={async (f) => {
-                                  console.log("original file:", f);
-
                                   const base64 = await fileToBase64(f);
-
-                                  console.log("base64:", base64);
-
                                   updateOfferRow(row.id, "file", {
-                                    file: base64,
-                                    base64: base64, // store base64 if needed
+                                    file: f,
+                                    base64: base64,
+                                    fileName: f.name, // store base64 if needed
+                                    fileUrl: null,
                                   });
                                 }}
                                 onRemove={() => removeOfferFile(row.id)}

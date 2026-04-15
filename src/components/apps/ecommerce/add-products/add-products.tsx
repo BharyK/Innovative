@@ -6,6 +6,51 @@ import SpkDatepickr from "../../../../shared/@spk-reusable-components/reusable-p
 import { genderTagOption } from "../../../../shared/data/apps/ecommerce/editproductsdata";
 
 const AddProduct = () => {
+  const [generalData, setGeneralData] = useState({
+    customerName: "",
+    geography: "",
+    internalCustomerNumber: "",
+    tradingCurrency: "",
+    date: null as Date | null,
+    serviceIds: [] as number[],
+    customerDescription: "",
+    gstNumber: "",
+    vatNumber: "",
+    paymentTerms: "",
+    registeredAddress: "",
+    billingAddress: "",
+    shippingAddress: "",
+  });
+  const [departments, setDepartments] = useState({
+    1: {
+      departmentTypeId: 1,
+    }, // Purchase
+    2: {}, // Accounts
+    3: {}, // Technical
+  });
+
+  const handleGeneralChange = (key: string, value: any) => {
+    setGeneralData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleDeptChange = (deptId: number, key: string, value: any) => {
+    setDepartments((prev: any) => ({
+      ...prev,
+      [deptId]: {
+        ...prev[deptId],
+        [key]: value,
+      },
+    }));
+  };
+
+  const purchaseId = 1;
+  const accountId = 2;
+  const techinicalId = 3;
+  console.log("departments", departments);
+
   return (
     <Fragment>
       <Row>
@@ -276,118 +321,163 @@ const AddProduct = () => {
                             </div>
                           </div>
                           <Row className="gy-3">
-                            <Col xl={12} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className="text-start"
-                              >
+                            {/* Customer Name */}
+                            <Col xl={12}>
+                              <Form.Label className="text-start d-block">
                                 Customer Name
                               </Form.Label>
                               <Form.Control
                                 type="text"
-                                className=""
-                                id="product-name-add"
                                 placeholder="Name"
+                                value={generalData.customerName}
+                                onChange={(e) =>
+                                  handleGeneralChange(
+                                    "customerName",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
+
+                            {/* Geography */}
+                            <Col xl={6}>
+                              <Form.Label className="text-start d-block">
                                 Geography
                               </Form.Label>
                               <Form.Control
                                 type="text"
-                                className=""
-                                id="product-name-add"
                                 placeholder="Enter the Geography"
+                                value={generalData.geography}
+                                onChange={(e) =>
+                                  handleGeneralChange(
+                                    "geography",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
+
+                            {/* Internal Customer Number */}
+                            <Col xl={6}>
+                              <Form.Label className="text-start d-block">
                                 Internal Customer Number
                               </Form.Label>
                               <Form.Control
                                 type="text"
-                                className=""
-                                id="product-name-add"
                                 placeholder="Enter the Internal Customer Number"
+                                value={generalData.internalCustomerNumber}
+                                onChange={(e) =>
+                                  handleGeneralChange(
+                                    "internalCustomerNumber",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-name-add"
-                                className=""
-                              >
+
+                            {/* Trading Currency */}
+                            <Col xl={6}>
+                              <Form.Label className="text-start d-block">
                                 Trading Currency
                               </Form.Label>
                               <Form.Control
                                 type="text"
-                                className=""
-                                id="product-name-add"
                                 placeholder="Enter the Trading Currency"
+                                value={generalData.tradingCurrency}
+                                onChange={(e) =>
+                                  handleGeneralChange(
+                                    "tradingCurrency",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-category-add1"
-                                className=""
-                              >
+
+                            {/* Date */}
+                            <Col xl={6}>
+                              <Form.Label className="text-start d-block">
                                 Date
                               </Form.Label>
                               <SpkDatepickr
                                 className="form-control"
-                                dateFormat="yy/MM/dd"
-                                // selected={
-                                //   row.proposalDate
-                                //     ? new Date(row.proposalDate)
-                                //     : null
-                                // }
-                                // onChange={(date: Date | null) =>
-                                //   updateRow(row.id, "proposalDate", date)
-                                // }
+                                selected={generalData.date}
+                                onChange={(date: Date | null) =>
+                                  handleGeneralChange("date", date)
+                                }
                                 placeholderText="Choose date"
-                                // popperPlacement="bottom-start"
                               />
                             </Col>
-                            <Col xl={6} className="text-start">
-                              <Form.Label
-                                htmlFor="product-gender-add"
-                                className=""
-                              >
+
+                            {/* Service Offered (MULTI SELECT → serviceIds[]) */}
+                            <Col xl={6}>
+                              <Form.Label className="text-start d-block">
                                 Service Offered
                               </Form.Label>
                               <SpkSelect
-                                name="colors"
                                 option={genderTagOption}
-                                mainClass="basic-multi-select"
-                                menuplacement="auto"
-                                classNameprefix="Select2"
+                                isMulti
                                 placeholder="Select"
+                                styles={{
+                                  multiValue: (s) => ({
+                                    ...s,
+                                    backgroundColor: "rgb(3, 181, 98)",
+                                  }),
+                                  multiValueLabel: (s) => ({
+                                    ...s,
+                                    color: "#fff",
+                                  }),
+                                  multiValueRemove: (s) => ({
+                                    ...s,
+                                    color: "#fff",
+                                    ":hover": {
+                                      backgroundColor: "rgb(2, 150, 80)",
+                                      color: "#fff",
+                                    },
+                                  }),
+                                  control: (s, state) => ({
+                                    ...s,
+                                    borderColor: state.isFocused
+                                      ? "rgb(3, 181, 98)"
+                                      : s.borderColor,
+                                    boxShadow: state.isFocused
+                                      ? "0 0 0 1px rgb(3, 181, 98)"
+                                      : s.boxShadow,
+                                    ":hover": {
+                                      borderColor: "rgb(3, 181, 98)",
+                                    },
+                                  }),
+                                  option: (s, state) => ({
+                                    ...s,
+                                    backgroundColor: state.isSelected
+                                      ? "rgb(3, 181, 98)"
+                                      : state.isFocused
+                                        ? "rgba(3, 181, 98, 0.2)"
+                                        : "#fff",
+                                    color: state.isSelected ? "#fff" : "#000",
+                                  }),
+                                }}
                               />
                             </Col>
-                            <Col xl={12} className="text-start">
-                              <Form.Label
-                                htmlFor="product-description-add1"
-                                className=""
-                              >
+
+                            {/* Description */}
+                            <Col xl={12}>
+                              <Form.Label className="text-start d-block">
                                 Customer Description
                               </Form.Label>
                               <textarea
                                 className="form-control"
-                                id="product-description-add1"
                                 rows={2}
-                              ></textarea>
-                              <Form.Label
-                                htmlFor="product-description-add1"
-                                className="form-label mt-1 fs-12 text-muted mb-0"
-                              >
+                                value={generalData.customerDescription}
+                                onChange={(e) =>
+                                  handleGeneralChange(
+                                    "customerDescription",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <Form.Text className="text-muted">
                                 *Description should not exceed 500 letters
-                              </Form.Label>
+                              </Form.Text>
                             </Col>
                           </Row>
                         </Tab.Pane>
@@ -405,7 +495,7 @@ const AddProduct = () => {
                             </div>
                           </div>
                           <Row className="gy-3">
-                            <Col xl={12} className="text-start">
+                            <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-name-add"
                                 className="text-start"
@@ -417,6 +507,34 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter Primary Contact Person"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "contactPerson",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-name-add"
+                                className="text-start"
+                              >
+                                Primary Contact Person
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter Primary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "primaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
                             <Col xl={6} className="text-start">
@@ -431,6 +549,13 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter the Designation"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "designation",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
 
@@ -446,10 +571,17 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter the Email Address"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "emailAddress",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
                             <hr className="my-2 mt-4" />
-                            <Col xl={12} className="text-start">
+                            <Col xl={6} className="text-start">
                               <Form.Label
                                 htmlFor="product-category-add1"
                                 className=""
@@ -461,6 +593,34 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter the Secondary Contact Person"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "secondaryContactPerson",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+                            <Col xl={6} className="text-start">
+                              <Form.Label
+                                htmlFor="product-category-add1"
+                                className=""
+                              >
+                                Secondary Contact Number
+                              </Form.Label>
+                              <Form.Control
+                                type="text"
+                                className=""
+                                id="product-name-add"
+                                placeholder="Enter the Secondary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "secondaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
                             <Col xl={6} className="text-start">
@@ -475,6 +635,13 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter the Designation"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "designation",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
 
@@ -490,6 +657,13 @@ const AddProduct = () => {
                                 className=""
                                 id="product-name-add"
                                 placeholder="Enter the Email"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "emailAddress",
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </Col>
                             <Col xl={12} className="text-start">
@@ -503,6 +677,15 @@ const AddProduct = () => {
                                 className="form-control"
                                 id="product-description-add1"
                                 rows={2}
+                                onChange={(
+                                  e: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) =>
+                                  handleDeptChange(
+                                    purchaseId,
+                                    "departmentDescription",
+                                    e.target.value,
+                                  )
+                                }
                               ></textarea>
                               <Form.Label
                                 htmlFor="product-description-add1"
