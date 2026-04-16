@@ -194,7 +194,7 @@ const FileUploadCell = ({
       window.open(fileUrl);
     }
   };
-  console.log(file, value?.fileName);
+
   return (
     <div className="file-upload-cell">
       <label className="upload-btn">
@@ -441,6 +441,7 @@ const Crm = () => {
   // ── Fetch ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState<boolean>(true);
   const [customerInfo, setCustomerInfo] = useState<any>([]);
+  const [orderDetailsData, setOrderDetailsData] = useState<any>([]);
   const base64ToBlobUrl = (base64: string, mimeType = "application/pdf") => {
     const byteCharacters = atob(base64);
     const byteArray = new Uint8Array(
@@ -456,16 +457,18 @@ const Crm = () => {
   const fetchData = async () => {
     setLoading(false);
     try {
-      const [Utility, Proposal, customer] = await Promise.all([
+      const [Utility, Proposal, customer, order] = await Promise.all([
         getApi("Uitility"),
         getApi("Proposal"),
         getApi("api/Customers"),
+        getApi("Order"),
       ]);
       setBusinessUnits(Utility.data.businessUnits);
       setDepartments(Utility.data.departments);
       setEmployees(Utility.data.employees);
       setCustomerInfo(customer.data);
       setFirms(Utility.data.firms);
+      setOrderDetailsData(order.data);
 
       const mapped: OfferRow[] = Proposal.data.map(
         (item: any, index: number) => ({
@@ -693,7 +696,6 @@ const Crm = () => {
   };
 
   const handleUpdateProposalData = async (rows) => {
-   
     try {
       const row = editPropodaData[0];
       console.log("wor", row);
@@ -712,10 +714,10 @@ const Crm = () => {
         documentData: row.documentData,
         year: row.year,
         fileName: row.fileName,
-        proposalId:rows.proposalId
+        proposalId: rows.proposalId,
       };
 
-     await putApi(`Proposal/${rows.proposalId}`, payload);
+      await putApi(`Proposal/${rows.proposalId}`, payload);
 
       // ✅ Update main table instantly
       setOfferData((prev) =>
@@ -785,6 +787,129 @@ const Crm = () => {
   };
   const financialYears = getFinancialYears();
   // ─── Render ──────────────────────────────────────────────────────────────
+
+  const [orderDetailsPopUp, setOrderDetailsPopup] = useState(false);
+  const [editOrderDetails, setEditOrderDetails] = useState([]);
+  const [orderEditDetailsPopUp, setOrderEditDetailsPopup] = useState(false);
+  const addOrderDetails = () => {
+    setOrderDetailsPopup(true);
+  };
+  const handleUpdateOrderDetails = async (row: any) => {
+    console.log(row);
+    const payload = {
+      proposalId: row.projectId,
+      orderNumber: row.orderNo,
+      orderDate: row.orderDate,
+      orderValue: row.orderAmount,
+      orderCurrency: row.orderValue,
+      orderValueInr: String(row.orderValueINR),
+      conversionRate: Number(row.conversionRate),
+      status: row.status,
+      invoiceMilestones: row.invoiceMilestone,
+      businessUnitId: Number(row.businessUnit),
+      projectName: "new",
+      comments: row.comments,
+    };
+    try {
+      await postApi("Order", payload);
+      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      fetchData();
+    } catch (err) {
+      toast.error("Techinicall Error", { autoClose: 1500 });
+    }
+  };
+
+  const handleEditOrderDetails = async (row: any) => {
+    console.log(row);
+
+    setEditOrderDetails([{ ...row }]);
+    setOrderEditDetailsPopup(true);
+  };
+  const updateEditOrdetailsRow = (
+    id: number,
+    field: keyof PurchaseOrderRow,
+    value: any,
+  ) =>
+    setEditOrderDetails((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+
+  const handleOrderDetailsUpdate = async (row) => {
+    console.log("row", row);
+    const payload = {
+      proposalId: row.projectId,
+      orderNumber: row.orderNo,
+      orderDate: row.orderDate,
+      orderValue: row.orderAmount,
+      orderCurrency: row.orderValue,
+      orderValueInr: String(row.orderValueINR),
+      conversionRate: Number(row.conversionRate),
+      status: row.status,
+      invoiceMilestones: row.invoiceMilestone,
+      businessUnitId: Number(row.businessUnit),
+      projectName: "new",
+      comments: row.comments,
+    };
+    try {
+      await putApi(`order/${row.id}`, payload);
+      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+    } catch (err) {
+      toast.error("Update failed", { autoClose: 1500 });
+    }
+  };
+
+  //-----------Invvoice Details------------/////
+
+  const [invoiceDetailsData, setInvoiceDetailsData] = useState([])
+  const [invoiceDetailsPopUp, setInvoiceDetailsPopup] = useState(false)
+  const [invoiceEditDetails, setInvoiceEditDetails]= useState([])
+  const [invoiceEditDetailsPopUp, setInvoiceEditDetailsPopUp] = useState(false)
+
+  const addInvoiceDetails = () => {
+    setInvoiceDetailsPopup(true)
+  }
+
+  const handleInvoiceAddDetails = (row:any) => {
+    console.log (row)
+    setInvoiceDetailsPopup(false)
+  }
+
+  const handleInvoiceEditDetails = (row:any) => {
+    console.log (row)
+    setInvoiceEditDetails([{ ...row }])
+    setInvoiceEditDetailsPopUp(true)
+  }
+
+  const handleInvoiceDetailsUpdate = (row:any) => {
+      console.log(row)
+      setInvoiceEditDetailsPopUp(false)
+  }
+
+  //----------Payment details -------------//
+  const [paymentDetailsData, setPaymentDetailsData] = useState([])
+  const [paymentDetailsPopUp, setPaymentDetailsPayment] = useState(false)
+  const [paymentEditPopUp, setPaymentEditPopUP] = useState(false)
+  const [paymentEditDetails, setPaymentEditDetails] = useState([])
+
+  const handlePaymentAddDetails = () => {
+    setPaymentDetailsPayment(true)
+  } 
+
+  const handlePaymentDetailsStore = (row:any) => {
+    console.log(row)
+    setPaymentDetailsPayment(false)
+  }
+
+  const handlePaymentEditDetails = (row:any) => {
+    console.log(row)
+    setPaymentEditDetails([{ ...row }])
+    setPaymentEditPopUP(true)
+  }
+
+  const handlePaymentUpdateDetails = (row) => {
+    setPaymentEditPopUP(false)
+  }
+  
 
   return (
     <Fragment>
@@ -1198,7 +1323,7 @@ const Crm = () => {
                         Buttonvariant="danger"
                         Size="sm"
                         Customclass="btn"
-                        //onClickfunc={addProposal}
+                        onClickfunc={addOrderDetails}
                       >
                         Add Order Details
                       </SpkButton>
@@ -1216,17 +1341,18 @@ const Crm = () => {
                             <th>Business Unit</th>
                             <th>Order No</th>
                             <th>Order Date</th>
+                            <th>Order Currency</th>
                             <th>Order Value</th>
                             <th>Conversion Rate</th>
                             <th>Order Value in INR</th>
                             <th>Invoice Milestones</th>
                             <th>Status</th>
-                            <th>Actions</th>
                             <th>Comments</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {purchaseOrderData.map((poRow) => (
+                          {orderDetailsData.map((poRow) => (
                             <tr key={poRow.id}>
                               {/* Proposal Number + Upload */}
                               <td>
@@ -1234,6 +1360,7 @@ const Crm = () => {
                                   className="form-control mb-1"
                                   value={poRow.proposalNumber}
                                   placeholder="Proposal number"
+                                  disabled
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
@@ -1250,6 +1377,7 @@ const Crm = () => {
                                   className="form-control"
                                   value={poRow.projectId}
                                   placeholder="Project ID"
+                                  disabled
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
@@ -1264,11 +1392,12 @@ const Crm = () => {
                               <td>
                                 <select
                                   className="form-select"
-                                  value={poRow.businessUnit}
+                                  value={poRow.businessUnitId}
+                                  disabled
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
-                                      "businessUnit",
+                                      "businessUnitId",
                                       e.target.value,
                                     )
                                   }
@@ -1289,12 +1418,13 @@ const Crm = () => {
                               <td>
                                 <input
                                   className="form-control mb-1"
-                                  value={poRow.orderNo}
+                                  value={poRow.orderNumber}
+                                  disabled
                                   placeholder="Order number"
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
-                                      "orderNo",
+                                      "orderNumber",
                                       e.target.value,
                                     )
                                   }
@@ -1305,6 +1435,7 @@ const Crm = () => {
                               <td>
                                 <SpkDatepickr
                                   className="form-control"
+                                  disabled
                                   selected={
                                     poRow.orderDate
                                       ? new Date(poRow.orderDate as string)
@@ -1317,38 +1448,41 @@ const Crm = () => {
                                   popperPlacement="bottom-start"
                                 />
                               </td>
-
+                              <td>
+                                <select
+                                  className="form-select"
+                                  disabled
+                                  style={{ maxWidth: "110px" }}
+                                  value={poRow.orderCurrency}
+                                  onChange={(e) =>
+                                    updatePoRow(
+                                      poRow.id,
+                                      "orderCurrency",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Currency</option>
+                                  {dropdownOptions.currency.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
                               {/* Order Value (currency + amount) */}
                               <td>
                                 <div className="d-flex gap-1">
-                                  <select
-                                    className="form-select"
-                                    style={{ maxWidth: "110px" }}
+                                  <input
+                                    className="form-control"
+                                    disabled
+                                    type="number"
+                                    placeholder="Amount"
                                     value={poRow.orderValue}
                                     onChange={(e) =>
                                       updatePoRow(
                                         poRow.id,
                                         "orderValue",
-                                        e.target.value,
-                                      )
-                                    }
-                                  >
-                                    <option value="">Currency</option>
-                                    {dropdownOptions.currency.map((opt) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <input
-                                    className="form-control"
-                                    type="number"
-                                    placeholder="Amount"
-                                    value={poRow.orderAmount}
-                                    onChange={(e) =>
-                                      updatePoRow(
-                                        poRow.id,
-                                        "orderAmount",
                                         e.target.value,
                                       )
                                     }
@@ -1361,6 +1495,7 @@ const Crm = () => {
                                 <input
                                   className="form-control"
                                   value={poRow.conversionRate}
+                                  disabled
                                   placeholder="Rate"
                                   onChange={(e) =>
                                     updatePoRow(
@@ -1376,12 +1511,13 @@ const Crm = () => {
                               <td>
                                 <input
                                   className="form-control"
-                                  value={poRow.orderValueINR}
+                                  disabled
+                                  value={poRow.orderValueInr}
                                   placeholder="INR value"
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
-                                      "orderValueINR",
+                                      "orderValueInr",
                                       e.target.value,
                                     )
                                   }
@@ -1393,6 +1529,7 @@ const Crm = () => {
                                 <InvoiceMilestoneCell
                                   rowId={poRow.id}
                                   value={poRow.invoiceMilestone}
+                                  disabled
                                   onSave={(val) =>
                                     updatePoRow(
                                       poRow.id,
@@ -1408,6 +1545,7 @@ const Crm = () => {
                                 <select
                                   className="form-select"
                                   value={poRow.status}
+                                  disabled
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
@@ -1425,35 +1563,12 @@ const Crm = () => {
                                 </select>
                               </td>
 
-                              {/* Actions */}
-                              <td className="text-center">
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  Submit
-                                </button>
-                                <br />
-                                <button
-                                  className="btn btn-danger btn-sm mt-1"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                              </td>
-
-                              {/* Comments */}
                               <td>
                                 <input
                                   className="form-control"
                                   value={poRow.comments}
                                   placeholder="Comments"
+                                  disabled
                                   onChange={(e) =>
                                     updatePoRow(
                                       poRow.id,
@@ -1463,13 +1578,25 @@ const Crm = () => {
                                   }
                                 />
                               </td>
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handleEditOrderDetails(poRow)}
+                                >
+                                  Edit
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
 
-                    <AddRowButton onClick={addPoRow} />
+                    {/* <AddRowButton onClick={addPoRow} /> */}
                   </Accordion.Body>
                 </Accordion.Item>
 
@@ -1490,9 +1617,17 @@ const Crm = () => {
 
                   <Accordion.Body className="p-0">
                     <div
-                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      className="d-flex justify-content-end px-3 pt-3 pb-2 gap-3"
                       style={{ borderBottom: "1px solid #f0f0f0" }}
                     >
+                      <SpkButton
+                        Buttonvariant="danger"
+                        Size="sm"
+                        Customclass="btn"
+                        onClickfunc={addInvoiceDetails}
+                      >
+                        Add Invoice Details
+                      </SpkButton>
                       <div className="search-box">
                         <input type="text" placeholder="Search..." />
                       </div>
@@ -1505,14 +1640,16 @@ const Crm = () => {
                             <th>Proposal Number</th>
                             <th>Invoice Number</th>
                             <th>Invoice Date</th>
+                             <th>Invoice Currency</th>
                             <th>Invoice Value</th>
                             <th>Conversion Rate</th>
                             <th>Invoice Value (INR)</th>
                             <th>Payment Term</th>
                             <th>Due Date</th>
                             <th>Status</th>
-                            <th>Actions</th>
                             <th>Comments</th>
+                            <th>Actions</th>
+                            
                           </tr>
                         </thead>
                         <tbody>
@@ -1530,15 +1667,6 @@ const Crm = () => {
                                       "proposalNumber",
                                       e.target.value,
                                     )
-                                  }
-                                />
-                                <FileUploadCell
-                                  file={row.file}
-                                  onUpload={(f) =>
-                                    updateInvoiceRow(row.id, "file", f)
-                                  }
-                                  onRemove={() =>
-                                    updateInvoiceRow(row.id, "file", null)
                                   }
                                 />
                               </td>
@@ -1578,29 +1706,30 @@ const Crm = () => {
                                   popperPlacement="bottom-start"
                                 />
                               </td>
-
+                              <td>
+                                <select
+                                  className="form-select"
+                                  style={{ maxWidth: "110px" }}
+                                  value={row.invoiceValue}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceValue",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Currency</option>
+                                  {dropdownOptions.currency.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
                               {/* Invoice Value (currency + amount) */}
                               <td>
                                 <div className="d-flex gap-1">
-                                  <select
-                                    className="form-select"
-                                    style={{ maxWidth: "110px" }}
-                                    value={row.invoiceValue}
-                                    onChange={(e) =>
-                                      updateInvoiceRow(
-                                        row.id,
-                                        "invoiceValue",
-                                        e.target.value,
-                                      )
-                                    }
-                                  >
-                                    <option value="">Currency</option>
-                                    {dropdownOptions.currency.map((opt) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
                                   <input
                                     className="form-control"
                                     type="number"
@@ -1697,28 +1826,7 @@ const Crm = () => {
                               </td>
 
                               {/* Actions */}
-                              <td className="text-center">
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  Submit
-                                </button>
-                                <br />
-                                <button
-                                  className="btn btn-danger btn-sm mt-1"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                              </td>
-
+                             
                               {/* Comments */}
                               <td>
                                 <input
@@ -1734,13 +1842,26 @@ const Crm = () => {
                                   }
                                 />
                               </td>
+                               <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handleInvoiceEditDetails(row)}
+                                >
+                                  Edit
+                                </button>
+                              </td>
+
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
 
-                    <AddRowButton onClick={addInvoiceRow} />
+                    {/* <AddRowButton onClick={addInvoiceRow} /> */}
                   </Accordion.Body>
                 </Accordion.Item>
 
@@ -1761,9 +1882,17 @@ const Crm = () => {
 
                   <Accordion.Body className="p-0">
                     <div
-                      className="d-flex justify-content-end px-3 pt-3 pb-2"
+                      className="d-flex justify-content-end px-3 pt-3 pb-2 gap-3"
                       style={{ borderBottom: "1px solid #f0f0f0" }}
                     >
+                      <SpkButton
+                        Buttonvariant="danger"
+                        Size="sm"
+                        Customclass="btn"
+                        onClickfunc={handlePaymentAddDetails}
+                      >
+                        Add Payment Details
+                      </SpkButton>
                       <div className="search-box">
                         <input type="text" placeholder="Search..." />
                       </div>
@@ -1776,6 +1905,7 @@ const Crm = () => {
                             <th>Proposal Number</th>
                             <th>Documents</th>
                             <th>Value Received</th>
+                             <th>Currency</th>
                             <th>Amount Realised</th>
                             <th>Realised Date</th>
                             <th>Payment Status</th>
@@ -1799,15 +1929,6 @@ const Crm = () => {
                                       "proposalNumber",
                                       e.target.value,
                                     )
-                                  }
-                                />
-                                <FileUploadCell
-                                  file={row.file}
-                                  onUpload={(f) =>
-                                    updateInvoiceRow(row.id, "file", f)
-                                  }
-                                  onRemove={() =>
-                                    updateInvoiceRow(row.id, "file", null)
                                   }
                                 />
                               </td>
@@ -1839,11 +1960,8 @@ const Crm = () => {
                                   }
                                 />
                               </td>
-
-                              {/* Amount Realised (currency + amount) */}
-                              <td>
-                                <div className="d-flex gap-1">
-                                  <select
+                                  <td>
+                                     <select
                                     className="form-select"
                                     style={{ maxWidth: "110px" }}
                                     value={row.amountCurrency}
@@ -1862,6 +1980,11 @@ const Crm = () => {
                                       </option>
                                     ))}
                                   </select>
+                                  </td>
+                              {/* Amount Realised (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                 
                                   <input
                                     className="form-control"
                                     type="number"
@@ -1954,21 +2077,12 @@ const Crm = () => {
                               {/* Actions */}
                               <td className="text-center">
                                 <button
-                                  className="btn btn-primary btn-sm"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  Submit
-                                </button>
-                                <br />
-                                <button
                                   className="btn btn-danger btn-sm mt-1"
                                   style={{
                                     whiteSpace: "nowrap",
                                     fontSize: "12px",
                                   }}
+                                  onClick={() => handlePaymentEditDetails(row)}
                                 >
                                   Edit
                                 </button>
@@ -1979,7 +2093,7 @@ const Crm = () => {
                       </table>
                     </div>
 
-                    <AddRowButton onClick={addPaymentRow} />
+                    {/* <AddRowButton onClick={addPaymentRow} /> */}
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
@@ -1993,7 +2107,1469 @@ const Crm = () => {
         >
           <div className="spinner-border text-primary" role="status" />
         </div>
-      )}
+      )}<Modal
+        show={paymentEditPopUp}
+        onHide={() => setPaymentEditPopUP(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Update Payment Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+           <div className="table-responsive">
+                      <table className="table table-bordered table-hover app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Documents</th>
+                            <th>Value Received</th>
+                             <th>Currency</th>
+                            <th>Amount Realised</th>
+                            <th>Realised Date</th>
+                            <th>Payment Status</th>
+                            <th>Fluctuation Difference</th>
+                            <th>Comments</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paymentEditDetails.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Documents */}
+                              <td>
+                                <FileUploadCell
+                                  file={row.file}
+                                  onUpload={(f) =>
+                                    updatePaymentRow(row.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updatePaymentRow(row.id, "file", null)
+                                  }
+                                />
+                              </td>
+
+                              {/* Value Received */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.valueReceived}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "valueReceived",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                                  <td>
+                                     <select
+                                    className="form-select"
+                                    style={{ maxWidth: "110px" }}
+                                    value={row.amountCurrency}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountCurrency",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Currency</option>
+                                    {dropdownOptions.currency.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  </td>
+                              {/* Amount Realised (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                 
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.amountValue}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Realised Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.realisedDate
+                                      ? new Date(row.realisedDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "realisedDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                />
+                              </td>
+
+                              {/* Payment Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.paymentStatus}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "paymentStatus",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.paymentStatus.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Fluctuation */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.fluctuation}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "fluctuation",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Actions */}
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handlePaymentUpdateDetails(row)}
+                                >
+                                  Update
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+        
+      </Modal>
+       <Modal
+        show={paymentDetailsPopUp}
+        onHide={() => setPaymentDetailsPayment(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Payment Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+           <div className="table-responsive">
+                      <table className="table table-bordered table-hover app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Documents</th>
+                            <th>Value Received</th>
+                             <th>Currency</th>
+                            <th>Amount Realised</th>
+                            <th>Realised Date</th>
+                            <th>Payment Status</th>
+                            <th>Fluctuation Difference</th>
+                            <th>Comments</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paymentData.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Documents */}
+                              <td>
+                                <FileUploadCell
+                                  file={row.file}
+                                  onUpload={(f) =>
+                                    updatePaymentRow(row.id, "file", f)
+                                  }
+                                  onRemove={() =>
+                                    updatePaymentRow(row.id, "file", null)
+                                  }
+                                />
+                              </td>
+
+                              {/* Value Received */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.valueReceived}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "valueReceived",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                                  <td>
+                                     <select
+                                    className="form-select"
+                                    style={{ maxWidth: "110px" }}
+                                    value={row.amountCurrency}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountCurrency",
+                                        e.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value="">Currency</option>
+                                    {dropdownOptions.currency.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  </td>
+                              {/* Amount Realised (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                 
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.amountValue}
+                                    onChange={(e) =>
+                                      updatePaymentRow(
+                                        row.id,
+                                        "amountValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Realised Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.realisedDate
+                                      ? new Date(row.realisedDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "realisedDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                />
+                              </td>
+
+                              {/* Payment Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.paymentStatus}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "paymentStatus",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.paymentStatus.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Fluctuation */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.fluctuation}
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "fluctuation",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Actions */}
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handlePaymentDetailsStore(row)}
+                                >
+                                  Submit
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+        
+      </Modal>
+       <Modal
+        show={invoiceEditDetailsPopUp}
+        onHide={() => setInvoiceEditDetailsPopUp(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Update Invoice Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+           <div className="table-responsive">
+                      <table className="table table-bordered app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Invoice Number</th>
+                            <th>Invoice Date</th>
+                             <th>Invoice Currency</th>
+                            <th>Invoice Value</th>
+                            <th>Conversion Rate</th>
+                            <th>Invoice Value (INR)</th>
+                            <th>Payment Term</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Comments</th>
+                            <th>Actions</th>
+                            
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoiceEditDetails.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number + Upload */}
+                              <td>
+                                <input
+                                  className="form-control mb-1"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceNumber}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.invoiceDate
+                                      ? new Date(row.invoiceDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+                              <td>
+                                <select
+                                  className="form-select"
+                                  style={{ maxWidth: "110px" }}
+                                  value={row.invoiceValue}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceValue",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Currency</option>
+                                  {dropdownOptions.currency.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              {/* Invoice Value (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.invoiceAmount}
+                                    onChange={(e) =>
+                                      updateInvoiceRow(
+                                        row.id,
+                                        "invoiceAmount",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Conversion Rate */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.conversionRate}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "conversionRate",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Value INR (read-only) */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceValueINR}
+                                  readOnly
+                                />
+                              </td>
+
+                              {/* Payment Term */}
+                              <td>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={row.paymentTerm}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "paymentTerm",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Due Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.dueDate
+                                      ? new Date(row.dueDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(row.id, "dueDate", date)
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+
+                              {/* Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.status}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "status",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.status.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Actions */}
+                             
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                               <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handleInvoiceDetailsUpdate(row)}
+                                >
+                                  Update
+                                </button>
+                              </td>
+
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+      </Modal>
+       <Modal
+        show={invoiceDetailsPopUp}
+        onHide={() => setInvoiceDetailsPopup(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Invoice Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+           <div className="table-responsive">
+                      <table className="table table-bordered app-table mb-0">
+                        <thead className="table-primary">
+                          <tr>
+                            <th>Proposal Number</th>
+                            <th>Invoice Number</th>
+                            <th>Invoice Date</th>
+                             <th>Invoice Currency</th>
+                            <th>Invoice Value</th>
+                            <th>Conversion Rate</th>
+                            <th>Invoice Value (INR)</th>
+                            <th>Payment Term</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Comments</th>
+                            <th>Actions</th>
+                            
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoiceData.map((row) => (
+                            <tr key={row.id}>
+                              {/* Proposal Number + Upload */}
+                              <td>
+                                <input
+                                  className="form-control mb-1"
+                                  value={row.proposalNumber}
+                                  placeholder="Proposal number"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "proposalNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Number */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceNumber}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.invoiceDate
+                                      ? new Date(row.invoiceDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceDate",
+                                      date,
+                                    )
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+                              <td>
+                                <select
+                                  className="form-select"
+                                  style={{ maxWidth: "110px" }}
+                                  value={row.invoiceValue}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "invoiceValue",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Currency</option>
+                                  {dropdownOptions.currency.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              {/* Invoice Value (currency + amount) */}
+                              <td>
+                                <div className="d-flex gap-1">
+                                  <input
+                                    className="form-control"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={row.invoiceAmount}
+                                    onChange={(e) =>
+                                      updateInvoiceRow(
+                                        row.id,
+                                        "invoiceAmount",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Conversion Rate */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.conversionRate}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "conversionRate",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Invoice Value INR (read-only) */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceValueINR}
+                                  readOnly
+                                />
+                              </td>
+
+                              {/* Payment Term */}
+                              <td>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={row.paymentTerm}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "paymentTerm",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+
+                              {/* Due Date */}
+                              <td>
+                                <SpkDatepickr
+                                  className="form-control"
+                                  selected={
+                                    row.dueDate
+                                      ? new Date(row.dueDate as string)
+                                      : null
+                                  }
+                                  onChange={(date: Date | null) =>
+                                    updateInvoiceRow(row.id, "dueDate", date)
+                                  }
+                                  placeholderText="Choose date"
+                                  popperPlacement="bottom-start"
+                                />
+                              </td>
+
+                              {/* Status */}
+                              <td>
+                                <select
+                                  className="form-select"
+                                  value={row.status}
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "status",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {dropdownOptions.status.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Actions */}
+                             
+                              {/* Comments */}
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.comments}
+                                  placeholder="Comments"
+                                  onChange={(e) =>
+                                    updateInvoiceRow(
+                                      row.id,
+                                      "comments",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                               <td className="text-center">
+                                <button
+                                  className="btn btn-danger btn-sm mt-1"
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => handleInvoiceAddDetails(row)}
+                                >
+                                  Submit
+                                </button>
+                              </td>
+
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+      </Modal>
+      <Modal
+        show={orderEditDetailsPopUp}
+        onHide={() => setOrderEditDetailsPopup(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Update Order Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+            <table className="table table-bordered app-table mb-0 pb-4">
+              <thead className="table-primary">
+                <tr>
+                  <th>Proposal Number</th>
+                  <th>Project ID</th>
+                  <th>Business Unit</th>
+                  <th>Order No</th>
+                  <th>Order Date</th>
+                  <th>Order Currency</th>
+                  <th>Order Value</th>
+                  <th>Conversion Rate</th>
+                  <th>Order Value in INR</th>
+                  <th>Invoice Milestones</th>
+                  <th>Status</th>
+                  <th>Comments</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editOrderDetails.length > 0 &&
+                  editOrderDetails.map((poRow) => (
+                    <tr key={poRow.id}>
+                      {/* Proposal Number + Upload */}
+                      <td>
+                        <input
+                          className="form-control mb-1"
+                          value={poRow.proposalNumber}
+                          placeholder="Proposal number"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "proposalNumber",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Project ID */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={poRow.projectId}
+                          placeholder="Project ID"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "projectId",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Business Unit */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={poRow.businessUnitId}
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "businessUnitId",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {businessUnits.map((opt) => (
+                            <option
+                              key={opt.businessUnitId}
+                              value={opt.businessUnitId}
+                            >
+                              {opt.businessUnitName}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Order No */}
+                      <td>
+                        <input
+                          className="form-control mb-1"
+                          value={poRow.orderNumber}
+                          placeholder="Order number"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "orderNumber",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Order Date */}
+                      <td>
+                        <SpkDatepickr
+                          className="form-control"
+                          selected={
+                            poRow.orderDate
+                              ? new Date(poRow.orderDate as string)
+                              : null
+                          }
+                          onChange={(date: Date | null) =>
+                            updateEditOrdetailsRow(poRow.id, "orderDate", date)
+                          }
+                          placeholderText="Choose date"
+                          popperPlacement="bottom-start"
+                        />
+                      </td>
+                      <td>
+                        <select
+                          className="form-select"
+                          style={{ maxWidth: "110px" }}
+                          value={poRow.orderCurrency}
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "orderCurrency",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Currency</option>
+                          {dropdownOptions.currency.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      {/* Order Value (currency + amount) */}
+                      <td>
+                        <div className="d-flex gap-1">
+                          <input
+                            className="form-control"
+                            type="number"
+                            placeholder="Amount"
+                            value={poRow.orderValue}
+                            onChange={(e) =>
+                              updateEditOrdetailsRow(
+                                poRow.id,
+                                "orderValue",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                      </td>
+
+                      {/* Conversion Rate */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={poRow.conversionRate}
+                          placeholder="Rate"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "conversionRate",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Order Value INR */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={poRow.orderValueInr}
+                          placeholder="INR value"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "orderValueInr",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Invoice Milestone */}
+                      <td>
+                        <input
+                          className="form-control"
+                          value={poRow.invoiceMilestone}
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "invoiceMilestone",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <select
+                          className="form-select"
+                          value={poRow.status}
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "status",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {dropdownOptions.status.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td>
+                        <input
+                          className="form-control"
+                          value={poRow.comments}
+                          placeholder="Comments"
+                          onChange={(e) =>
+                            updateEditOrdetailsRow(
+                              poRow.id,
+                              "comments",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="text-center">
+                        <button
+                          className="btn btn-danger btn-sm mt-1"
+                          style={{
+                            whiteSpace: "nowrap",
+                            fontSize: "12px",
+                          }}
+                          onClick={() => handleOrderDetailsUpdate(poRow)}
+                        >
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+      </Modal>
+      <Modal
+        show={orderDetailsPopUp}
+        onHide={() => setOrderDetailsPopup(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Order Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+            <table className="table table-bordered app-table mb-0 pb-4">
+              <thead className="table-primary">
+                <tr>
+                  <th>Proposal Number</th>
+                  <th>Project ID</th>
+                  <th>Business Unit</th>
+                  <th>Order No</th>
+                  <th>Order Date</th>
+                  <th>Order Currency</th>
+                  <th>Order Value</th>
+                  <th>Conversion Rate</th>
+                  <th>Order Value in INR</th>
+                  <th>Invoice Milestones</th>
+                  <th>Status</th>
+                  <th>Comments</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchaseOrderData.map((poRow) => (
+                  <tr key={poRow.id}>
+                    {/* Proposal Number + Upload */}
+                    <td>
+                      <input
+                        className="form-control mb-1"
+                        value={poRow.proposalNumber}
+                        placeholder="Proposal number"
+                        onChange={(e) =>
+                          updatePoRow(
+                            poRow.id,
+                            "proposalNumber",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Project ID */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={poRow.projectId}
+                        placeholder="Project ID"
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "projectId", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Business Unit */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={poRow.businessUnit}
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "businessUnit", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        {businessUnits.map((opt) => (
+                          <option
+                            key={opt.businessUnitId}
+                            value={opt.businessUnitId}
+                          >
+                            {opt.businessUnitName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Order No */}
+                    <td>
+                      <input
+                        className="form-control mb-1"
+                        value={poRow.orderNo}
+                        placeholder="Order number"
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "orderNo", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Order Date */}
+                    <td>
+                      <SpkDatepickr
+                        className="form-control"
+                        selected={
+                          poRow.orderDate
+                            ? new Date(poRow.orderDate as string)
+                            : null
+                        }
+                        onChange={(date: Date | null) =>
+                          updatePoRow(poRow.id, "orderDate", date)
+                        }
+                        placeholderText="Choose date"
+                        popperPlacement="bottom-start"
+                      />
+                    </td>
+                    <td>
+                      <select
+                        className="form-select"
+                        style={{ maxWidth: "110px" }}
+                        value={poRow.orderValue}
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "orderValue", e.target.value)
+                        }
+                      >
+                        <option value="">Currency</option>
+                        {dropdownOptions.currency.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    {/* Order Value (currency + amount) */}
+                    <td>
+                      <div className="d-flex gap-1">
+                        <input
+                          className="form-control"
+                          type="number"
+                          placeholder="Amount"
+                          value={poRow.orderAmount}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "orderAmount", e.target.value)
+                          }
+                        />
+                      </div>
+                    </td>
+
+                    {/* Conversion Rate */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={poRow.conversionRate}
+                        placeholder="Rate"
+                        onChange={(e) =>
+                          updatePoRow(
+                            poRow.id,
+                            "conversionRate",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Order Value INR */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={poRow.orderValueINR}
+                        placeholder="INR value"
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "orderValueINR", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Invoice Milestone */}
+                    <td>
+                      <input
+                        className="form-control"
+                        value={poRow.invoiceMilestone}
+                        onChange={(e) =>
+                          updatePoRow(
+                            poRow.id,
+                            "invoiceMilestone",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      <select
+                        className="form-select"
+                        value={poRow.status}
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "status", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        {dropdownOptions.status.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td>
+                      <input
+                        className="form-control"
+                        value={poRow.comments}
+                        placeholder="Comments"
+                        onChange={(e) =>
+                          updatePoRow(poRow.id, "comments", e.target.value)
+                        }
+                      />
+                    </td>
+                    <td className="text-center">
+                      <button
+                        className="btn btn-danger btn-sm mt-1"
+                        style={{
+                          whiteSpace: "nowrap",
+                          fontSize: "12px",
+                        }}
+                        onClick={() => handleUpdateOrderDetails(poRow)}
+                      >
+                        Submit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+      </Modal>
       <Modal
         show={showProposalModal}
         onHide={() => setShowProposalModal(false)}
