@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
-import { getApi, postApi } from "../../../api/services";
+import { getApi, postApi, putApi } from "../../../api/services";
 import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
 import Swal from "sweetalert2";
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
@@ -692,7 +692,8 @@ const Crm = () => {
     setEditModal(true);
   };
 
-  const handleUpdateProposalData = async () => {
+  const handleUpdateProposalData = async (rows) => {
+   
     try {
       const row = editPropodaData[0];
       console.log("wor", row);
@@ -710,10 +711,11 @@ const Crm = () => {
         comments: row.comments,
         documentData: row.documentData,
         year: row.year,
-        fileName: "test", //row.fileName,
+        fileName: row.fileName,
+        proposalId:rows.proposalId
       };
 
-      await postApi("Proposal", payload);
+     await putApi(`Proposal/${rows.proposalId}`, payload);
 
       // ✅ Update main table instantly
       setOfferData((prev) =>
