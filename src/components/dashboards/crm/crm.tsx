@@ -986,6 +986,56 @@ const Crm = () => {
     {},
   );
 
+const base64ToBlob = (base64, mimeType) => {
+  const sliceSize = 512;
+  const byteCharacters = atob(base64);
+
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+    const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+
+  return new Blob(byteArrays, {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+};
+
+const handleFile = (row) => {
+  const base64 = row.documentData;
+
+  if (!base64) return;
+
+  const blob = base64ToBlob(base64);
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  document.body.appendChild(a);
+
+  // 🔥 Force correct file name
+  let fileName = row.fileName || "document.docx";
+  if (!fileName.toLowerCase().endsWith(".docx")) {
+    fileName += ".docx";
+  }
+
+  a.href = url;
+  a.setAttribute("download", fileName);
+
+  a.click();
+
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
   return (
     <Fragment>
       {!loading ? (
@@ -1114,21 +1164,19 @@ const Crm = () => {
                                   )
                                 }
                               />
-                              <FileUploadCell
-                                file={row.file}
-                                fileUrl={row.fileUrl}
-                                value={row}
-                                onUpload={async (f) => {
-                                  const base64 = await fileToBase64(f);
-                                  updateOfferRow(row.id, "file", {
-                                    file: f,
-                                    base64: base64,
-                                    fileName: f.name, // store base64 if needed
-                                    fileUrl: null,
-                                  });
-                                }}
-                                //onRemove={() => removeOfferFile(row.id)}
-                              />
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => handleFile(row)}
+                              >
+                                View and download
+                              </button><br/>
+                             {row.fileName ? (
+    <small className="text-muted">
+      📎 {row.fileName}
+    </small>
+  ) : (
+    <small className="text-muted"></small>
+  )}
                             </td>
 
                             {/* Date */}
@@ -3640,7 +3688,7 @@ const Crm = () => {
         dialogClassName="modal-90w"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Add Proposal</Modal.Title>
+          <Modal.Title>Add Proposal Details</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
@@ -3746,21 +3794,39 @@ const Crm = () => {
                           )
                         }
                       />
-                      <FileUploadCell
-                        file={row.file}
-                        fileUrl={row.fileUrl}
-                        value={row}
-                        onUpload={async (f) => {
-                          const base64 = await fileToBase64(f);
-                          updateAddProposalRow(row.id, "file", {
-                            file: f,
-                            base64: base64,
-                            fileName: f.name, // store base64 if needed
-                            fileUrl: null,
-                          });
-                        }}
-                        onRemove={() => removeOfferFile(row.id)}
-                      />
+                     <div>
+  <input
+    type="file"
+    className="form-control mb-1"
+    onChange={(e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+
+      updateAddProposalRow(row.id, "file", {
+        file: f,
+        fileName: f.name,
+      });
+    }}
+  />
+
+  <div className="d-flex justify-content-between align-items-center">
+    <small>
+      {row.file?.fileName ? row.file.fileName : "No file selected"}
+    </small>
+
+    {row.file?.fileName && (
+      <button
+        type="button"
+        className="btn btn-sm btn-link text-danger"
+        onClick={() =>
+          updateAddProposalRow(row.id, "file", null)
+        }
+      >
+        Remove
+      </button>
+    )}
+  </div>
+</div>
                     </td>
 
                     {/* Date */}
