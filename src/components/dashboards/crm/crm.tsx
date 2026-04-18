@@ -696,11 +696,11 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
       };
 
       await putApi(`Proposal/${rows.proposalId}`, payload);
-
+      fetchData()
       // ✅ Update main table instantly
-      setOfferData((prev) =>
-        prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
-      );
+      // setOfferData((prev) =>
+      //   prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
+      // );
 
       toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
 
@@ -888,6 +888,21 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
     setPaymentEditPopUP(false)
   }
   
+  const groupedData = Object.values(
+  orderDetailsData.reduce((acc, item) => {
+    if (!acc[item.proposalNumber]) {
+      acc[item.proposalNumber] = {
+        proposalNumber: item.proposalNumber,
+        projectName: item.projectName,
+        businessUnitId: item.businessUnitId,
+        orders: [],
+      };
+    }
+
+    acc[item.proposalNumber].orders.push(item);
+    return acc;
+  }, {})
+);
 
   return (
     <Fragment>
@@ -4177,7 +4192,7 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
                           className="form-control"
                           value={row.estimatedHours}
                           onChange={(e) =>
-                            updateModalRow(row.id, "hours", e.target.value)
+                            updateModalRow(row.id, "estimatedHours", e.target.value)
                           }
                         />
                       </td>
