@@ -16,10 +16,7 @@ import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plug
 import "./crm.css";
 import { getApi, postApi, putApi } from "../../../api/services";
 import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
-import Swal from "sweetalert2";
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -627,28 +624,9 @@ const Crm = () => {
     );
 
   // ── Add Customer popup ───────────────────────────────────────────────────
-
+const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
   const openAddCustomer = () => {
-    let root: ReactDOM.Root | null = null;
-    Swal.fire({
-      html: `<div id="react-child"></div>`,
-      width: "90%",
-      padding: "1rem",
-      didOpen: () => {
-        const container = document.getElementById("react-child");
-        if (container) {
-          root = ReactDOM.createRoot(container);
-          root.render(
-            <BrowserRouter>
-              <AddCustomer />
-            </BrowserRouter>,
-          );
-        }
-      },
-      willClose: () => {
-        root?.unmount();
-      },
-    });
+   setAddCustomerPopUp(true)
   };
   const createEmptyRow = () => ({
     id: Date.now(),
@@ -2107,7 +2085,38 @@ const Crm = () => {
         >
           <div className="spinner-border text-primary" role="status" />
         </div>
-      )}<Modal
+      )}
+      <Modal
+        show={addCustomerPopUP}
+        onHide={() => setAddCustomerPopUp(false)}
+        size="xl"
+        dialogClassName="modal-90w"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Customer</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div
+            className="table-responsive pb-16"
+            style={{ paddingBottom: "22px" }}
+          >
+           <div className="table-responsive">
+                <AddCustomer/>  
+            </div>
+
+          </div>
+
+          {/* <button
+            className="btn btn-success btn-sm mt-2"
+            onClick={() => setProposalData([...proposalData, createEmptyRow()])}
+          >
+            Add Row
+          </button> */}
+        </Modal.Body>
+        
+      </Modal>
+      <Modal
         show={paymentEditPopUp}
         onHide={() => setPaymentEditPopUP(false)}
         size="xl"
