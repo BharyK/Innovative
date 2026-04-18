@@ -299,26 +299,7 @@ function InvoiceMilestoneCell({
 
 const Crm = () => {
   // ── Offer Details state ──────────────────────────────────────────────────
-  const [offerData, setOfferData] = useState<OfferRow[]>([
-    {
-      id: 1,
-      firmId: "",
-      file: null,
-      fileUrl: null,
-      documentData: null,
-      proposalNumber: "",
-      proposalDate: null,
-      customer: "",
-      leadGenerator: "",
-      projectDetails: "",
-      departmentId: "",
-      hours: "",
-      businessUnitId: "",
-      status: "",
-      financialYear: null,
-      comments: "",
-    },
-  ]);
+  const [offerData, setOfferData] = useState<OfferRow[]>([]);
 
   // ── Purchase Order state ─────────────────────────────────────────────────
   const [purchaseOrderData, setPurchaseOrderData] = useState<
@@ -439,6 +420,7 @@ const Crm = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [customerInfo, setCustomerInfo] = useState<any>([]);
   const [orderDetailsData, setOrderDetailsData] = useState<any>([]);
+  const [invoiceDetailsData, setInvoiceDetailsData] = useState<any>([])
   const base64ToBlobUrl = (base64: string, mimeType = "application/pdf") => {
     const byteCharacters = atob(base64);
     const byteArray = new Uint8Array(
@@ -454,11 +436,12 @@ const Crm = () => {
   const fetchData = async () => {
     setLoading(false);
     try {
-      const [Utility, Proposal, customer, order] = await Promise.all([
+      const [Utility, Proposal, customer, order, invoice] = await Promise.all([
         getApi("Uitility"),
         getApi("Proposal"),
         getApi("api/Customers"),
         getApi("Order"),
+        getApi("Invoce"),
       ]);
       setBusinessUnits(Utility.data.businessUnits);
       setDepartments(Utility.data.departments);
@@ -466,7 +449,7 @@ const Crm = () => {
       setCustomerInfo(customer.data);
       setFirms(Utility.data.firms);
       setOrderDetailsData(order.data);
-
+      setInvoiceDetailsData(invoice.data)
       const mapped: OfferRow[] = Proposal.data.map(
         (item: any, index: number) => ({
           ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
@@ -770,28 +753,39 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
   const [editOrderDetails, setEditOrderDetails] = useState([]);
   const [orderEditDetailsPopUp, setOrderEditDetailsPopup] = useState(false);
   const addOrderDetails = () => {
+
     setOrderDetailsPopup(true);
   };
   const handleUpdateOrderDetails = async (row: any) => {
     console.log(row);
     const payload = {
-      proposalId: row.projectId,
+      proposalId: row.proposalId,
       orderNumber: row.orderNo,
       orderDate: row.orderDate,
-      orderValue: row.orderAmount,
+      orderValue: Number(row.orderAmount),
       orderCurrency: row.orderValue,
-      orderValueInr: String(row.orderValueINR),
+      orderValueInr: Number(row.orderValueINR),
       conversionRate: Number(row.conversionRate),
       status: row.status,
       invoiceMilestones: row.invoiceMilestone,
       businessUnitId: Number(row.businessUnit),
-      projectName: "new",
+      projectName: row.projectId,
       comments: row.comments,
     };
     try {
       await postApi("Order", payload);
       toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
-      fetchData();
+      setOrderDetailsPopup(false);
+      try {
+      const [order] = await Promise.all([
+        getApi("Order"),
+      ]);
+      setOrderDetailsData(order.data);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
     } catch (err) {
       toast.error("Techinicall Error", { autoClose: 1500 });
     }
@@ -829,7 +823,7 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
       comments: row.comments,
     };
     try {
-      await putApi(`order/${row.id}`, payload);
+      await putApi(`order/${row.orderId}`, payload);
       toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
     } catch (err) {
       toast.error("Update failed", { autoClose: 1500 });
@@ -837,8 +831,6 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
   };
 
   //-----------Invvoice Details------------/////
-
-  const [invoiceDetailsData, setInvoiceDetailsData] = useState([])
   const [invoiceDetailsPopUp, setInvoiceDetailsPopup] = useState(false)
   const [invoiceEditDetails, setInvoiceEditDetails]= useState([])
   const [invoiceEditDetailsPopUp, setInvoiceEditDetailsPopUp] = useState(false)
@@ -888,21 +880,13 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
     setPaymentEditPopUP(false)
   }
   
-  const groupedData = Object.values(
-  orderDetailsData.reduce((acc, item) => {
-    if (!acc[item.proposalNumber]) {
-      acc[item.proposalNumber] = {
-        proposalNumber: item.proposalNumber,
-        projectName: item.projectName,
-        businessUnitId: item.businessUnitId,
-        orders: [],
-      };
-    }
-
-    acc[item.proposalNumber].orders.push(item);
-    return acc;
-  }, {})
-);
+ const getOrderDetailsGroup = orderDetailsData.length > 0 && orderDetailsData.reduce((acc: any, item) => {
+  if (!acc[item.proposalNumber]) {
+    acc[item.proposalNumber] = [];
+  }
+  acc[item.proposalNumber].push(item);
+  return acc;
+}, {});
 
   return (
     <Fragment>
@@ -1345,246 +1329,173 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
                           </tr>
                         </thead>
                         <tbody>
-                          {orderDetailsData.map((poRow) => (
-                            <tr key={poRow.id}>
-                              {/* Proposal Number + Upload */}
-                              <td>
-                                <input
-                                  className="form-control mb-1"
-                                  value={poRow.proposalNumber}
-                                  placeholder="Proposal number"
-                                  disabled
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "proposalNumber",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
+                         {Object.keys(getOrderDetailsGroup).map((proposalNumber) => {
+  const rows = getOrderDetailsGroup[proposalNumber];
 
-                              {/* Project ID */}
-                              <td>
-                                <input
-                                  className="form-control"
-                                  value={poRow.projectId}
-                                  placeholder="Project ID"
-                                  disabled
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "projectId",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
+  return rows.map((poRow: any, index: number) => (
+    <tr key={poRow.orderId}>
 
-                              {/* Business Unit */}
-                              <td>
-                                <select
-                                  className="form-select"
-                                  value={poRow.businessUnitId}
-                                  disabled
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "businessUnitId",
-                                      e.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value="">Select</option>
-                                  {businessUnits.map((opt) => (
-                                    <option
-                                      key={opt.businessUnitId}
-                                      value={opt.businessUnitId}
-                                    >
-                                      {opt.businessUnitName}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
+      {/* ✅ Proposal Number */}
+      {index === 0 && (
+        <td rowSpan={rows.length}>
+          <input
+            className="form-control mb-1"
+            value={proposalNumber}
+            disabled
+          />
+        </td>
+      )}
 
-                              {/* Order No */}
-                              <td>
-                                <input
-                                  className="form-control mb-1"
-                                  value={poRow.orderNumber}
-                                  disabled
-                                  placeholder="Order number"
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "orderNumber",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
+      {/* ✅ Project ID */}
+      
+       <td>
+        <input
+          className="form-control"
+          value={poRow.proposalId}
+          disabled
+        />
+      </td>
 
-                              {/* Order Date */}
-                              <td>
-                                <SpkDatepickr
-                                  className="form-control"
-                                  disabled
-                                  selected={
-                                    poRow.orderDate
-                                      ? new Date(poRow.orderDate as string)
-                                      : null
-                                  }
-                                  onChange={(date: Date | null) =>
-                                    updatePoRow(poRow.id, "orderDate", date)
-                                  }
-                                  placeholderText="Choose date"
-                                  popperPlacement="bottom-start"
-                                />
-                              </td>
-                              <td>
-                                <select
-                                  className="form-select"
-                                  disabled
-                                  style={{ maxWidth: "110px" }}
-                                  value={poRow.orderCurrency}
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "orderCurrency",
-                                      e.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value="">Currency</option>
-                                  {dropdownOptions.currency.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                      {opt}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              {/* Order Value (currency + amount) */}
-                              <td>
-                                <div className="d-flex gap-1">
-                                  <input
-                                    className="form-control"
-                                    disabled
-                                    type="number"
-                                    placeholder="Amount"
-                                    value={poRow.orderValue}
-                                    onChange={(e) =>
-                                      updatePoRow(
-                                        poRow.id,
-                                        "orderValue",
-                                        e.target.value,
-                                      )
-                                    }
-                                  />
-                                </div>
-                              </td>
+      
 
-                              {/* Conversion Rate */}
-                              <td>
-                                <input
-                                  className="form-control"
-                                  value={poRow.conversionRate}
-                                  disabled
-                                  placeholder="Rate"
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "conversionRate",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
+      {/* ✅ Business Unit */}
+      
+        <td>
+        <select
+          className="form-select"
+          value={poRow.businessUnitId}
+          disabled
+        >
+          <option value="">Select</option>
+          {businessUnits.map((opt) => (
+            <option
+              key={opt.businessUnitId}
+              value={opt.businessUnitId}
+            >
+              {opt.businessUnitName}
+            </option>
+          ))}
+        </select>
+      </td>
+      {/* 🔽 ORDER LEVEL FIELDS (no merge) */}
 
-                              {/* Order Value INR */}
-                              <td>
-                                <input
-                                  className="form-control"
-                                  disabled
-                                  value={poRow.orderValueInr}
-                                  placeholder="INR value"
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "orderValueInr",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
+      {/* Order No */}
+      <td>
+        <input
+          className="form-control mb-1"
+          value={poRow.orderNumber}
+          disabled
+        />
+      </td>
 
-                              {/* Invoice Milestone */}
-                              <td>
-                                <InvoiceMilestoneCell
-                                  rowId={poRow.id}
-                                  value={poRow.invoiceMilestone}
-                                  disabled
-                                  onSave={(val) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "invoiceMilestone",
-                                      val,
-                                    )
-                                  }
-                                />
-                              </td>
+      {/* Order Date */}
+      <td>
+        <SpkDatepickr
+          className="form-control"
+          disabled
+          selected={
+            poRow.orderDate
+              ? new Date(poRow.orderDate)
+              : null
+          }
+          placeholderText="Choose date"
+        />
+      </td>
 
-                              {/* Status */}
-                              <td>
-                                <select
-                                  className="form-select"
-                                  value={poRow.status}
-                                  disabled
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "status",
-                                      e.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value="">Select</option>
-                                  {dropdownOptions.status.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                      {opt}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
+      {/* Currency */}
+      <td>
+        <select
+          className="form-select"
+          disabled
+          value={poRow.orderCurrency}
+        >
+          <option value="">Currency</option>
+          {dropdownOptions.currency.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </td>
 
-                              <td>
-                                <input
-                                  className="form-control"
-                                  value={poRow.comments}
-                                  placeholder="Comments"
-                                  disabled
-                                  onChange={(e) =>
-                                    updatePoRow(
-                                      poRow.id,
-                                      "comments",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              </td>
-                              <td className="text-center">
-                                <button
-                                  className="btn btn-danger btn-sm mt-1"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                  onClick={() => handleEditOrderDetails(poRow)}
-                                >
-                                  Edit
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+      {/* Order Value */}
+      <td>
+        <input
+          className="form-control"
+          type="number"
+          value={poRow.orderValue}
+          disabled
+        />
+      </td>
+
+      {/* Conversion Rate */}
+      <td>
+        <input
+          className="form-control"
+          value={poRow.conversionRate}
+          disabled
+        />
+      </td>
+
+      {/* INR Value */}
+      <td>
+        <input
+          className="form-control"
+          value={poRow.orderValueInr}
+          disabled
+        />
+      </td>
+
+      {/* Invoice Milestone */}
+      <td>
+        <InvoiceMilestoneCell
+          rowId={poRow.id}
+          value={poRow.invoiceMilestone}
+          disabled
+          onSave={(val) =>
+            updatePoRow(poRow.id, "invoiceMilestone", val)
+          }
+        />
+      </td>
+
+      {/* Status */}
+      <td>
+        <select
+          className="form-select"
+          value={poRow.status}
+          disabled
+        >
+          <option value="">Select</option>
+          {dropdownOptions.status.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </td>
+
+      {/* Comments */}
+      <td>
+        <input
+          className="form-control"
+          value={poRow.comments}
+          disabled
+        />
+      </td>
+
+      {/* Edit */}
+      <td className="text-center">
+        <button
+          className="btn btn-danger btn-sm mt-1"
+          onClick={() => handleEditOrderDetails(poRow)}
+        >
+          Edit
+        </button>
+      </td>
+
+    </tr>
+  ));
+})}
                         </tbody>
                       </table>
                     </div>
@@ -3390,18 +3301,32 @@ const [addCustomerPopUP, setAddCustomerPopUp] = useState(false)
                   <tr key={poRow.id}>
                     {/* Proposal Number + Upload */}
                     <td>
-                      <input
-                        className="form-control mb-1"
-                        value={poRow.proposalNumber}
-                        placeholder="Proposal number"
-                        onChange={(e) =>
-                          updatePoRow(
-                            poRow.id,
-                            "proposalNumber",
-                            e.target.value,
-                          )
-                        }
-                      />
+                      <select
+  className="form-select mb-1"
+  value={poRow.proposalId || ""}
+  onChange={(e) => {
+    const selectedId = Number(e.target.value);
+
+    const selectedProposal = offerData.find(
+      (item) => item.proposalId === selectedId
+    );
+
+    updatePoRow(poRow.id, "proposalId", selectedId);
+    updatePoRow(
+      poRow.id,
+      "proposalNumber",
+      selectedProposal?.proposalNumber || ""
+    );
+  }}
+>
+  <option value="">Select Proposal</option>
+
+  {offerData.map((item) => (
+    <option key={item.proposalId} value={item.proposalId}>
+      {item.proposalNumber}
+    </option>
+  ))}
+</select>
                     </td>
 
                     {/* Project ID */}
