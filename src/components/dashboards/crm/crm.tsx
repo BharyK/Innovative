@@ -986,55 +986,55 @@ const Crm = () => {
     {},
   );
 
-const base64ToBlob = (base64, mimeType) => {
-  const sliceSize = 512;
-  const byteCharacters = atob(base64);
+  const base64ToBlob = (base64, mimeType) => {
+    const sliceSize = 512;
+    const byteCharacters = atob(base64);
 
-  const byteArrays = [];
+    const byteArrays = [];
 
-  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-    const slice = byteCharacters.slice(offset, offset + sliceSize);
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
 
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
     }
 
-    const byteArray = new Uint8Array(byteNumbers);
-    byteArrays.push(byteArray);
-  }
+    return new Blob(byteArrays, {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+  };
 
-  return new Blob(byteArrays, {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  });
-};
+  const handleFile = (row) => {
+    const base64 = row.documentData;
 
-const handleFile = (row) => {
-  const base64 = row.documentData;
+    if (!base64) return;
 
-  if (!base64) return;
+    const blob = base64ToBlob(base64);
 
-  const blob = base64ToBlob(base64);
+    const url = URL.createObjectURL(blob);
 
-  const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    document.body.appendChild(a);
 
-  const a = document.createElement("a");
-  document.body.appendChild(a);
+    // 🔥 Force correct file name
+    let fileName = row.fileName || "document.docx";
+    if (!fileName.toLowerCase().endsWith(".docx")) {
+      fileName += ".docx";
+    }
 
-  // 🔥 Force correct file name
-  let fileName = row.fileName || "document.docx";
-  if (!fileName.toLowerCase().endsWith(".docx")) {
-    fileName += ".docx";
-  }
+    a.href = url;
+    a.setAttribute("download", fileName);
 
-  a.href = url;
-  a.setAttribute("download", fileName);
+    a.click();
 
-  a.click();
-
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <Fragment>
@@ -1169,14 +1169,15 @@ const handleFile = (row) => {
                                 onClick={() => handleFile(row)}
                               >
                                 View and download
-                              </button><br/>
-                             {row.fileName ? (
-    <small className="text-muted">
-      📎 {row.fileName}
-    </small>
-  ) : (
-    <small className="text-muted"></small>
-  )}
+                              </button>
+                              <br />
+                              {row.fileName ? (
+                                <small className="text-muted">
+                                  📎 {row.fileName}
+                                </small>
+                              ) : (
+                                <small className="text-muted"></small>
+                              )}
                             </td>
 
                             {/* Date */}
@@ -3794,39 +3795,41 @@ const handleFile = (row) => {
                           )
                         }
                       />
-                     <div>
-  <input
-    type="file"
-    className="form-control mb-1"
-    onChange={(e) => {
-      const f = e.target.files[0];
-      if (!f) return;
+                      <div>
+                        <input
+                          type="file"
+                          className="form-control mb-1"
+                          onChange={(e) => {
+                            const f = e.target.files[0];
+                            if (!f) return;
 
-      updateAddProposalRow(row.id, "file", {
-        file: f,
-        fileName: f.name,
-      });
-    }}
-  />
+                            updateAddProposalRow(row.id, "file", {
+                              file: f,
+                              fileName: f.name,
+                            });
+                          }}
+                        />
 
-  <div className="d-flex justify-content-between align-items-center">
-    <small>
-      {row.file?.fileName ? row.file.fileName : "No file selected"}
-    </small>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <small>
+                            {row.file?.fileName
+                              ? row.file.fileName
+                              : "No file selected"}
+                          </small>
 
-    {row.file?.fileName && (
-      <button
-        type="button"
-        className="btn btn-sm btn-link text-danger"
-        onClick={() =>
-          updateAddProposalRow(row.id, "file", null)
-        }
-      >
-        Remove
-      </button>
-    )}
-  </div>
-</div>
+                          {row.file?.fileName && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-link text-danger"
+                              onClick={() =>
+                                updateAddProposalRow(row.id, "file", null)
+                              }
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     {/* Date */}
