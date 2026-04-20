@@ -312,7 +312,7 @@ const Crm = () => {
     {
       id: 1,
       proposalNumber: "",
-      invoiceNumber: "V224251020",
+      invoiceNumber: "",
       invoiceDate: null,
       invoiceValue: "",
       invoiceAmount: "",
@@ -332,38 +332,12 @@ const Crm = () => {
       id: 1,
       proposalNumber: "",
       file: null,
-      valueReceived: "₹ 1,480,000.00",
+      valueReceived: "",
       amountCurrency: "",
       amountValue: "",
       realisedDate: null,
-      paymentStatus: "Received",
-      fluctuation: "₹ 252,600.00",
-      comments: "",
-      actionComments: "",
-    },
-    {
-      id: 2,
-      proposalNumber: "",
-      file: null,
-      valueReceived: "₹ 239,400.00",
-      amountCurrency: "",
-      amountValue: "",
-      realisedDate: null,
-      paymentStatus: "Received",
-      fluctuation: "₹ 9,120.00",
-      comments: "",
-      actionComments: "",
-    },
-    {
-      id: 3,
-      proposalNumber: "",
-      file: null,
-      valueReceived: "13,000 €",
-      amountCurrency: "",
-      amountValue: "",
-      realisedDate: null,
-      paymentStatus: "Received",
-      fluctuation: "0.00 €",
+      paymentStatus: "",
+      fluctuation: "",
       comments: "",
       actionComments: "",
     },
@@ -415,6 +389,7 @@ const Crm = () => {
   const [customerInfo, setCustomerInfo] = useState<any>([]);
   const [orderDetailsData, setOrderDetailsData] = useState<any>([]);
   const [invoiceDetailsData, setInvoiceDetailsData] = useState<any>([]);
+  const [paymentDetailsData, setPaymentDetailsData] = useState<any>([]);
   const base64ToBlobUrl = (base64: string, mimeType = "application/pdf") => {
     const byteCharacters = atob(base64);
     const byteArray = new Uint8Array(
@@ -430,20 +405,22 @@ const Crm = () => {
   const fetchData = async () => {
     setLoading(false);
     try {
-      const [Utility, Proposal, customer, order, invoice] = await Promise.all([
+      const [Utility, Proposal, order, invoice, payment] = await Promise.all([
         getApi("Uitility"),
         getApi("Proposal"),
-        getApi("api/Customers"),
         getApi("Order"),
         getApi("Invoice"),
+        getApi("InvoicePayment"),
       ]);
+      console.log("payment", payment);
       setBusinessUnits(Utility.data.businessUnits);
       setDepartments(Utility.data.departments);
       setEmployees(Utility.data.employees);
-      setCustomerInfo(customer.data);
+      //  setCustomerInfo(customer.data);
       setFirms(Utility.data.firms);
       setOrderDetailsData(order.data);
       setInvoiceDetailsData(invoice.data);
+      setPaymentDetailsData([payment.data]);
       const mapped: OfferRow[] = Proposal.data.map(
         (item: any, index: number) => ({
           ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
@@ -937,7 +914,7 @@ const Crm = () => {
   };
 
   //----------Payment details -------------//
-  const [paymentDetailsData, setPaymentDetailsData] = useState([]);
+
   const [paymentDetailsPopUp, setPaymentDetailsPayment] = useState(false);
   const [paymentEditPopUp, setPaymentEditPopUP] = useState(false);
   const [paymentEditDetails, setPaymentEditDetails] = useState([]);
@@ -946,9 +923,37 @@ const Crm = () => {
     setPaymentDetailsPayment(true);
   };
 
-  const handlePaymentDetailsStore = (row: any) => {
+  const handlePaymentDetailsStore = async (row: any) => {
     console.log(row);
-    setPaymentDetailsPayment(false);
+    const payload = {
+      invoiceId: row.invoiceId,
+      paymentDate: row.realisedDate,
+      amountReceived: Number(row.valueReceived),
+      currency: row.amountCurrency,
+      amountReceivedInr: Number(row.valueReceived),
+      conversionRateAtPayment: Number(row.amountValue),
+      fluctuationDifference: Number(row.fluctuation),
+      paymentMethod: row.paymentStatus,
+      referenceNumber: "123",
+      comments: row.comments,
+    };
+    try {
+      await postApi(`InvoicePayment`, payload);
+      toast.success("Sucessfully invoice payment data updated", {
+        autoClose: 1500,
+      });
+      try {
+        const [InvoicePayment] = await Promise.all([getApi("InvoicePayment")]);
+        setPaymentData([InvoicePayment.data]);
+        setPaymentDetailsPayment(false);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error("Techinicall Error", { autoClose: 1500 });
+    }
   };
 
   const handlePaymentEditDetails = (row: any) => {
@@ -957,8 +962,42 @@ const Crm = () => {
     setPaymentEditPopUP(true);
   };
 
-  const handlePaymentUpdateDetails = (row) => {
-    setPaymentEditPopUP(false);
+    const updatePaymenteEdit = (id: number, field: keyof PaymentRow, value: any) =>
+    setPaymentEditDetails((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+
+  const handlePaymentUpdateDetails = async (row:any) => {
+    console.log(row);
+    const payload = {
+      paymentId: row.paymentId,
+      paymentDate: "2026-04-20T18:22:31.160Z",//row.paymentDate,
+      amountReceived:Number(row.amountReceived),
+      currency: row.currency,
+      amountReceivedInr: row.amountReceivedInr,
+      conversionRateAtPayment: row.conversionRateAtPayment,
+      fluctuationDifference: Number(row.fluctuationDifference),
+      paymentMethod: row.paymentMethod,
+      referenceNumber: row.referenceNumber,
+      comments: row.comments,
+    };
+    try {
+      await putApi(`InvoicePayment/${row.invoiceId}`, payload);
+      toast.success("Sucessfully invoice payment data updated", {
+        autoClose: 1500,
+      });
+      try {
+        const [InvoicePayment] = await Promise.all([getApi("InvoicePayment")]);
+        setPaymentData([InvoicePayment.data]);
+        setPaymentEditPopUP(false);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error("Techinicall Error", { autoClose: 1500 });
+    }
   };
 
   const getOrderDetailsGroup =
@@ -1934,6 +1973,8 @@ const Crm = () => {
                         <thead className="table-primary">
                           <tr>
                             <th>Proposal Number</th>
+                            <th>Order Number</th>
+                            <th>Invoice Number</th>
                             <th>Documents</th>
                             <th>Value Received</th>
                             <th>Currency</th>
@@ -1946,7 +1987,7 @@ const Crm = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {paymentData.map((row) => (
+                          {paymentDetailsData.map((row) => (
                             <tr key={row.id}>
                               {/* Proposal Number */}
                               <td>
@@ -1954,6 +1995,7 @@ const Crm = () => {
                                   className="form-control"
                                   value={row.proposalNumber}
                                   placeholder="Proposal number"
+                                  disabled
                                   onChange={(e) =>
                                     updatePaymentRow(
                                       row.id,
@@ -1963,7 +2005,36 @@ const Crm = () => {
                                   }
                                 />
                               </td>
-
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.orderNumber}
+                                  placeholder="Proposal number"
+                                  disabled
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "orderNumber",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  className="form-control"
+                                  value={row.invoiceId}
+                                  placeholder="invoiceId number"
+                                  disabled
+                                  onChange={(e) =>
+                                    updatePaymentRow(
+                                      row.id,
+                                      "invoiceId",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
                               {/* Documents */}
                               <td>
                                 <FileUploadCell
@@ -1981,11 +2052,12 @@ const Crm = () => {
                               <td>
                                 <input
                                   className="form-control"
-                                  value={row.valueReceived}
+                                  value={row.amountReceived}
+                                  disabled
                                   onChange={(e) =>
                                     updatePaymentRow(
                                       row.id,
-                                      "valueReceived",
+                                      "amountReceived",
                                       e.target.value,
                                     )
                                   }
@@ -1995,11 +2067,12 @@ const Crm = () => {
                                 <select
                                   className="form-select"
                                   style={{ maxWidth: "110px" }}
-                                  value={row.amountCurrency}
+                                  disabled
+                                  value={row.currency}
                                   onChange={(e) =>
                                     updatePaymentRow(
                                       row.id,
-                                      "amountCurrency",
+                                      "currency",
                                       e.target.value,
                                     )
                                   }
@@ -2017,13 +2090,14 @@ const Crm = () => {
                                 <div className="d-flex gap-1">
                                   <input
                                     className="form-control"
+                                    disabled
                                     type="number"
                                     placeholder="Amount"
-                                    value={row.amountValue}
+                                    value={row.amountReceivedInr}
                                     onChange={(e) =>
                                       updatePaymentRow(
                                         row.id,
-                                        "amountValue",
+                                        "amountReceivedInr",
                                         e.target.value,
                                       )
                                     }
@@ -2035,15 +2109,16 @@ const Crm = () => {
                               <td>
                                 <SpkDatepickr
                                   className="form-control"
+                                  disabled
                                   selected={
-                                    row.realisedDate
-                                      ? new Date(row.realisedDate as string)
+                                    row.paymentDate
+                                      ? new Date(row.paymentDate as string)
                                       : null
                                   }
                                   onChange={(date: Date | null) =>
                                     updatePaymentRow(
                                       row.id,
-                                      "realisedDate",
+                                      "paymentDate",
                                       date,
                                     )
                                   }
@@ -2055,11 +2130,12 @@ const Crm = () => {
                               <td>
                                 <select
                                   className="form-select"
-                                  value={row.paymentStatus}
+                                  value={row.paymentMethod}
+                                  disabled
                                   onChange={(e) =>
                                     updatePaymentRow(
                                       row.id,
-                                      "paymentStatus",
+                                      "paymentMethod",
                                       e.target.value,
                                     )
                                   }
@@ -2077,11 +2153,12 @@ const Crm = () => {
                               <td>
                                 <input
                                   className="form-control"
-                                  value={row.fluctuation}
+                                  disabled
+                                  value={row.fluctuationDifference}
                                   onChange={(e) =>
                                     updatePaymentRow(
                                       row.id,
-                                      "fluctuation",
+                                      "fluctuationDifference",
                                       e.target.value,
                                     )
                                   }
@@ -2092,6 +2169,7 @@ const Crm = () => {
                               <td>
                                 <input
                                   className="form-control"
+                                  disabled
                                   value={row.comments}
                                   placeholder="Comments"
                                   onChange={(e) =>
@@ -2186,6 +2264,8 @@ const Crm = () => {
                 <thead className="table-primary">
                   <tr>
                     <th>Proposal Number</th>
+                    <th>Order Number</th>
+                    <th>Invoice Number</th>
                     <th>Documents</th>
                     <th>Value Received</th>
                     <th>Currency</th>
@@ -2204,10 +2284,11 @@ const Crm = () => {
                       <td>
                         <input
                           className="form-control"
+                          disabled
                           value={row.proposalNumber}
                           placeholder="Proposal number"
                           onChange={(e) =>
-                            updatePaymentRow(
+                            updatePaymenteEdit(
                               row.id,
                               "proposalNumber",
                               e.target.value,
@@ -2215,14 +2296,71 @@ const Crm = () => {
                           }
                         />
                       </td>
+                      <td>
+                        <select
+                          className="form-select mb-1"
+                          value={row.orderId || ""}
+                          disabled
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
 
+                            const selectedOrder = orderDetailsData.find(
+                              (item) => item.orderId === selectedId,
+                            );
+
+                            updatePaymenteEdit(row.id, "orderId", selectedId);
+                            updatePaymenteEdit(
+                              row.id,
+                              "orderNumber",
+                              selectedOrder?.orderNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select Order</option>
+
+                          {orderDetailsData.map((item) => (
+                            <option key={item.orderId} value={item.orderId}>
+                              {item.orderNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="form-select mb-1"
+                          disabled
+                          value={row.invoiceId || ""}
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
+
+                            const selectedOrder = invoiceDetailsData.find(
+                              (item) => item.invoiceId === selectedId,
+                            );
+
+                            updatePaymenteEdit(row.id, "invoiceId", selectedId);
+                            updatePaymenteEdit(
+                              row.id,
+                              "orderNumber",
+                              selectedOrder?.invoiceNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select Order</option>
+
+                          {invoiceDetailsData.map((item) => (
+                            <option key={item.invoiceId} value={item.invoiceId}>
+                              {item.invoiceNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       {/* Documents */}
                       <td>
                         <FileUploadCell
                           file={row.file}
-                          onUpload={(f) => updatePaymentRow(row.id, "file", f)}
+                          onUpload={(f) => updatePaymenteEdit(row.id, "file", f)}
                           onRemove={() =>
-                            updatePaymentRow(row.id, "file", null)
+                            updatePaymenteEdit(row.id, "file", null)
                           }
                         />
                       </td>
@@ -2231,11 +2369,11 @@ const Crm = () => {
                       <td>
                         <input
                           className="form-control"
-                          value={row.valueReceived}
+                          value={row.amountReceived}
                           onChange={(e) =>
-                            updatePaymentRow(
+                            updatePaymenteEdit(
                               row.id,
-                              "valueReceived",
+                              "amountReceived",
                               e.target.value,
                             )
                           }
@@ -2247,7 +2385,7 @@ const Crm = () => {
                           style={{ maxWidth: "110px" }}
                           value={row.amountCurrency}
                           onChange={(e) =>
-                            updatePaymentRow(
+                            updatePaymenteEdit(
                               row.id,
                               "amountCurrency",
                               e.target.value,
@@ -2269,11 +2407,11 @@ const Crm = () => {
                             className="form-control"
                             type="number"
                             placeholder="Amount"
-                            value={row.amountValue}
+                            value={row.amountReceivedInr}
                             onChange={(e) =>
-                              updatePaymentRow(
+                              updatePaymenteEdit(
                                 row.id,
-                                "amountValue",
+                                "amountReceivedInr",
                                 e.target.value,
                               )
                             }
@@ -2286,12 +2424,12 @@ const Crm = () => {
                         <SpkDatepickr
                           className="form-control"
                           selected={
-                            row.realisedDate
-                              ? new Date(row.realisedDate as string)
+                            row.paymentDate
+                              ? new Date(row.paymentDate as string)
                               : null
                           }
                           onChange={(date: Date | null) =>
-                            updatePaymentRow(row.id, "realisedDate", date)
+                            updatePaymenteEdit(row.id, "paymentDate", date)
                           }
                           placeholderText="Choose date"
                         />
@@ -2301,11 +2439,11 @@ const Crm = () => {
                       <td>
                         <select
                           className="form-select"
-                          value={row.paymentStatus}
+                          value={row.paymentMethod}
                           onChange={(e) =>
-                            updatePaymentRow(
+                            updatePaymenteEdit(
                               row.id,
-                              "paymentStatus",
+                              "paymentMethod",
                               e.target.value,
                             )
                           }
@@ -2323,11 +2461,11 @@ const Crm = () => {
                       <td>
                         <input
                           className="form-control"
-                          value={row.fluctuation}
+                          value={row.fluctuationDifference}
                           onChange={(e) =>
-                            updatePaymentRow(
+                            updatePaymenteEdit(
                               row.id,
-                              "fluctuation",
+                              "fluctuationDifference",
                               e.target.value,
                             )
                           }
@@ -2341,7 +2479,7 @@ const Crm = () => {
                           value={row.comments}
                           placeholder="Comments"
                           onChange={(e) =>
-                            updatePaymentRow(row.id, "comments", e.target.value)
+                            updatePaymenteEdit(row.id, "comments", e.target.value)
                           }
                         />
                       </td>
@@ -2394,6 +2532,8 @@ const Crm = () => {
                 <thead className="table-primary">
                   <tr>
                     <th>Proposal Number</th>
+                    <th>Order Number</th>
+                    <th>Invoice Number</th>
                     <th>Documents</th>
                     <th>Value Received</th>
                     <th>Currency</th>
@@ -2410,29 +2550,131 @@ const Crm = () => {
                     <tr key={row.id}>
                       {/* Proposal Number */}
                       <td>
-                        <input
-                          className="form-control"
-                          value={row.proposalNumber}
-                          placeholder="Proposal number"
-                          onChange={(e) =>
+                        <select
+                          className="form-select mb-1"
+                          value={row.proposalId || ""}
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
+
+                            const selectedProposal = offerData.find(
+                              (item) => item.proposalId === selectedId,
+                            );
+
+                            updatePaymentRow(row.id, "proposalId", selectedId);
                             updatePaymentRow(
                               row.id,
                               "proposalNumber",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </td>
+                              selectedProposal?.proposalNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select Proposal</option>
 
+                          {offerData.map((item) => (
+                            <option
+                              key={item.proposalId}
+                              value={item.proposalId}
+                            >
+                              {item.proposalNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="form-select mb-1"
+                          value={row.orderId || ""}
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
+
+                            const selectedOrder = orderDetailsData.find(
+                              (item) => item.orderId === selectedId,
+                            );
+
+                            updatePaymentRow(row.id, "orderId", selectedId);
+                            updatePaymentRow(
+                              row.id,
+                              "orderNumber",
+                              selectedOrder?.orderNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select Order</option>
+
+                          {orderDetailsData.map((item) => (
+                            <option key={item.orderId} value={item.orderId}>
+                              {item.orderNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="form-select mb-1"
+                          value={row.invoiceId || ""}
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
+
+                            const selectedOrder = invoiceDetailsData.find(
+                              (item) => item.invoiceId === selectedId,
+                            );
+
+                            updatePaymentRow(row.id, "invoiceId", selectedId);
+                            updatePaymentRow(
+                              row.id,
+                              "orderNumber",
+                              selectedOrder?.invoiceNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select Order</option>
+
+                          {invoiceDetailsData.map((item) => (
+                            <option key={item.invoiceId} value={item.invoiceId}>
+                              {item.invoiceNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       {/* Documents */}
                       <td>
-                        <FileUploadCell
-                          file={row.file}
-                          onUpload={(f) => updatePaymentRow(row.id, "file", f)}
-                          onRemove={() =>
-                            updatePaymentRow(row.id, "file", null)
-                          }
-                        />
+                        <td>
+                          <div>
+                            <input
+                              type="file"
+                              className="form-control mb-1"
+                              onChange={(e) => {
+                                const f = e.target.files[0];
+                                if (!f) return;
+
+                                updatePaymentRow(row.id, "file", {
+                                  file: f,
+                                  fileName: f.name,
+                                });
+                              }}
+                            />
+
+                            <div className="d-flex justify-content-between align-items-center">
+                              <small>
+                                {row.file?.fileName
+                                  ? row.file.fileName
+                                  : "No file selected"}
+                              </small>
+
+                              {row.file?.fileName && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-link text-danger"
+                                  onClick={() =>
+                                    updatePaymentRow(row.id, "file", null)
+                                  }
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                       </td>
 
                       {/* Value Received */}

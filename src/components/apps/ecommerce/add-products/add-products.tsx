@@ -4,7 +4,8 @@ import SpkButton from "../../../../shared/@spk-reusable-components/reusable-uiel
 import SpkSelect from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-reactselect";
 import SpkDatepickr from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import { genderTagOption } from "../../../../shared/data/apps/ecommerce/editproductsdata";
-
+import { postApi } from "../../../../api/services";
+import { toast, ToastContainer } from "react-toastify";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface DeptContact {
@@ -80,7 +81,7 @@ const AddProduct = () => {
   };
 
   // ── Build payload & save ─────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     /** Flatten one dept into two departmentContacts entries (primary + secondary) */
     const buildContacts = (
       dept: DeptState,
@@ -119,6 +120,10 @@ const AddProduct = () => {
       gstNumber: generalData.gstNumber,
       vatNumber: generalData.vatNumber,
       paymentTerms: generalData.paymentTerms,
+       billingAddress:generalData.billingAddress,
+      shippingAddress: generalData.shippingAddress,
+      registeredAddress:generalData.registeredAddress,
+      // Department contacts
 
       // ── Department contacts ───────────────────────────────────────────
       departmentContacts: [
@@ -128,22 +133,14 @@ const AddProduct = () => {
       ],
 
       // ── Address (separate as required) ───────────────────────────────
-      address: [
-        {
-          addressType: "registered",
-          address: generalData.registeredAddress,
-        },
-        {
-          addressType: "billing",
-          address: generalData.billingAddress,
-        },
-        {
-          addressType: "shipping",
-          address: generalData.shippingAddress,
-        },
-      ],
-    };
 
+    };
+try {
+        await postApi('api/Customer', payload)
+        toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      } catch(err){
+         toast.error("Pease try again", { autoClose: 1500 });
+      }
     console.log("Save payload →", JSON.stringify(payload, null, 2));
     // TODO: replace with your actual API call, e.g.:
     // await createCustomer(payload);
@@ -152,6 +149,7 @@ const AddProduct = () => {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <Fragment>
+      <ToastContainer/>
       <Row>
         <Col xl={12}>
           <Card className="custom-card p-0">

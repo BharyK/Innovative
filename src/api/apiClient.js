@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "https://vinnovativeapi.azurewebsites.net/api/",
+  baseURL: "https://vinnovativeapi.azurewebsites.net/",
   headers: {
     "Content-Type": "application/json",
   },
