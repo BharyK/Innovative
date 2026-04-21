@@ -222,3 +222,8 @@ tbody tr td {
 .custom-full-modal .modal-body {
   overflow: auto;
 }
+
+.badge {
+  font-size: 12px !important;
+  padding: 6px;
+}

@@ -19,6 +19,8 @@ import SpkButton from "../../../shared/@spk-reusable-components/reusable-uieleme
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
 import { toast, ToastContainer } from "react-toastify";
 import moment from "moment";
+import SpkBadge from "../../../shared/@spk-reusable-components/reusable-uielements/spk-badge";
+import SpkTooltips from "../../../shared/@spk-reusable-components/reusable-uielements/spk-tooltips";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -405,22 +407,24 @@ const Crm = () => {
   const fetchData = async () => {
     setLoading(false);
     try {
-      const [Utility, Proposal, order, invoice, payment] = await Promise.all([
-        getApi("Uitility"),
-        getApi("Proposal"),
-        getApi("Order"),
-        getApi("Invoice"),
-        getApi("InvoicePayment"),
-      ]);
+      const [Utility, Proposal, order, invoice, payment, customer] =
+        await Promise.all([
+          getApi("Uitility"),
+          getApi("Proposal"),
+          getApi("Order"),
+          getApi("Invoice"),
+          getApi("InvoicePayment"),
+          //getApi("api/Customers"),
+        ]);
       console.log("payment", payment);
       setBusinessUnits(Utility.data.businessUnits);
       setDepartments(Utility.data.departments);
       setEmployees(Utility.data.employees);
-      //  setCustomerInfo(customer.data);
       setFirms(Utility.data.firms);
       setOrderDetailsData(order.data);
       setInvoiceDetailsData(invoice.data);
       setPaymentDetailsData([payment.data]);
+      //setCustomerInfo(customer.data);
       const mapped: OfferRow[] = Proposal.data.map(
         (item: any, index: number) => ({
           ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
@@ -560,16 +564,21 @@ const Crm = () => {
 
   // ── Remove file (offer) ──────────────────────────────────────────────────
 
-  const removeOfferFile = (id: number) => {
-    setOfferData((prev) =>
+  const removeOfferFile = (proposalId: number) => {
+    setEditProposalData((prev) =>
       prev.map((r) => {
-        if (r.id !== id) return r;
+        if (r.proposalId !== proposalId) return r;
         if (r.fileUrl) URL.revokeObjectURL(r.fileUrl);
-        return { ...r, file: null, fileUrl: null, documentData: null };
+        return {
+          ...r,
+          file: null,
+          fileUrl: null,
+          documentData: null,
+          fileName: null,
+        };
       }),
     );
   };
-
   // ── Accordion ────────────────────────────────────────────────────────────
 
   const toggleAccordion = (key: string) =>
@@ -962,17 +971,21 @@ const Crm = () => {
     setPaymentEditPopUP(true);
   };
 
-    const updatePaymenteEdit = (id: number, field: keyof PaymentRow, value: any) =>
+  const updatePaymenteEdit = (
+    id: number,
+    field: keyof PaymentRow,
+    value: any,
+  ) =>
     setPaymentEditDetails((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  const handlePaymentUpdateDetails = async (row:any) => {
+  const handlePaymentUpdateDetails = async (row: any) => {
     console.log(row);
     const payload = {
       paymentId: row.paymentId,
-      paymentDate: "2026-04-20T18:22:31.160Z",//row.paymentDate,
-      amountReceived:Number(row.amountReceived),
+      paymentDate: "2026-04-20T18:22:31.160Z", //row.paymentDate,
+      amountReceived: Number(row.amountReceived),
       currency: row.amountCurrency,
       amountReceivedInr: row.amountReceivedInr,
       conversionRateAtPayment: row.conversionRateAtPayment,
@@ -1075,6 +1088,21 @@ const Crm = () => {
     URL.revokeObjectURL(url);
   };
 
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "Approved":
+        return "primary-transparent";
+      case "Pending":
+        return "warning-transparent";
+      case "Rejected":
+        return "danger-transparent";
+      case "Active":
+        return "secondary-transparent";
+      default:
+        return "secondary-transparent";
+    }
+  };
+
   return (
     <Fragment>
       {!loading ? (
@@ -1144,74 +1172,40 @@ const Crm = () => {
 
                             {/* Financial Year */}
                             <td>
-                              <select
-                                className="form-control"
-                                value={row.year || ""}
-                                disabled
-                                onChange={(e) =>
-                                  updateOfferRow(row.id, "year", e.target.value)
-                                }
-                              >
-                                <option value="">Select Financial Year</option>
-
-                                {financialYears.map((fy) => (
-                                  <option key={fy} value={fy}>
-                                    {fy}
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="fw-semibold d-block">
+                                {row.year}
+                              </div>
                             </td>
 
                             {/* Firm */}
                             <td>
-                              <select
-                                className="form-select"
-                                value={row.firmId}
-                                disabled
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "firmId",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Select</option>
-                                {firms.length > 0 ? (
-                                  firms.map((opt) => (
-                                    <option key={opt.firmId} value={opt.firmId}>
-                                      {opt.firmName}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled>No options available</option>
-                                )}
-                              </select>
+                              <div className="fw-seminormal d-block">
+                               {
+    firms.find(f => f.firmId === row.firmId)?.firmName || "Unknown"
+  }
+                              </div>
+                              
                             </td>
 
                             {/* Proposal No + Upload */}
                             <td>
-                              <input
-                                className="form-control mb-1"
-                                disabled
-                                value={row.proposalNumber}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "proposalNumber",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                              <button
-                                className="btn btn-sm btn-secondary"
-                                onClick={() => handleFile(row)}
-                              >
-                                View and download
-                              </button>
-                              <br />
+                              <div className="d-flex align-items-center gap-2">
+                                <SpkTooltips placement="top" title="Download">
+                                  <SpkButton
+                                    Buttonvariant="danger-light"
+                                    Customclass="btn btn-icon btn-sm"
+                                    onClick={() => handleFile(row)}
+                                  >
+                                    <i className="ri-download-2-line"></i>
+                                  </SpkButton>
+                                </SpkTooltips>
+                                <span className="text-primary">
+                                  {row.proposalNumber}
+                                </span>
+                              </div>
+
                               {row.fileName ? (
-                                <small className="text-muted">
+                                <small className="text-muted fs-12 mt-1">
                                   📎 {row.fileName}
                                 </small>
                               ) : (
@@ -1221,210 +1215,136 @@ const Crm = () => {
 
                             {/* Date */}
                             <td>
-                              <SpkDatepickr
-                                className="form-control"
-                                disabled
-                                selected={
-                                  row.proposalDate
-                                    ? new Date(row.proposalDate)
-                                    : null
-                                }
-                                onChange={(date) => {
-                                  updateOfferRow(row.id, "proposalDate", date);
-
-                                  console.log(date); // ✅ correct
-                                }}
-                                placeholderText="Choose date"
-                              />
+                              <div className="fw-semibold d-block">
+                                {moment(row.proposalDate).format(
+                                  "MMMM DD, YYYY",
+                                )}
+                              </div>
                             </td>
 
                             {/* Customer */}
                             <td>
-                              <select
-                                className="form-select"
-                                disabled
-                                value={row.firmId}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "firmId",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Select</option>
-                                {customerInfo.length > 0 ? (
-                                  customerInfo.map((opt) => (
-                                    <option
-                                      key={opt.customerId}
-                                      value={opt.customerId}
-                                    >
-                                      {opt.customerName}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled>No options available</option>
-                                )}
-                              </select>
+                              <div className="d-flex align-items-center">
+                                <div className="avatar avatar-sm me-2 avatar-rounded">
+                                  <span className="avatar-text">
+                                    {row.customerName?.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <div className="lh-1">
+                                    <span>{row.customerName}</span>
+                                  </div>
+                                </div>
+                              </div>
                             </td>
 
                             {/* Lead Generator */}
                             <td>
-                              <select
-                                className="form-select"
-                                disabled
-                                value={row.leadGenerator}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "leadGenerator",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Select</option>
-                                {employees.length > 0 ? (
-                                  employees.map((opt) => (
-                                    <option
-                                      key={opt.employeeId}
-                                      value={opt.employeeId}
-                                    >
-                                      {opt.employeeName}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled>No options available</option>
-                                )}
-                              </select>
+                              <div className="d-flex align-items-center">
+                                <div
+                                  className="d-flex align-items-center justify-content-center me-2 rounded-circle bg-secondary text-white"
+                                  style={{
+                                    width: "32px",
+                                    height: "32px",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  {employees
+                                    .find(
+                                      (e) => e.employeeId === row.leadGenerator,
+                                    )
+                                    ?.employeeName?.charAt(0)
+                                    .toUpperCase() || "?"}
+                                </div>
+
+                                <div>
+                                  <div className="lh-1">
+                                    <span>
+                                      {employees.find(
+                                        (e) =>
+                                          e.employeeId === row.leadGenerator,
+                                      )?.employeeName || "Unknown"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             </td>
 
                             {/* Project Details */}
                             <td>
-                              <input
-                                className="form-control"
-                                disabled
-                                value={row.projectDetails}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "projectDetails",
-                                    e.target.value,
-                                  )
-                                }
-                              />
+                              <div className="fw-seminormal d-block text-left">
+                                {row.projectDetails}
+                              </div>
                             </td>
 
                             {/* Business Unit */}
                             <td>
-                              <select
-                                className="form-select"
-                                disabled
-                                value={row.businessUnitId}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "businessUnitId",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Select</option>
-                                {businessUnits.length > 0 ? (
-                                  businessUnits.map((opt) => (
-                                    <option
-                                      key={opt.businessUnitId}
-                                      value={opt.businessUnitId}
-                                    >
-                                      {opt.businessUnitName}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled>No options available</option>
-                                )}
-                              </select>
+                              <div className="d-flex align-items-center">
+                                <div
+                                  className="d-flex align-items-center justify-content-center me-2 rounded-circle bg-primary  text-white"
+                                  style={{
+                                    width: "32px",
+                                    height: "32px",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  {businessUnits
+                                    .find(
+                                      (u) =>
+                                        u.businessUnitId === row.businessUnitId,
+                                    )
+                                    ?.businessUnitName?.charAt(0)
+                                    .toUpperCase() || "?"}
+                                </div>
+
+                                <div>
+                                  <div className="lh-1">
+                                    <span>
+                                      {businessUnits.find(
+                                        (u) =>
+                                          u.businessUnitId ===
+                                          row.businessUnitId,
+                                      )?.businessUnitName || "Unknown"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             </td>
 
                             {/* Department */}
                             <td>
-                              <select
-                                className="form-select"
-                                disabled
-                                value={row.departmentId}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "departmentId",
-                                    e.target.value,
-                                  )
-                                }
-                              >
-                                <option value="">Select</option>
-                                {departments.map((opt) => (
-                                  <option
-                                    key={opt.departmentId}
-                                    value={opt.departmentId}
-                                  >
-                                    {opt.departmentName}
-                                  </option>
-                                ))}
-                              </select>
+                             <div className="fw-seminormal d-block">
+  {
+    departments.find(d => d.departmentId === row.departmentId)
+      ?.departmentName || "Unknown"
+  }
+</div>
                             </td>
 
                             {/* Efforts / Hours */}
                             <td>
-                              <input
-                                type="number"
-                                disabled
-                                className="form-control"
-                                value={row.estimatedHours}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "hours",
-                                    e.target.value,
-                                  )
-                                }
-                              />
+                              <SpkBadge variant="badge bg-primary" size="lg">
+                                {row.estimatedHours}
+                              </SpkBadge>
                             </td>
 
                             {/* Status */}
                             <td>
-                              <select
-                                className="form-select"
-                                disabled
-                                value={row.status}
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "status",
-                                    e.target.value,
-                                  )
-                                }
+                              <SpkBadge
+                                variant={getStatusVariant(row.status)}
+                                size="lg"
                               >
-                                <option value="">Select</option>
-                                {dropdownOptions.status.map((opt) => (
-                                  <option key={opt} value={opt}>
-                                    {opt}
-                                  </option>
-                                ))}
-                              </select>
+                                {row.status}
+                              </SpkBadge>
                             </td>
 
                             {/* Comments */}
                             <td>
-                              <input
-                                className="form-control"
-                                disabled
-                                value={row.comments ?? ""}
-                                placeholder="Comments"
-                                onChange={(e) =>
-                                  updateOfferRow(
-                                    row.id,
-                                    "comments",
-                                    e.target.value,
-                                  )
-                                }
-                              />
+                             
+                              <div className="fw-seminormal d-block">
+  {row.comments}
+</div>
                             </td>
 
                             {/* Actions */}
@@ -2358,7 +2278,9 @@ const Crm = () => {
                       <td>
                         <FileUploadCell
                           file={row.file}
-                          onUpload={(f) => updatePaymenteEdit(row.id, "file", f)}
+                          onUpload={(f) =>
+                            updatePaymenteEdit(row.id, "file", f)
+                          }
                           onRemove={() =>
                             updatePaymenteEdit(row.id, "file", null)
                           }
@@ -2479,7 +2401,11 @@ const Crm = () => {
                           value={row.comments}
                           placeholder="Comments"
                           onChange={(e) =>
-                            updatePaymenteEdit(row.id, "comments", e.target.value)
+                            updatePaymenteEdit(
+                              row.id,
+                              "comments",
+                              e.target.value,
+                            )
                           }
                         />
                       </td>
@@ -4384,14 +4310,20 @@ const Crm = () => {
                           value={row}
                           onUpload={async (f) => {
                             const base64 = await fileToBase64(f);
-                            updateAddProposalRow(row.id, "file", {
-                              file: f,
-                              base64: base64,
-                              fileName: f.name, // store base64 if needed
-                              fileUrl: null,
-                            });
+
+                            updateModalRow(row.id, "file", f); // ✅ real file
+
+                            updateModalRow(row.id, "fileName", f.name); // ✅ update name
+
+                            updateModalRow(
+                              row.id,
+                              "fileUrl",
+                              URL.createObjectURL(f),
+                            ); // ✅ preview
+
+                            updateModalRow(row.id, "documentData", base64); // optional
                           }}
-                          onRemove={() => removeOfferFile(row.id)}
+                          onRemove={() => removeOfferFile(row.proposalId)}
                         />
                       </td>
 
@@ -4399,9 +4331,7 @@ const Crm = () => {
                       <td>
                         <SpkDatepickr
                           className="form-control"
-                          selected={
-                            row.proposalDate ? new Date(row.proposalDate) : null
-                          }
+                          selected={row.proposalDate ? new Date(row.id) : null}
                           onChange={(date) => {
                             updateModalRow(row.id, "proposalDate", date);
 
