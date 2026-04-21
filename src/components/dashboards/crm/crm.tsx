@@ -973,7 +973,7 @@ const Crm = () => {
       paymentId: row.paymentId,
       paymentDate: "2026-04-20T18:22:31.160Z",//row.paymentDate,
       amountReceived:Number(row.amountReceived),
-      currency: row.currency,
+      currency: row.amountCurrency,
       amountReceivedInr: row.amountReceivedInr,
       conversionRateAtPayment: row.conversionRateAtPayment,
       fluctuationDifference: Number(row.fluctuationDifference),
@@ -982,7 +982,7 @@ const Crm = () => {
       comments: row.comments,
     };
     try {
-      await putApi(`InvoicePayment/${row.invoiceId}`, payload);
+      await putApi(`InvoicePayment/${row.paymentId}`, payload);
       toast.success("Sucessfully invoice payment data updated", {
         autoClose: 1500,
       });
@@ -2220,7 +2220,7 @@ const Crm = () => {
         show={addCustomerPopUP}
         onHide={() => setAddCustomerPopUp(false)}
         size="xl"
-        dialogClassName="modal-90w"
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Customer</Modal.Title>
@@ -2247,8 +2247,8 @@ const Crm = () => {
       <Modal
         show={paymentEditPopUp}
         onHide={() => setPaymentEditPopUP(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Update Payment Details</Modal.Title>
@@ -2257,9 +2257,9 @@ const Crm = () => {
         <Modal.Body>
           <div
             className="table-responsive pb-16"
-            style={{ paddingBottom: "22px" }}
+            //style={{ paddingBottom: "22px" }}
           >
-            <div className="table-responsive">
+            <div className="table-responsive pb-4">
               <table className="table table-bordered table-hover app-table mb-0">
                 <thead className="table-primary">
                   <tr>
@@ -2515,8 +2515,8 @@ const Crm = () => {
       <Modal
         show={paymentDetailsPopUp}
         onHide={() => setPaymentDetailsPayment(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Payment Details</Modal.Title>
@@ -2527,7 +2527,7 @@ const Crm = () => {
             className="table-responsive pb-16"
             style={{ paddingBottom: "22px" }}
           >
-            <div className="table-responsive">
+            <div className="table-responsive pb-4">
               <table className="table table-bordered table-hover app-table mb-0">
                 <thead className="table-primary">
                   <tr>
@@ -2827,8 +2827,7 @@ const Crm = () => {
       <Modal
         show={invoiceEditDetailsPopUp}
         onHide={() => setInvoiceEditDetailsPopUp(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Update Invoice Details</Modal.Title>
@@ -2839,7 +2838,7 @@ const Crm = () => {
             className="table-responsive pb-16"
             style={{ paddingBottom: "22px" }}
           >
-            <div className="table-responsive">
+            <div className="table-responsive pb-4">
               <table className="table table-bordered app-table mb-0">
                 <thead className="table-primary">
                   <tr>
@@ -3098,8 +3097,8 @@ const Crm = () => {
       <Modal
         show={invoiceDetailsPopUp}
         onHide={() => setInvoiceDetailsPopup(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Invoice Details</Modal.Title>
@@ -3110,7 +3109,7 @@ const Crm = () => {
             className="table-responsive pb-16"
             style={{ paddingBottom: "22px" }}
           >
-            <div className="table-responsive">
+            <div className="table-responsive pb-4">
               <table className="table table-bordered app-table mb-0">
                 <thead className="table-primary">
                   <tr>
@@ -3396,8 +3395,8 @@ const Crm = () => {
       <Modal
         show={orderEditDetailsPopUp}
         onHide={() => setOrderEditDetailsPopup(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Update Order Details</Modal.Title>
@@ -3671,8 +3670,8 @@ const Crm = () => {
       <Modal
         show={orderDetailsPopUp}
         onHide={() => setOrderDetailsPopup(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Order Details</Modal.Title>
@@ -3927,15 +3926,15 @@ const Crm = () => {
       <Modal
         show={showProposalModal}
         onHide={() => setShowProposalModal(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Proposal Details</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          <div className="table-responsive">
+          <div className="table-responsive pb-4">
             <table className="table table-bordered table-hover">
               <thead className="table-primary">
                 <tr>
@@ -4291,8 +4290,8 @@ const Crm = () => {
       <Modal
         show={showEditModal}
         onHide={() => setEditModal(false)}
-        size="xl"
-        dialogClassName="modal-90w"
+        fullscreen
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Edit Proposal</Modal.Title>
@@ -4300,7 +4299,7 @@ const Crm = () => {
 
         <Modal.Body>
           <div className="table-responsive">
-            <div className="table-responsive app-table-wrapper">
+            <div className="table-responsive app-table-wrapper pb-4">
               <table className="table table-bordered table-hover app-table">
                 <thead className="table-primary">
                   <tr>

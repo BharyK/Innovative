@@ -208,3 +208,17 @@ tbody tr {
 tbody tr td {
   border: 1px solid #ccc;
 }
+
+.custom-full-modal {
+  max-width: 95vw !important;
+  width: 95vw;
+  margin: 10px auto;
+}
+
+.custom-full-modal .modal-content {
+  height: 90vh;
+}
+
+.custom-full-modal .modal-body {
+  overflow: auto;
+}
