@@ -414,7 +414,7 @@ const Crm = () => {
           getApi("Order"),
           getApi("Invoice"),
           getApi("InvoicePayment"),
-          //getApi("api/Customers"),
+          getApi("Customers"),
         ]);
       console.log("payment", payment);
       setBusinessUnits(Utility.data.businessUnits);
@@ -424,7 +424,7 @@ const Crm = () => {
       setOrderDetailsData(order.data);
       setInvoiceDetailsData(invoice.data);
       setPaymentDetailsData([payment.data]);
-      //setCustomerInfo(customer.data);
+      setCustomerInfo(customer.data);
       const mapped: OfferRow[] = Proposal.data.map(
         (item: any, index: number) => ({
           ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
@@ -2140,7 +2140,7 @@ const Crm = () => {
         show={addCustomerPopUP}
         onHide={() => setAddCustomerPopUp(false)}
         size="xl"
-        dialogClassName="custom-full-modal"
+        //dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Customer</Modal.Title>
@@ -3853,7 +3853,7 @@ const Crm = () => {
         show={showProposalModal}
         onHide={() => setShowProposalModal(false)}
         fullscreen
-        dialogClassName="custom-full-modal"
+        
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Proposal Details</Modal.Title>
@@ -3933,7 +3933,10 @@ const Crm = () => {
                         className="form-select"
                         value={row.firmId}
                         onChange={(e) =>
-                          updateAddProposalRow(row.id, "firmId", e.target.value)
+                        {
+                          updateAddProposalRow(row.id, "firmId", e.target.value);
+                          sessionStorage.setItem("selectedFirmId", e.target.value);
+                        }
                         }
                       >
                         <option value="">Select</option>

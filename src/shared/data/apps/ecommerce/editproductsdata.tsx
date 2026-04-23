@@ -58,14 +58,14 @@ export const subCategoryTagOptions = [
 ];
 
 export const genderTagOption = [
-  { value: "Mechanical Design", label: "Mechanical Design" },
-  { value: "Robotic Simulation ", label: "Robotic Simulation " },
-  { value: "Layout ", label: "Layout" },
-  { value: "Documentation", label: "Documentation" },
-  { value: "Manufacturing", label: "Manufacturing" },
-  { value: "Onsite Support", label: "Onsite Support" },
+  { value: 1, label: "Mechanical Design" },
+  { value: 2, label: "Robotic Simulation " },
+  { value: 3, label: "Layout" },
+  { value: 4, label: "Documentation" },
+  { value: 5, label: "Manufacturing" },
+  { value: 6, label: "Onsite Support" },
   {
-    value: "Onsite Deputation /Staffing",
+    value: 7,
     label: "Onsite Deputation /Staffing",
   },
 ];
