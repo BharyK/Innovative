@@ -381,4 +381,22 @@ export const MENUITEMS: Menuitemtype[] = [
     dirchange: false,
     title: "Indirect-Expenses",
   },
+  {
+    path: `${import.meta.env.BASE_URL}dashboards/release-purchase-orders`,
+    icon: Icons,
+    type: "link",
+    active: false,
+    selected: false,
+    dirchange: false,
+    title: "Release of Purchase Orders",
+  },
+  {
+    path: `${import.meta.env.BASE_URL}dashboards/delivery-challan`,
+    icon: Icons,
+    type: "link",
+    active: false,
+    selected: false,
+    dirchange: false,
+    title: "Delivery Challan",
+  },
 ];

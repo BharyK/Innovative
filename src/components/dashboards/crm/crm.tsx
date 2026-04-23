@@ -1125,7 +1125,7 @@ const Crm = () => {
                   <Card.Title>OFFER DETAILS</Card.Title>
                   <div className="d-flex justify-content-between gap-2">
                     <SpkButton
-                      Buttonvariant="danger"
+                      Buttonvariant="primary"
                       Size="sm"
                       Customclass="btn"
                       onClickfunc={addProposal}
@@ -1180,11 +1180,9 @@ const Crm = () => {
                             {/* Firm */}
                             <td>
                               <div className="fw-seminormal d-block">
-                               {
-    firms.find(f => f.firmId === row.firmId)?.firmName || "Unknown"
-  }
+                                {firms.find((f) => f.firmId === row.firmId)
+                                  ?.firmName || "Unknown"}
                               </div>
-                              
                             </td>
 
                             {/* Proposal No + Upload */}
@@ -1314,12 +1312,11 @@ const Crm = () => {
 
                             {/* Department */}
                             <td>
-                             <div className="fw-seminormal d-block">
-  {
-    departments.find(d => d.departmentId === row.departmentId)
-      ?.departmentName || "Unknown"
-  }
-</div>
+                              <div className="fw-seminormal d-block">
+                                {departments.find(
+                                  (d) => d.departmentId === row.departmentId,
+                                )?.departmentName || "Unknown"}
+                              </div>
                             </td>
 
                             {/* Efforts / Hours */}
@@ -1341,17 +1338,16 @@ const Crm = () => {
 
                             {/* Comments */}
                             <td>
-                             
                               <div className="fw-seminormal d-block">
-  {row.comments}
-</div>
+                                {row.comments}
+                              </div>
                             </td>
 
                             {/* Actions */}
                             <td className="text-center">
                               <br />
                               <button
-                                className="btn btn-danger btn-sm mt-1"
+                                className="btn btn-primary btn-sm mt-1"
                                 onClick={() => handleEditProposalData(row)}
                                 style={{
                                   whiteSpace: "nowrap",
@@ -3852,8 +3848,7 @@ const Crm = () => {
       <Modal
         show={showProposalModal}
         onHide={() => setShowProposalModal(false)}
-        fullscreen
-        
+        dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Proposal Details</Modal.Title>
@@ -3861,350 +3856,327 @@ const Crm = () => {
 
         <Modal.Body>
           <div className="table-responsive pb-4">
-            <table className="table table-bordered table-hover">
-              <thead className="table-primary">
-                <tr>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Financial Year
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Firm
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Proposal No
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Date
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Customer
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Lead Generator
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Project Details
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Business Unit
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Department
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Efforts
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Status
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Comments
-                  </th>
-                  <th className="text-nowrap" style={{ minWidth: "150px" }}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+            <div className="container">
+              <div className="container">
+                <div className="container">
+                  {proposalData.map((row) => (
+                    <div key={row.id} className="card mb-3 p-3 shadow-sm">
+                      <div className="row g-3">
+                        {/* Row 1 */}
+                        <div className="col-md-3">
+                          <label className="form-label">Financial Year</label>
+                          <select
+                            className="form-select"
+                            value={row.year || ""}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "year",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {financialYears.map((fy) => (
+                              <option key={fy} value={fy}>
+                                {fy}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-              <tbody>
-                {proposalData.map((row) => (
-                  <tr key={row.id}>
-                    {/* Financial Year */}
-                    <td>
-                      <select
-                        className="form-control"
-                        value={row.year || ""}
-                        onChange={(e) =>
-                          updateAddProposalRow(row.id, "year", e.target.value)
-                        }
-                      >
-                        <option value="">Select Financial Year</option>
-                        {financialYears.map((fy) => (
-                          <option key={fy} value={fy}>
-                            {fy}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                        <div className="col-md-3">
+                          <label className="form-label">Firm</label>
+                          <select
+                            className="form-select"
+                            value={row.firmId}
+                            onChange={(e) => {
+                              updateAddProposalRow(
+                                row.id,
+                                "firmId",
+                                e.target.value,
+                              );
+                              sessionStorage.setItem(
+                                "selectedFirmId",
+                                e.target.value,
+                              );
+                            }}
+                          >
+                            <option value="">Select</option>
+                            {firms.map((opt) => (
+                              <option key={opt.firmId} value={opt.firmId}>
+                                {opt.firmName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                    {/* Firm */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.firmId}
-                        onChange={(e) =>
-                        {
-                          updateAddProposalRow(row.id, "firmId", e.target.value);
-                          sessionStorage.setItem("selectedFirmId", e.target.value);
-                        }
-                        }
-                      >
-                        <option value="">Select</option>
-                        {firms.length > 0 ? (
-                          firms.map((opt) => (
-                            <option key={opt.firmId} value={opt.firmId}>
-                              {opt.firmName}
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled>No options available</option>
-                        )}
-                      </select>
-                    </td>
+                        <div className="col-md-3">
+                          <label className="form-label">Proposal No</label>
+                          <input
+                            className="form-control"
+                            value={row.proposalNumber}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "proposalNumber",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
 
-                    {/* Proposal No */}
-                    <td>
-                      <input
-                        className="form-control mb-1"
-                        value={row.proposalNumber}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "proposalNumber",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <div>
-                        <input
-                          type="file"
-                          className="form-control mb-1"
-                          onChange={(e) => {
-                            const f = e.target.files[0];
-                            if (!f) return;
+                        <div className="col-md-3">
+                          <label className="form-label">Date</label>
+                          <SpkDatepickr
+                            className="form-control"
+                            selected={
+                              row.proposalDate
+                                ? new Date(row.proposalDate)
+                                : null
+                            }
+                            onChange={(date) =>
+                              updateAddProposalRow(row.id, "proposalDate", date)
+                            }
+                            placeholderText="Choose date"
+                          />
+                        </div>
 
-                            updateAddProposalRow(row.id, "file", {
-                              file: f,
-                              fileName: f.name,
-                            });
-                          }}
-                        />
+                        {/* Row 2 */}
+                        <div className="col-md-3">
+                          <label className="form-label">Customer</label>
+                          <select
+                            className="form-select"
+                            value={row.customerId || ""}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "customerId",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {customerInfo.map((opt) => (
+                              <option
+                                key={opt.customerId}
+                                value={opt.customerId}
+                              >
+                                {opt.customerName}
+                              </option>
+                            ))}
+                          </select>
 
-                        <div className="d-flex justify-content-between align-items-center">
-                          <small>
-                            {row.file?.fileName
-                              ? row.file.fileName
-                              : "No file selected"}
-                          </small>
+                          <button
+                            className="btn btn-danger btn-sm mt-1"
+                            onClick={openAddCustomer}
+                          >
+                            Add User
+                          </button>
+                        </div>
+
+                        <div className="col-md-3">
+                          <label className="form-label">Lead Generator</label>
+                          <select
+                            className="form-select"
+                            value={row.leadGenerator}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "leadGenerator",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {employees.map((opt) => (
+                              <option
+                                key={opt.employeeId}
+                                value={opt.employeeId}
+                              >
+                                {opt.employeeName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Project Details + Comments SAME ROW */}
+                        <div className="col-md-6">
+                          <div className="row">
+                            <div className="col-6">
+                              <label className="form-label">
+                                Project Details
+                              </label>
+                              <textarea
+                                className="form-control"
+                                rows={4}
+                                value={row.projectDetails}
+                                onChange={(e) =>
+                                  updateAddProposalRow(
+                                    row.id,
+                                    "projectDetails",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div className="col-6">
+                              <label className="form-label">Comments</label>
+                              <textarea
+                                className="form-control"
+                                rows={4}
+                                value={row.comments || ""}
+                                onChange={(e) =>
+                                  updateAddProposalRow(
+                                    row.id,
+                                    "comments",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Row 3 */}
+                        <div className="col-md-3">
+                          <label className="form-label">Business Unit</label>
+                          <select
+                            className="form-select"
+                            value={row.businessUnitId}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "businessUnitId",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {businessUnits.map((opt) => (
+                              <option
+                                key={opt.businessUnitId}
+                                value={opt.businessUnitId}
+                              >
+                                {opt.businessUnitName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-3">
+                          <label className="form-label">Department</label>
+                          <select
+                            className="form-select"
+                            value={row.departmentId}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "departmentId",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {departments.map((opt) => (
+                              <option
+                                key={opt.departmentId}
+                                value={opt.departmentId}
+                              >
+                                {opt.departmentName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-3">
+                          <label className="form-label">Efforts (hrs)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={row.estimatedHours}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "estimatedHours",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="col-md-3">
+                          <label className="form-label">Status</label>
+                          <select
+                            className="form-select"
+                            value={row.status}
+                            onChange={(e) =>
+                              updateAddProposalRow(
+                                row.id,
+                                "status",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {dropdownOptions.status.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Row 4 */}
+                        <div className="col-md-6">
+                          <label className="form-label">Upload File</label>
+                          <input
+                            type="file"
+                            className="form-control"
+                            onChange={(e) => {
+                              const f = e.target.files[0];
+                              if (!f) return;
+
+                              updateAddProposalRow(row.id, "file", {
+                                file: f,
+                                fileName: f.name,
+                              });
+                            }}
+                          />
 
                           {row.file?.fileName && (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-link text-danger"
-                              onClick={() =>
-                                updateAddProposalRow(row.id, "file", null)
-                              }
-                            >
-                              Remove
-                            </button>
+                            <div className="d-flex justify-content-between mt-1">
+                              <small>{row.file.fileName}</small>
+                              <button
+                                type="button"
+                                className="btn btn-link text-danger p-0"
+                                onClick={() =>
+                                  updateAddProposalRow(row.id, "file", null)
+                                }
+                              >
+                                Remove
+                              </button>
+                            </div>
                           )}
                         </div>
+
+                        {/* Submit */}
+                        <div className="col-12 text-end">
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => modalSubmit(row)}
+                            disabled={btnLoading}
+                          >
+                            {btnLoading ? "Submitting..." : "Submit"}
+                          </button>
+                        </div>
                       </div>
-                    </td>
-
-                    {/* Date */}
-                    <td>
-                      <SpkDatepickr
-                        className="form-control"
-                        selected={
-                          row.proposalDate ? new Date(row.proposalDate) : null
-                        }
-                        onChange={(date) =>
-                          updateAddProposalRow(row.id, "proposalDate", date)
-                        }
-                        placeholderText="Choose date"
-                      />
-                    </td>
-
-                    {/* Customer */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.customerId || ""}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "customerId",
-                            e.target.value,
-                          )
-                        }
-                      >
-                        <option value="">Select</option>
-                        {customerInfo.map((opt) => (
-                          <option key={opt.customerId} value={opt.customerId}>
-                            {opt.customerName}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        className="btn btn-danger btn-sm mt-1"
-                        onClick={openAddCustomer}
-                      >
-                        Add User
-                      </button>
-                    </td>
-
-                    {/* Lead Generator */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.leadGenerator}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "leadGenerator",
-                            e.target.value,
-                          )
-                        }
-                      >
-                        <option value="">Select</option>
-                        {employees.map((opt) => (
-                          <option key={opt.employeeId} value={opt.employeeId}>
-                            {opt.employeeName}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Project Details */}
-                    <td>
-                      <input
-                        className="form-control"
-                        value={row.projectDetails}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "projectDetails",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
-
-                    {/* Business Unit */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.businessUnitId}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "businessUnitId",
-                            e.target.value,
-                          )
-                        }
-                      >
-                        <option value="">Select</option>
-                        {businessUnits.map((opt) => (
-                          <option
-                            key={opt.businessUnitId}
-                            value={opt.businessUnitId}
-                          >
-                            {opt.businessUnitName}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Department */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.departmentId}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "departmentId",
-                            e.target.value,
-                          )
-                        }
-                      >
-                        <option value="">Select</option>
-                        {departments.map((opt) => (
-                          <option
-                            key={opt.departmentId}
-                            value={opt.departmentId}
-                          >
-                            {opt.departmentName}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Efforts */}
-                    <td>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={row.estimatedHours}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "estimatedHours",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
-
-                    {/* Status */}
-                    <td>
-                      <select
-                        className="form-select"
-                        value={row.status}
-                        onChange={(e) =>
-                          updateAddProposalRow(row.id, "status", e.target.value)
-                        }
-                      >
-                        <option value="">Select</option>
-                        {dropdownOptions.status.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Comments */}
-                    <td>
-                      <input
-                        className="form-control"
-                        value={row.comments || ""}
-                        onChange={(e) =>
-                          updateAddProposalRow(
-                            row.id,
-                            "comments",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
-
-                    {/* Actions */}
-                    <td className="text-center">
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={modalSubmit}
-                        disabled={btnLoading}
-                      >
-                        {btnLoading ? (
-                          <>
-                            <span
-                              className="spinner-border spinner-border-sm me-1"
-                              role="status"
-                            ></span>
-                            Submitting...
-                          </>
-                        ) : (
-                          "Submit"
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* <button
@@ -4219,7 +4191,6 @@ const Crm = () => {
       <Modal
         show={showEditModal}
         onHide={() => setEditModal(false)}
-        fullscreen
         dialogClassName="custom-full-modal"
       >
         <Modal.Header closeButton>
@@ -4229,51 +4200,31 @@ const Crm = () => {
         <Modal.Body>
           <div className="table-responsive">
             <div className="table-responsive app-table-wrapper pb-4">
-              <table className="table table-bordered table-hover app-table">
-                <thead className="table-primary">
-                  <tr>
-                    <th>Financial Year</th>
-                    <th>Firm</th>
-                    <th>Proposal No</th>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>Lead Generator</th>
-                    <th>Project Details</th>
-                    <th>Business Unit</th>
-                    <th>Department</th>
-                    <th>Efforts</th>
-                    <th>Status</th>
-                    <th>Comments</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {editPropodaData.map((row) => (
-                    <tr key={row.id}>
-                      {/* ID */}
-
-                      {/* Financial Year */}
-                      <td>
+              <div className="container">
+                {editPropodaData.map((row) => (
+                  <div key={row.id} className="card mb-3 p-3 shadow-sm">
+                    <div className="row g-3">
+                      {/* Row 1 */}
+                      <div className="col-md-3">
+                        <label className="form-label">Financial Year</label>
                         <select
-                          className="form-control"
+                          className="form-select"
                           value={row.year || ""}
-                          onChange={(e) => {
-                            updateModalRow(row.id, "year", e.target.value);
-                            console.log("working", e.target.value);
-                          }}
+                          onChange={(e) =>
+                            updateModalRow(row.id, "year", e.target.value)
+                          }
                         >
-                          <option value="">Select Financial Year</option>
-
+                          <option value="">Select</option>
                           {financialYears.map((fy) => (
                             <option key={fy} value={fy}>
                               {fy}
                             </option>
                           ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Firm */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Firm</label>
                         <select
                           className="form-select"
                           value={row.firmId}
@@ -4282,22 +4233,18 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {firms.length > 0 ? (
-                            firms.map((opt) => (
-                              <option key={opt.firmId} value={opt.firmId}>
-                                {opt.firmName}
-                              </option>
-                            ))
-                          ) : (
-                            <option disabled>No options available</option>
-                          )}
+                          {firms.map((opt) => (
+                            <option key={opt.firmId} value={opt.firmId}>
+                              {opt.firmName}
+                            </option>
+                          ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Proposal No + Upload */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Proposal No</label>
                         <input
-                          className="form-control mb-1"
+                          className="form-control"
                           value={row.proposalNumber}
                           onChange={(e) =>
                             updateModalRow(
@@ -4307,70 +4254,43 @@ const Crm = () => {
                             )
                           }
                         />
-                        <FileUploadCell
-                          file={row.file}
-                          fileUrl={row.fileUrl}
-                          value={row}
-                          onUpload={async (f) => {
-                            const base64 = await fileToBase64(f);
+                      </div>
 
-                            updateModalRow(row.id, "file", f); // ✅ real file
-
-                            updateModalRow(row.id, "fileName", f.name); // ✅ update name
-
-                            updateModalRow(
-                              row.id,
-                              "fileUrl",
-                              URL.createObjectURL(f),
-                            ); // ✅ preview
-
-                            updateModalRow(row.id, "documentData", base64); // optional
-                          }}
-                          onRemove={() => removeOfferFile(row.proposalId)}
-                        />
-                      </td>
-
-                      {/* Date */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Date</label>
                         <SpkDatepickr
                           className="form-control"
-                          selected={row.proposalDate ? new Date(row.id) : null}
-                          onChange={(date) => {
-                            updateModalRow(row.id, "proposalDate", date);
-
-                            console.log(date); // ✅ correct
-                          }}
+                          selected={
+                            row.proposalDate ? new Date(row.proposalDate) : null
+                          }
+                          onChange={(date) =>
+                            updateModalRow(row.id, "proposalDate", date)
+                          }
                           placeholderText="Choose date"
                         />
-                      </td>
+                      </div>
 
-                      {/* Customer */}
-                      <td>
+                      {/* Row 2 */}
+                      <div className="col-md-3">
+                        <label className="form-label">Customer</label>
                         <select
                           className="form-select"
-                          value={row.firmId}
+                          value={row.customerId || ""}
                           onChange={(e) =>
-                            updateModalRow(row.id, "firmId", e.target.value)
+                            updateModalRow(row.id, "customerId", e.target.value)
                           }
                         >
                           <option value="">Select</option>
-                          {customerInfo.length > 0 ? (
-                            customerInfo.map((opt) => (
-                              <option
-                                key={opt.customerId}
-                                value={opt.customerId}
-                              >
-                                {opt.customerName}
-                              </option>
-                            ))
-                          ) : (
-                            <option disabled>No options available</option>
-                          )}
+                          {customerInfo.map((opt) => (
+                            <option key={opt.customerId} value={opt.customerId}>
+                              {opt.customerName}
+                            </option>
+                          ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Lead Generator */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Lead Generator</label>
                         <select
                           className="form-select"
                           value={row.leadGenerator}
@@ -4383,38 +4303,56 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {employees.length > 0 ? (
-                            employees.map((opt) => (
-                              <option
-                                key={opt.employeeId}
-                                value={opt.employeeId}
-                              >
-                                {opt.employeeName}
-                              </option>
-                            ))
-                          ) : (
-                            <option disabled>No options available</option>
-                          )}
+                          {employees.map((opt) => (
+                            <option key={opt.employeeId} value={opt.employeeId}>
+                              {opt.employeeName}
+                            </option>
+                          ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Project Details */}
-                      <td>
-                        <input
-                          className="form-control"
-                          value={row.projectDetails}
-                          onChange={(e) =>
-                            updateModalRow(
-                              row.id,
-                              "projectDetails",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </td>
+                      {/* Project Details + Comments SAME ROW */}
+                      <div className="col-md-6">
+                        <div className="row">
+                          <div className="col-6">
+                            <label className="form-label">
+                              Project Details
+                            </label>
+                            <textarea
+                              className="form-control"
+                              rows={4}
+                              value={row.projectDetails}
+                              onChange={(e) =>
+                                updateModalRow(
+                                  row.id,
+                                  "projectDetails",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </div>
 
-                      {/* Business Unit */}
-                      <td>
+                          <div className="col-6">
+                            <label className="form-label">Comments</label>
+                            <textarea
+                              className="form-control"
+                              rows={4}
+                              value={row.comments ?? ""}
+                              onChange={(e) =>
+                                updateModalRow(
+                                  row.id,
+                                  "comments",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 3 */}
+                      <div className="col-md-3">
+                        <label className="form-label">Business Unit</label>
                         <select
                           className="form-select"
                           value={row.businessUnitId}
@@ -4427,23 +4365,19 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {businessUnits.length > 0 ? (
-                            businessUnits.map((opt) => (
-                              <option
-                                key={opt.businessUnitId}
-                                value={opt.businessUnitId}
-                              >
-                                {opt.businessUnitName}
-                              </option>
-                            ))
-                          ) : (
-                            <option disabled>No options available</option>
-                          )}
+                          {businessUnits.map((opt) => (
+                            <option
+                              key={opt.businessUnitId}
+                              value={opt.businessUnitId}
+                            >
+                              {opt.businessUnitName}
+                            </option>
+                          ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Department */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Department</label>
                         <select
                           className="form-select"
                           value={row.departmentId}
@@ -4465,10 +4399,10 @@ const Crm = () => {
                             </option>
                           ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Efforts / Hours */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Efforts (hrs)</label>
                         <input
                           type="number"
                           className="form-control"
@@ -4481,10 +4415,10 @@ const Crm = () => {
                             )
                           }
                         />
-                      </td>
+                      </div>
 
-                      {/* Status */}
-                      <td>
+                      <div className="col-md-3">
+                        <label className="form-label">Status</label>
                         <select
                           className="form-select"
                           value={row.status}
@@ -4499,38 +4433,45 @@ const Crm = () => {
                             </option>
                           ))}
                         </select>
-                      </td>
+                      </div>
 
-                      {/* Comments */}
-                      <td>
-                        <input
-                          className="form-control"
-                          value={row.comments ?? ""}
-                          placeholder="Comments"
-                          onChange={(e) =>
-                            updateModalRow(row.id, "comments", e.target.value)
-                          }
+                      {/* Row 4 - File Upload */}
+                      <div className="col-md-6">
+                        <label className="form-label">Upload File</label>
+
+                        <FileUploadCell
+                          file={row.file}
+                          fileUrl={row.fileUrl}
+                          value={row}
+                          onUpload={async (f) => {
+                            const base64 = await fileToBase64(f);
+
+                            updateModalRow(row.id, "file", f);
+                            updateModalRow(row.id, "fileName", f.name);
+                            updateModalRow(
+                              row.id,
+                              "fileUrl",
+                              URL.createObjectURL(f),
+                            );
+                            updateModalRow(row.id, "documentData", base64);
+                          }}
+                          onRemove={() => removeOfferFile(row.proposalId)}
                         />
-                      </td>
+                      </div>
 
                       {/* Actions */}
-                      <td className="text-center">
-                        <br />
+                      <div className="col-12 text-end">
                         <button
-                          className="btn btn-danger btn-sm mt-1"
+                          className="btn btn-primary"
                           onClick={() => handleUpdateProposalData(row)}
-                          style={{
-                            whiteSpace: "nowrap",
-                            fontSize: "12px",
-                          }}
                         >
                           Update
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </Modal.Body>
