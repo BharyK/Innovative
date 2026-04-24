@@ -1032,16 +1032,6 @@ const Crm = () => {
     }
   };
 
-  const getOrderDetailsGroup =
-    orderDetailsData.length > 0 &&
-    orderDetailsData.reduce((acc: any, item) => {
-      if (!acc[item.proposalNumber]) {
-        acc[item.proposalNumber] = [];
-      }
-      acc[item.proposalNumber].push(item);
-      return acc;
-    }, {});
-
   const getInvoiceDeetailsGroup = invoiceDetailsData.reduce(
     (acc: any, item) => {
       const proposalKey = item.proposalNumber;
@@ -1144,6 +1134,64 @@ const Crm = () => {
     }
   };
 
+  const [orderSearch, setOrderSearch] = useState("");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [paymentSearch, setPaymentSearch] = useState("");
+
+  const filteredOrderData = orderDetailsData.filter((row) =>
+    Object.values(row)
+      .join(" ")
+      .toLowerCase()
+      .includes(orderSearch.toLowerCase()),
+  );
+  const getOrderDetailsGroup =
+    filteredOrderData.length > 0 &&
+    filteredOrderData.reduce((acc: any, item) => {
+      if (!acc[item.proposalNumber]) acc[item.proposalNumber] = [];
+      acc[item.proposalNumber].push(item);
+      return acc;
+    }, {});
+
+  const filteredInvoiceData = invoiceDetailsData.filter((row) =>
+    Object.values(row)
+      .join(" ")
+      .toLowerCase()
+      .includes(invoiceSearch.toLowerCase()),
+  );
+  const getInvoiceDetailsGroup = filteredInvoiceData.reduce(
+    (acc: any, item) => {
+      const proposalKey = item.proposalNumber;
+      const orderKey = String(item.orderNumber);
+      if (!acc[proposalKey]) acc[proposalKey] = {};
+      if (!acc[proposalKey][orderKey]) acc[proposalKey][orderKey] = [];
+      acc[proposalKey][orderKey].push(item);
+      return acc;
+    },
+    {},
+  );
+
+  const filteredPaymentData = paymentDetailsData.filter((row) =>
+    Object.values(row)
+      .join(" ")
+      .toLowerCase()
+      .includes(paymentSearch.toLowerCase()),
+  );
+
+  const groupedPayments = Object.entries(
+  filteredPaymentData.reduce((acc: any, row: any) => {
+    if (!acc[row.proposalNumber]) acc[row.proposalNumber] = {};
+
+    if (!acc[row.proposalNumber][row.orderNumber])
+      acc[row.proposalNumber][row.orderNumber] = {};
+
+    if (!acc[row.proposalNumber][row.orderNumber][row.invoiceId])
+      acc[row.proposalNumber][row.orderNumber][row.invoiceId] = [];
+
+    acc[row.proposalNumber][row.orderNumber][row.invoiceId].push(row);
+
+    return acc;
+  }, {})
+);
   
 
   return (
@@ -1453,8 +1501,8 @@ const Crm = () => {
                         <input
                           type="text"
                           placeholder="Search..."
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
+                          value={orderSearch}
+                          onChange={(e) => setOrderSearch(e.target.value)}
                         />
                       </div>
                     </div>
@@ -1666,7 +1714,12 @@ const Crm = () => {
                         Add Invoice Details
                       </SpkButton>
                       <div className="search-box">
-                        <input type="text" placeholder="Search..." />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={invoiceSearch}
+                          onChange={(e) => setInvoiceSearch(e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -1690,7 +1743,7 @@ const Crm = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {Object.entries(getInvoiceDeetailsGroup).map(
+                          {Object.entries(getInvoiceDetailsGroup).map(
                             ([proposalNumber, orders]: any) => {
                               const orderEntries = Object.entries(orders);
 
@@ -1876,7 +1929,12 @@ const Crm = () => {
                         Add Payment Details
                       </SpkButton>
                       <div className="search-box">
-                        <input type="text" placeholder="Search..." />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={paymentSearch}
+                          onChange={(e) => setPaymentSearch(e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -1898,102 +1956,100 @@ const Crm = () => {
                             <th>Actions</th>
                           </tr>
                         </thead>
-                        <tbody>
-                          {paymentDetailsData.map((row) => (
-                            <tr key={row.id}>
-                              {/* Proposal Number */}
-                              <td>
-                                <span className="text-primary">
-                                  {row.proposalNumber}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.orderNumber}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.invoiceId}
-                                </span>
-                              </td>
-                              {/* Documents */}
-                              <td>
-                                <FileUploadCell
-                                  file={row.file}
-                                  onUpload={(f) =>
-                                    updatePaymentRow(row.id, "file", f)
-                                  }
-                                  onRemove={() =>
-                                    updatePaymentRow(row.id, "file", null)
-                                  }
-                                />
-                              </td>
+                      <tbody>
+  {groupedPayments.map(([proposalNumber, orders]: any) => {
+    const orderEntries = Object.entries(orders);
 
-                              {/* Value Received */}
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.amountReceived}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.currency}
-                                </span>
-                              </td>
-                              {/* Amount Realised (currency + amount) */}
-                              <td>
-                                <div className="fw-semibold d-block">
-                                  <span className="text-primary">
-                                    {row.amountReceivedInr}
-                                  </span>
-                                </div>
-                              </td>
+    // total rows for proposal
+    const proposalRowSpan = orderEntries.reduce(
+      (sum: number, [, invoices]: any) =>
+        sum +
+        Object.values(invoices).reduce(
+          (s: number, rows: any) => s + rows.length,
+          0
+        ),
+      0
+    );
 
-                              {/* Realised Date */}
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.paymentDate}
-                                </span>
-                              </td>
+    return orderEntries.flatMap(
+      ([orderNumber, invoices]: any, orderIndex: number) => {
+        const invoiceEntries = Object.entries(invoices);
 
-                              {/* Payment Status */}
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.paymentMethod}
-                                </span>
-                              </td>
+        const orderRowSpan = invoiceEntries.reduce(
+          (sum: number, [, rows]: any) => sum + rows.length,
+          0
+        );
 
-                              {/* Fluctuation */}
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.fluctuationDifference}
-                                </span>
-                              </td>
+        return invoiceEntries.flatMap(
+          ([invoiceId, rows]: any, invoiceIndex: number) => {
+            return rows.map((row: any, rowIndex: number) => (
+              <tr key={row.paymentId}>
+                {/* ✅ Proposal */}
+                {orderIndex === 0 &&
+                  invoiceIndex === 0 &&
+                  rowIndex === 0 && (
+                    <td rowSpan={proposalRowSpan}>
+                      <span className="text-primary">
+                        {proposalNumber}
+                      </span>
+                    </td>
+                  )}
 
-                              {/* Comments */}
-                              <td>
-                                <span className="fw-semibold d-block">
-                                  {row.comments}
-                                </span>
-                              </td>
+                {/* ✅ Order */}
+                {invoiceIndex === 0 && rowIndex === 0 && (
+                  <td rowSpan={orderRowSpan}>
+                    <span className="fw-semibold d-block">
+                      {orderNumber}
+                    </span>
+                  </td>
+                )}
 
-                              {/* Actions */}
-                              <td className="text-center">
-                                <button
-                                  className="btn btn-primary btn-sm mt-1"
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    fontSize: "12px",
-                                  }}
-                                  onClick={() => handlePaymentEditDetails(row)}
-                                >
-                                  Edit
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
+                {/* ✅ Invoice */}
+                {rowIndex === 0 && (
+                  <td rowSpan={rows.length}>
+                    <span className="fw-semibold d-block">
+                      {invoiceId}
+                    </span>
+                  </td>
+                )}
+
+                {/* 🔽 Rest normal fields */}
+                <td>
+                  <FileUploadCell
+                    file={row.file}
+                    onUpload={(f) =>
+                      updatePaymentRow(row.id, "file", f)
+                    }
+                    onRemove={() =>
+                      updatePaymentRow(row.id, "file", null)
+                    }
+                  />
+                </td>
+
+                <td>{row.amountReceived}</td>
+                <td>{row.currency}</td>
+                <td>{row.amountReceivedInr}</td>
+                <td>{row.paymentDate}</td>
+                <td>{row.paymentMethod}</td>
+                <td>{row.fluctuationDifference}</td>
+                <td>{row.comments}</td>
+
+                <td className="text-center">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handlePaymentEditDetails(row)}
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ));
+          }
+        );
+      }
+    );
+  })}
+</tbody>
                       </table>
                     </div>
 
