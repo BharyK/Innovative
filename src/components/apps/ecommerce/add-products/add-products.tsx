@@ -4,7 +4,7 @@ import SpkButton from "../../../../shared/@spk-reusable-components/reusable-uiel
 import SpkSelect from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-reactselect";
 import SpkDatepickr from "../../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import { genderTagOption } from "../../../../shared/data/apps/ecommerce/editproductsdata";
-import { postApi } from "../../../../api/services";
+import { postApi, getApi } from "../../../../api/services";
 import { toast, ToastContainer } from "react-toastify";
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ const DEPT_ID = { purchase: 1, account: 2, technical: 3 } as const;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-const AddProduct = () => {
+const AddProduct = ({ handleCustomerAdded }) => {
   // ── General info state ──────────────────────────────────────────────────
   const [generalData, setGeneralData] = useState({
     customerName: "",
@@ -81,98 +81,84 @@ const AddProduct = () => {
   };
 
   // ── Build payload & save ─────────────────────────────────────────────────
- const handleSave = async () => {
-  const firmId = sessionStorage.getItem("selectedFirmId") || "1";
+  const handleSave = async () => {
+    const firmId = sessionStorage.getItem("selectedFirmId") || "1";
 
-  /** ✅ Check if at least one meaningful field is filled */
-  const isFilled = (c: any) => {
-    return (
-      c.contactPerson?.trim() ||
-      c.designation?.trim() ||
-      c.primaryContactNumber?.trim() ||
-      c.secondaryContactNumber?.trim() ||
-      c.emailAddress?.trim() ||
-      c.departmentDescription?.trim()
-    );
-  };
-
-  /** ✅ Build contacts and include ONLY if filled */
-  const buildContacts = (dept: DeptState, departmentTypeId: number) => {
-    const contacts: any[] = [];
-
-    const primary = {
-      departmentTypeId,
-      contactPerson: dept.primary.contactPerson || "",
-      designation: dept.primary.designation || "",
-      primaryContactNumber: dept.primary.primaryContactNumber || "",
-      secondaryContactNumber: dept.secondary.primaryContactNumber || "",
-      emailAddress: dept.primary.emailAddress || "",
-      isPrimaryContact: true,
-      departmentDescription: dept.primary.departmentDescription || "",
+    /** ✅ Check if at least one meaningful field is filled */
+    const isFilled = (c: any) => {
+      return (
+        c.contactPerson?.trim() ||
+        c.designation?.trim() ||
+        c.primaryContactNumber?.trim() ||
+        c.secondaryContactNumber?.trim() ||
+        c.emailAddress?.trim() ||
+        c.departmentDescription?.trim()
+      );
     };
 
-    const secondary = {
-      departmentTypeId,
-      contactPerson: dept.secondary.contactPerson || "",
-      designation: dept.secondary.designation || "",
-      primaryContactNumber: dept.primary.primaryContactNumber || "",
-      secondaryContactNumber: dept.secondary.primaryContactNumber || "",
-      emailAddress: dept.secondary.emailAddress || "",
-      isPrimaryContact: false,
-      departmentDescription: dept.primary.departmentDescription || "",
+    /** ✅ Build contacts and include ONLY if filled */
+    const buildContacts = (dept: DeptState, departmentTypeId: number) => {
+      const contacts: any[] = [];
+
+      const primary = {
+        departmentTypeId,
+        contactPerson: dept.primary.contactPerson || "",
+        designation: dept.primary.designation || "",
+        primaryContactNumber: dept.primary.primaryContactNumber || "",
+        secondaryContactNumber: dept.secondary.primaryContactNumber || "",
+        emailAddress: dept.primary.emailAddress || "",
+        isPrimaryContact: true,
+        departmentDescription: dept.primary.departmentDescription || "",
+      };
+
+      const secondary = {
+        departmentTypeId,
+        contactPerson: dept.secondary.contactPerson || "",
+        designation: dept.secondary.designation || "",
+        primaryContactNumber: dept.primary.primaryContactNumber || "",
+        secondaryContactNumber: dept.secondary.primaryContactNumber || "",
+        emailAddress: dept.secondary.emailAddress || "",
+        isPrimaryContact: false,
+        departmentDescription: dept.primary.departmentDescription || "",
+      };
+
+      // ✅ Only push if at least one field is filled
+      if (isFilled(primary)) {
+        contacts.push(primary);
+      }
+
+      if (isFilled(secondary)) {
+        contacts.push(secondary);
+      }
+
+      return contacts;
     };
 
-    // ✅ Only push if at least one field is filled
-    if (isFilled(primary)) {
-      contacts.push(primary);
-    }
+    /** ✅ Final payload */
+    const payload = {
+      customerName: generalData.customerName,
+      geography: generalData.geography,
+      internalCustomerNumber: generalData.internalCustomerNumber,
+      tradingCurrency: generalData.tradingCurrency,
+      serviceIds: generalData.serviceIds,
+      customerDescription: generalData.customerDescription,
+      gstNumber: generalData.gstNumber,
+      vatNumber: generalData.vatNumber,
+      paymentTerms: generalData.paymentTerms,
+      registeredAddress: generalData.registeredAddress,
+      billingAddress: generalData.billingAddress,
+      shippingAddress: generalData.shippingAddress,
+      firmId: Number(firmId),
 
-    if (isFilled(secondary)) {
-      contacts.push(secondary);
-    }
-
-    return contacts;
+      // ✅ Only valid contacts will be included
+      departmentContacts: [
+        ...buildContacts(purchaseDept, DEPT_ID.purchase),
+        ...buildContacts(accountDept, DEPT_ID.account),
+        ...buildContacts(technicalDept, DEPT_ID.technical),
+      ],
+    };
+    handleCustomerAdded(payload);
   };
-
-  /** ✅ Final payload */
-  const payload = {
-    customerName: generalData.customerName,
-    geography: generalData.geography,
-    internalCustomerNumber: generalData.internalCustomerNumber,
-    tradingCurrency: generalData.tradingCurrency,
-    serviceIds: generalData.serviceIds,
-    customerDescription: generalData.customerDescription,
-    gstNumber: generalData.gstNumber,
-    vatNumber: generalData.vatNumber,
-    paymentTerms: generalData.paymentTerms,
-    registeredAddress: generalData.registeredAddress,
-    billingAddress: generalData.billingAddress,
-    shippingAddress: generalData.shippingAddress,
-    firmId: Number(firmId),
-
-    // ✅ Only valid contacts will be included
-    departmentContacts: [
-      ...buildContacts(purchaseDept, DEPT_ID.purchase),
-      ...buildContacts(accountDept, DEPT_ID.account),
-      ...buildContacts(technicalDept, DEPT_ID.technical),
-    ],
-  };
-
-  try {
-    console.log("FINAL PAYLOAD:", payload);
-    console.log("serviceIds:", payload.serviceIds);
-    console.log("Is Array:", Array.isArray(payload.serviceIds));
-
-    await postApi("Customers", payload);
-
-    toast.success("Successfully proposal data updated", { autoClose: 1500 });
-  } catch (err) {
-    console.error("API ERROR:", err);
-    toast.error("Please try again", { autoClose: 1500 });
-  }
-
-  console.log("Save payload →", JSON.stringify(payload, null, 2));
-};
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -782,12 +768,11 @@ const AddProduct = () => {
                               Account Department Information
                             </div>
                           </div>
+
                           <Row className="gy-3">
                             {/* PRIMARY */}
-                            <Col xl={12} className="text-start">
-                              <Form.Label className="text-start">
-                                Primary Contact Person
-                              </Form.Label>
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Primary Contact Person</Form.Label>
                               <Form.Control
                                 type="text"
                                 placeholder="Enter Primary Contact Person"
@@ -801,6 +786,23 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Primary Contact Number</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="Enter Primary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    setAccountDept,
+                                    "primary",
+                                    "primaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Designation</Form.Label>
                               <Form.Control
@@ -816,6 +818,7 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Email Address</Form.Label>
                               <Form.Control
@@ -835,11 +838,11 @@ const AddProduct = () => {
                             <hr className="my-2 mt-4" />
 
                             {/* SECONDARY */}
-                            <Col xl={12} className="text-start">
+                            <Col xl={6} className="text-start">
                               <Form.Label>Secondary Contact Person</Form.Label>
                               <Form.Control
                                 type="text"
-                                placeholder="Enter the Secondary Contact Person"
+                                placeholder="Enter Secondary Contact Person"
                                 onChange={(e) =>
                                   handleDeptChange(
                                     setAccountDept,
@@ -850,6 +853,23 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Secondary Contact Number</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="Enter Secondary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    setAccountDept,
+                                    "secondary",
+                                    "primaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Designation</Form.Label>
                               <Form.Control
@@ -865,6 +885,7 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Email</Form.Label>
                               <Form.Control
@@ -880,10 +901,13 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            {/* DESCRIPTION */}
                             <Col xl={12} className="text-start">
                               <Form.Label htmlFor="account-desc">
-                                Purchase Description
+                                Account Description
                               </Form.Label>
+
                               <textarea
                                 className="form-control"
                                 id="account-desc"
@@ -897,6 +921,7 @@ const AddProduct = () => {
                                   )
                                 }
                               />
+
                               <Form.Label className="form-label mt-1 fs-12 text-muted mb-0">
                                 *Description should not exceed 500 letters
                               </Form.Label>
@@ -918,12 +943,11 @@ const AddProduct = () => {
                               Technical Department Information
                             </div>
                           </div>
+
                           <Row className="gy-3">
                             {/* PRIMARY */}
-                            <Col xl={12} className="text-start">
-                              <Form.Label className="text-start">
-                                Primary Contact Person
-                              </Form.Label>
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Primary Contact Person</Form.Label>
                               <Form.Control
                                 type="text"
                                 placeholder="Enter Primary Contact Person"
@@ -937,6 +961,23 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Primary Contact Number</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="Enter Primary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    setTechnicalDept,
+                                    "primary",
+                                    "primaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Designation</Form.Label>
                               <Form.Control
@@ -952,6 +993,7 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Email Address</Form.Label>
                               <Form.Control
@@ -971,11 +1013,11 @@ const AddProduct = () => {
                             <hr className="my-2 mt-4" />
 
                             {/* SECONDARY */}
-                            <Col xl={12} className="text-start">
+                            <Col xl={6} className="text-start">
                               <Form.Label>Secondary Contact Person</Form.Label>
                               <Form.Control
                                 type="text"
-                                placeholder="Enter the Secondary Contact Person"
+                                placeholder="Enter Secondary Contact Person"
                                 onChange={(e) =>
                                   handleDeptChange(
                                     setTechnicalDept,
@@ -986,6 +1028,23 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            <Col xl={6} className="text-start">
+                              <Form.Label>Secondary Contact Number</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="Enter Secondary Contact Number"
+                                onChange={(e) =>
+                                  handleDeptChange(
+                                    setTechnicalDept,
+                                    "secondary",
+                                    "primaryContactNumber",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Designation</Form.Label>
                               <Form.Control
@@ -1001,6 +1060,7 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
                             <Col xl={6} className="text-start">
                               <Form.Label>Email</Form.Label>
                               <Form.Control
@@ -1016,10 +1076,13 @@ const AddProduct = () => {
                                 }
                               />
                             </Col>
+
+                            {/* DESCRIPTION */}
                             <Col xl={12} className="text-start">
                               <Form.Label htmlFor="technical-desc">
-                                Purchase Description
+                                Technical Description
                               </Form.Label>
+
                               <textarea
                                 className="form-control"
                                 id="technical-desc"
@@ -1033,6 +1096,7 @@ const AddProduct = () => {
                                   )
                                 }
                               />
+
                               <Form.Label className="form-label mt-1 fs-12 text-muted mb-0">
                                 *Description should not exceed 500 letters
                               </Form.Label>
