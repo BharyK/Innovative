@@ -1178,21 +1178,20 @@ const Crm = () => {
   );
 
   const groupedPayments = Object.entries(
-  filteredPaymentData.reduce((acc: any, row: any) => {
-    if (!acc[row.proposalNumber]) acc[row.proposalNumber] = {};
+    filteredPaymentData.reduce((acc: any, row: any) => {
+      if (!acc[row.proposalNumber]) acc[row.proposalNumber] = {};
 
-    if (!acc[row.proposalNumber][row.orderNumber])
-      acc[row.proposalNumber][row.orderNumber] = {};
+      if (!acc[row.proposalNumber][row.orderNumber])
+        acc[row.proposalNumber][row.orderNumber] = {};
 
-    if (!acc[row.proposalNumber][row.orderNumber][row.invoiceId])
-      acc[row.proposalNumber][row.orderNumber][row.invoiceId] = [];
+      if (!acc[row.proposalNumber][row.orderNumber][row.invoiceId])
+        acc[row.proposalNumber][row.orderNumber][row.invoiceId] = [];
 
-    acc[row.proposalNumber][row.orderNumber][row.invoiceId].push(row);
+      acc[row.proposalNumber][row.orderNumber][row.invoiceId].push(row);
 
-    return acc;
-  }, {})
-);
-  
+      return acc;
+    }, {}),
+  );
 
   return (
     <Fragment>
@@ -1956,100 +1955,123 @@ const Crm = () => {
                             <th>Actions</th>
                           </tr>
                         </thead>
-                      <tbody>
-  {groupedPayments.map(([proposalNumber, orders]: any) => {
-    const orderEntries = Object.entries(orders);
+                        <tbody>
+                          {groupedPayments.map(
+                            ([proposalNumber, orders]: any) => {
+                              const orderEntries = Object.entries(orders);
 
-    // total rows for proposal
-    const proposalRowSpan = orderEntries.reduce(
-      (sum: number, [, invoices]: any) =>
-        sum +
-        Object.values(invoices).reduce(
-          (s: number, rows: any) => s + rows.length,
-          0
-        ),
-      0
-    );
+                              // total rows for proposal
+                              const proposalRowSpan = orderEntries.reduce(
+                                (sum: number, [, invoices]: any) =>
+                                  sum +
+                                  Object.values(invoices).reduce(
+                                    (s: number, rows: any) => s + rows.length,
+                                    0,
+                                  ),
+                                0,
+                              );
 
-    return orderEntries.flatMap(
-      ([orderNumber, invoices]: any, orderIndex: number) => {
-        const invoiceEntries = Object.entries(invoices);
+                              return orderEntries.flatMap(
+                                (
+                                  [orderNumber, invoices]: any,
+                                  orderIndex: number,
+                                ) => {
+                                  const invoiceEntries =
+                                    Object.entries(invoices);
 
-        const orderRowSpan = invoiceEntries.reduce(
-          (sum: number, [, rows]: any) => sum + rows.length,
-          0
-        );
+                                  const orderRowSpan = invoiceEntries.reduce(
+                                    (sum: number, [, rows]: any) =>
+                                      sum + rows.length,
+                                    0,
+                                  );
 
-        return invoiceEntries.flatMap(
-          ([invoiceId, rows]: any, invoiceIndex: number) => {
-            return rows.map((row: any, rowIndex: number) => (
-              <tr key={row.paymentId}>
-                {/* ✅ Proposal */}
-                {orderIndex === 0 &&
-                  invoiceIndex === 0 &&
-                  rowIndex === 0 && (
-                    <td rowSpan={proposalRowSpan}>
-                      <span className="text-primary">
-                        {proposalNumber}
-                      </span>
-                    </td>
-                  )}
+                                  return invoiceEntries.flatMap(
+                                    (
+                                      [invoiceId, rows]: any,
+                                      invoiceIndex: number,
+                                    ) => {
+                                      return rows.map(
+                                        (row: any, rowIndex: number) => (
+                                          <tr key={row.paymentId}>
+                                            {/* ✅ Proposal */}
+                                            {orderIndex === 0 &&
+                                              invoiceIndex === 0 &&
+                                              rowIndex === 0 && (
+                                                <td rowSpan={proposalRowSpan}>
+                                                  <span className="text-primary">
+                                                    {proposalNumber}
+                                                  </span>
+                                                </td>
+                                              )}
 
-                {/* ✅ Order */}
-                {invoiceIndex === 0 && rowIndex === 0 && (
-                  <td rowSpan={orderRowSpan}>
-                    <span className="fw-semibold d-block">
-                      {orderNumber}
-                    </span>
-                  </td>
-                )}
+                                            {/* ✅ Order */}
+                                            {invoiceIndex === 0 &&
+                                              rowIndex === 0 && (
+                                                <td rowSpan={orderRowSpan}>
+                                                  <span className="fw-semibold d-block">
+                                                    {orderNumber}
+                                                  </span>
+                                                </td>
+                                              )}
 
-                {/* ✅ Invoice */}
-                {rowIndex === 0 && (
-                  <td rowSpan={rows.length}>
-                    <span className="fw-semibold d-block">
-                      {invoiceId}
-                    </span>
-                  </td>
-                )}
+                                            {/* ✅ Invoice */}
+                                            {rowIndex === 0 && (
+                                              <td rowSpan={rows.length}>
+                                                <span className="fw-semibold d-block">
+                                                  {invoiceId}
+                                                </span>
+                                              </td>
+                                            )}
 
-                {/* 🔽 Rest normal fields */}
-                <td>
-                  <FileUploadCell
-                    file={row.file}
-                    onUpload={(f) =>
-                      updatePaymentRow(row.id, "file", f)
-                    }
-                    onRemove={() =>
-                      updatePaymentRow(row.id, "file", null)
-                    }
-                  />
-                </td>
+                                            {/* 🔽 Rest normal fields */}
+                                            <td>
+                                              <FileUploadCell
+                                                file={row.file}
+                                                onUpload={(f) =>
+                                                  updatePaymentRow(
+                                                    row.id,
+                                                    "file",
+                                                    f,
+                                                  )
+                                                }
+                                                onRemove={() =>
+                                                  updatePaymentRow(
+                                                    row.id,
+                                                    "file",
+                                                    null,
+                                                  )
+                                                }
+                                              />
+                                            </td>
 
-                <td>{row.amountReceived}</td>
-                <td>{row.currency}</td>
-                <td>{row.amountReceivedInr}</td>
-                <td>{row.paymentDate}</td>
-                <td>{row.paymentMethod}</td>
-                <td>{row.fluctuationDifference}</td>
-                <td>{row.comments}</td>
+                                            <td>{row.amountReceived}</td>
+                                            <td>{row.currency}</td>
+                                            <td>{row.amountReceivedInr}</td>
+                                            <td>{row.paymentDate}</td>
+                                            <td>{row.paymentMethod}</td>
+                                            <td>{row.fluctuationDifference}</td>
+                                            <td>{row.comments}</td>
 
-                <td className="text-center">
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => handlePaymentEditDetails(row)}
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ));
-          }
-        );
-      }
-    );
-  })}
-</tbody>
+                                            <td className="text-center">
+                                              <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() =>
+                                                  handlePaymentEditDetails(row)
+                                                }
+                                              >
+                                                Edit
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          )}
+                        </tbody>
                       </table>
                     </div>
 
