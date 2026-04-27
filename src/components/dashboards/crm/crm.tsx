@@ -309,7 +309,7 @@ const Crm = () => {
   const [purchaseOrderData, setPurchaseOrderData] = useState<
     PurchaseOrderRow[]
   >([createEmptyPurchaseOrderRow()]);
-
+console.log('purchaseOrderData', purchaseOrderData);
   // ── Invoice state ────────────────────────────────────────────────────────
   const [invoiceData, setInvoiceData] = useState<InvoiceRow[]>([
     {
@@ -366,14 +366,14 @@ const Crm = () => {
   const dropdownOptions = {
     status: ["Approved", "Pending", "Rejected"],
     currency: [
-      "INR",
-      "USD",
-      "EURO",
-      "GBP",
-      "Chinese Yuan",
-      "Japanese Yen",
-      "Dollar",
-    ],
+  { "name": "INR", "symbol": "₹" },
+  { "name": "USD", "symbol": "$" },
+  { "name": "EURO", "symbol": "€" },
+  { "name": "GBP", "symbol": "£" },
+  { "name": "Chinese Yuan", "symbol": "¥" },
+  { "name": "Japanese Yen", "symbol": "¥" },
+  { "name": "Dollar", "symbol": "$" }
+],
     paymentStatus: [
       "Received",
       "Pending",
@@ -752,7 +752,7 @@ const Crm = () => {
   const [editOrderDetails, setEditOrderDetails] = useState([]);
   const [orderEditDetailsPopUp, setOrderEditDetailsPopup] = useState(false);
   const addOrderDetails = () => {
-    setOrderDetailsPopup(true);
+      setOrderDetailsPopup(true);
   };
   const handleUpdateOrderDetails = async (row: any) => {
     console.log(row);
@@ -2248,9 +2248,9 @@ const Crm = () => {
                         }
                       >
                         <option value="">Select</option>
-                        {dropdownOptions.currency.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
                           </option>
                         ))}
                       </select>
@@ -2537,11 +2537,11 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {dropdownOptions.currency.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
+                           {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
+                          </option>
+                        ))}
                         </select>
                       </div>
 
@@ -2731,11 +2731,11 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {dropdownOptions.currency.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
+                          {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
+                          </option>
+                        ))}
                         </select>
                       </div>
 
@@ -3012,11 +3012,11 @@ const Crm = () => {
                             }
                           >
                             <option value="">Select</option>
-                            {dropdownOptions.currency.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
+                             {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
+                          </option>
+                        ))}
                           </select>
                         </div>
 
@@ -3279,11 +3279,11 @@ const Crm = () => {
                           }
                         >
                           <option value="">Select</option>
-                          {dropdownOptions.currency.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
+                         {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
+                          </option>
+                        ))}
                         </select>
                       </div>
 
@@ -3429,7 +3429,7 @@ const Crm = () => {
             style={{ paddingBottom: "22px" }}
           >
             <div className="container">
-              {purchaseOrderData.map((poRow) => (
+              {purchaseOrderData.length > 0 && purchaseOrderData.map((poRow) => (
                 <div key={poRow.id} className="card mb-3 p-3 shadow-sm">
                   <div className="row g-3">
                     {/* Row 1 */}
@@ -3530,9 +3530,9 @@ const Crm = () => {
                         }
                       >
                         <option value="">Select</option>
-                        {dropdownOptions.currency.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                         {dropdownOptions.currency.map((opt, index) => (
+                          <option key={index} value={opt.name}>
+                           {opt.name} ({opt.symbol})
                           </option>
                         ))}
                       </select>
