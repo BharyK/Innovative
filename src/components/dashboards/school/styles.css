@@ -1,0 +1,36 @@
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide buttons only */
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  /* Keep exact UI and move section to page 2 */
+  .comments-print-page {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Keep table proper in print */
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+}

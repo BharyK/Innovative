@@ -114,11 +114,6 @@ const SocialMedia = () => {
     window.print();
   };
 
-  const commentsPrintPage = {
-    pageBreakInside: "avoid",
-    breakInside: "avoid",
-  };
-
   return (
     <Fragment>
       <Seo title={"Release of Purchase Orders"} />
