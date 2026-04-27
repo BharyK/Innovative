@@ -12,6 +12,8 @@ import {
   Badge,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
+import "./style.css";
 
 const SocialMedia = () => {
   const companyInfo = {
@@ -34,31 +36,50 @@ const SocialMedia = () => {
     address: "",
     gstin: "",
     attention: "",
+    date: "",
   });
 
   const [items, setItems] = useState([
-    { description: "", qty: 1, unitPrice: 0, total: 0 },
+    {
+      description: "",
+      qty: "",
+      unitPrice: "",
+      total: "",
+    },
   ]);
+  const [comments, setComments] = useState();
+
+  const [gstPercent, setGstPercent] = useState("");
+  const subTotalGST = items.reduce(
+    (acc, item) => acc + (Number(item.total) || 0),
+    0,
+  );
+  const gstAmount = subTotalGST * ((Number(gstPercent) || 0) / 100);
+
+  const grandTotal = subTotalGST + gstAmount;
 
   const handleSupplierChange = (e) => {
-    setSupplier({ ...supplier, [e.target.name]: e.target.value });
+    setSupplier({
+      ...supplier,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
-
-    const qty = parseFloat(newItems[index].qty) || 0;
-    const unitPrice = parseFloat(newItems[index].unitPrice) || 0;
-    newItems[index].total = qty * unitPrice;
-
     setItems(newItems);
   };
 
   const addItem = () => {
     setItems([
       ...items,
-      { description: "", qty: 1, unitPrice: 0, total: 0 },
+      {
+        description: "",
+        qty: "",
+        unitPrice: "",
+        total: "",
+      },
     ]);
   };
 
@@ -67,9 +88,10 @@ const SocialMedia = () => {
     setItems(updated);
   };
 
-  const subTotal = items.reduce((acc, item) => acc + item.total, 0);
-  const gst = subTotal * 0.18;
-  const grandTotal = subTotal + gst;
+  const subTotal = items.reduce(
+    (acc, item) => acc + (Number(item.total) || 0),
+    0,
+  );
 
   const handleSave = () => {
     const payload = {
@@ -84,7 +106,7 @@ const SocialMedia = () => {
       },
     };
 
-    console.log("Payload:", payload);
+    console.log(payload);
     alert("Saved Successfully!");
   };
 
@@ -92,255 +114,347 @@ const SocialMedia = () => {
     window.print();
   };
 
+  const commentsPrintPage = {
+    pageBreakInside: "avoid",
+    breakInside: "avoid",
+  };
+
   return (
     <Fragment>
       <Seo title={"Release of Purchase Orders"} />
+
       <Pageheader
         title="Dashboard"
         currentpage="Release of Purchase Orders"
         activepage="Release of Purchase Orders"
       />
+      <Container fluid className="py-4 bg-light">
+        <Container className="my-4" style={{ maxWidth: "1100px" }}>
+          <Card className="border-0 shadow rounded-4 overflow-hidden">
+            <div className="bg-white  p-3 mb-4 text-center">
+              <img
+                src="https://vinnovative.co.in/wp-content/uploads/2017/02/logo.png"
+                alt="Vinnovative Engineering Pvt Ltd."
+                style={{
+                  maxHeight: "70px",
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <div className="bg-success text-white p-4">
+              <Row className="align-items-center">
+                <Col md={7}>
+                  <h2 className="fw-bold mb-1">{companyInfo.name}</h2>
+                  <p className="mb-1">{companyInfo.addressLine1}</p>
+                  <p className="mb-0">{companyInfo.addressLine2}</p>
 
-      <Container className="my-4" style={{ maxWidth: "1100px" }}>
-        <Card className="border-0 shadow rounded-4 overflow-hidden">
-          {/* Header */}
-          <div className="bg-success text-white p-4">
-            <Row className="align-items-center">
-              <Col md={7}>
-                <h2 className="fw-bold mb-1">{companyInfo.name}</h2>
-                <p className="mb-1">{companyInfo.addressLine1}</p>
-                <p className="mb-0">{companyInfo.addressLine2}</p>
+                  <div className="mt-3 d-flex gap-2 flex-wrap">
+                    <Badge bg="light" text="dark">
+                      GSTIN: {companyInfo.gst}
+                    </Badge>
 
-                <div className="mt-3 d-flex gap-2 flex-wrap">
-                  <Badge bg="light" text="dark">
-                    GSTIN: {companyInfo.gst}
-                  </Badge>
-                  <Badge bg="light" text="dark">
-                    PAN: {companyInfo.pan}
-                  </Badge>
-                </div>
-              </Col>
+                    <Badge bg="light" text="dark">
+                      PAN: {companyInfo.pan}
+                    </Badge>
+                  </div>
+                </Col>
 
-              <Col md={5}>
-                <Card className="border-0 shadow-sm">
-                  <Card.Body>
-                    <h5 className="text-success fw-bold mb-3">
-                      Purchase Order
-                    </h5>
+                <Col md={5}>
+                  <Card className="border-0 shadow-sm">
+                    <Card.Body>
+                      <h5 className="text-success fw-bold mb-3">
+                        Purchase Order
+                      </h5>
 
-                    <Form.Group className="mb-2">
-                      <Form.Label>Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={poDetails.date}
-                        onChange={(e) =>
-                          setPoDetails({
-                            ...poDetails,
-                            date: e.target.value,
-                          })
-                        }
-                      />
-                    </Form.Group>
+                      <Form.Group className="mb-2">
+                        <Form.Label>Date</Form.Label>
+                        <SpkDatepickr
+                          className="form-control"
+                          selected={
+                            poDetails.date ? new Date(poDetails.date) : null
+                          }
+                          onChange={(e) =>
+                            setPoDetails({
+                              ...poDetails,
+                              date: e.target.value,
+                            })
+                          }
+                          placeholderText="Choose date"
+                        />
+                      </Form.Group>
 
-                    <Form.Group>
-                      <Form.Label>P.O Number</Form.Label>
-                      <Form.Control
-                        value={poDetails.poNumber}
-                        onChange={(e) =>
-                          setPoDetails({
-                            ...poDetails,
-                            poNumber: e.target.value,
-                          })
-                        }
-                      />
-                    </Form.Group>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          </div>
+                      <Form.Group>
+                        <Form.Label>P.O Number</Form.Label>
 
-          {/* Body */}
-          <Card.Body className="p-4">
-            {/* Supplier */}
-            <h5 className="fw-bold text-dark mb-3">
-              Supplier Information
-            </h5>
-
-            <Row className="g-3 mb-4">
-              <Col md={6}>
-                <Form.Control
-                  placeholder="Supplier Name"
-                  name="name"
-                  value={supplier.name}
-                  onChange={handleSupplierChange}
-                />
-              </Col>
-
-              <Col md={6}>
-                <Form.Control
-                  placeholder="Kind Attention"
-                  name="attention"
-                  value={supplier.attention}
-                  onChange={handleSupplierChange}
-                />
-              </Col>
-
-              <Col md={6}>
-                <Form.Control
-                  placeholder="GSTIN"
-                  name="gstin"
-                  value={supplier.gstin}
-                  onChange={handleSupplierChange}
-                />
-              </Col>
-
-              <Col md={12}>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  placeholder="Address"
-                  name="address"
-                  value={supplier.address}
-                  onChange={handleSupplierChange}
-                />
-              </Col>
-            </Row>
-
-            {/* Items */}
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="fw-bold mb-0">Order Items</h5>
-
-              <Button size="sm" onClick={addItem}>
-                + Add Item
-              </Button>
+                        <Form.Control
+                          value={poDetails.poNumber}
+                          onChange={(e) =>
+                            setPoDetails({
+                              ...poDetails,
+                              poNumber: e.target.value,
+                            })
+                          }
+                        />
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
             </div>
 
-            <Table bordered hover responsive>
-              <thead className="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Description</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Total</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+            <Card.Body className="p-4">
+              <h5 className="fw-bold mb-3">Supplier Information</h5>
 
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
+              <Row className="g-3 mb-4">
+                <Col md={6}>
+                  <Form.Control
+                    placeholder="Supplier Name"
+                    name="name"
+                    value={supplier.name}
+                    onChange={handleSupplierChange}
+                  />
+                </Col>
 
-                    <td>
-                      <Form.Control
-                        value={item.description}
-                        placeholder="Description"
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "description",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </td>
+                <Col md={6}>
+                  <Form.Control
+                    placeholder="Quatitaion No."
+                    name="attention"
+                    value={supplier.attention}
+                    onChange={handleSupplierChange}
+                  />
+                </Col>
+                <Col md={6}>
+                  <SpkDatepickr
+                    className="form-control"
+                    selected={supplier.date ? new Date(supplier.date) : null}
+                    onChange={(e) =>
+                      setPoDetails({
+                        ...supplier,
+                        date: e.target.value,
+                      })
+                    }
+                    placeholderText="Choose date"
+                  />
+                </Col>
+                <Col md={6}>
+                  <Form.Control
+                    placeholder="GSTIN"
+                    name="gstin"
+                    value={supplier.gstin}
+                    onChange={handleSupplierChange}
+                  />
+                </Col>
 
-                    <td>
-                      <Form.Control
-                        type="number"
-                        value={item.qty}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "qty",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </td>
+                <Col md={12}>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    placeholder="Address"
+                    name="address"
+                    value={supplier.address}
+                    onChange={handleSupplierChange}
+                  />
+                </Col>
+              </Row>
 
-                    <td>
-                      <Form.Control
-                        type="number"
-                        value={item.unitPrice}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "unitPrice",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </td>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-bold mb-0">Order Items</h5>
 
-                    <td className="fw-bold">
-                      ₹{item.total.toFixed(2)}
-                    </td>
+                <Button size="sm" onClick={addItem}>
+                  + Add Item
+                </Button>
+              </div>
 
-                    <td>
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => removeItem(index)}
-                      >
-                        Remove
-                      </Button>
-                    </td>
+              <Table bordered hover responsive>
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th width="350px">Description</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
+                </thead>
 
-            {/* Totals */}
-            <Row className="justify-content-end mt-4">
-              <Col md={5}>
-                <Card className="border-0 bg-light">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between mb-2">
-                      <span>Subtotal</span>
-                      <strong>₹{subTotal.toFixed(2)}</strong>
-                    </div>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
 
-                    <div className="d-flex justify-content-between mb-2">
-                      <span>GST (18%)</span>
-                      <strong>₹{gst.toFixed(2)}</strong>
-                    </div>
+                      <td>
+                        <Form.Control
+                          as="textarea"
+                          rows={4}
+                          value={item.description}
+                          placeholder="Description"
+                          onChange={(e) =>
+                            handleItemChange(
+                              index,
+                              "description",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </td>
 
-                    <hr />
+                      <td>
+                        <Form.Control
+                          type="number"
+                          value={item.qty}
+                          placeholder="Qty"
+                          onChange={(e) =>
+                            handleItemChange(index, "qty", e.target.value)
+                          }
+                        />
+                      </td>
 
-                    <div className="d-flex justify-content-between">
-                      <h5 className="mb-0 text-primary">
-                        Grand Total
-                      </h5>
-                      <h5 className="mb-0 text-primary">
-                        ₹{grandTotal.toFixed(2)}
-                      </h5>
+                      <td>
+                        <Form.Control
+                          type="number"
+                          value={item.unitPrice}
+                          placeholder="Unit Price"
+                          onChange={(e) =>
+                            handleItemChange(index, "unitPrice", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        <Form.Control
+                          type="number"
+                          value={item.total}
+                          placeholder="Total"
+                          onChange={(e) =>
+                            handleItemChange(index, "total", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => removeItem(index)}
+                        >
+                          Remove
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              <div style={{ clear: "both" }}></div>
+              <div className="fw-bold mb-3 comments-print-page">
+                <Card
+                  className="mt-4 rounded-0"
+                  style={{ border: "1px solid #e9ecef" }}
+                >
+                  <Card.Header
+                    className="fw-bold mb-3 comments-print-page"
+                    style={{ borderBottom: "1px solid #e9ecef" }}
+                  >
+                    Other Comments or Special Instructions
+                  </Card.Header>
+
+                  <Card.Body className="p-0">
+                    <Row className="g-0">
+                      {/* Left Comments Section */}
+                      <Col md={8} style={{ borderRight: "1px solid #e9ecef" }}>
+                        <div className="p-3" style={{ minHeight: "320px" }}>
+                          <Form.Control
+                            as="textarea"
+                            placeholder="Please add comments....."
+                            rows={12}
+                            value={comments}
+                            onChange={(e) => setComments(e.target.value)}
+                            className="border-0 shadow-none h-100"
+                            style={{
+                              resize: "none",
+                              fontSize: "18px",
+                              fontWeight: "500",
+                            }}
+                          />
+                        </div>
+                      </Col>
+
+                      {/* Right GST Section */}
+                      <Col md={4}>
+                        <div className="p-3" style={{ minHeight: "320px" }}>
+                          <div className="d-flex justify-content-between mb-3">
+                            <span>Subtotal</span>
+                            <strong>₹{subTotal.toFixed(2)}</strong>
+                          </div>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>GST %</Form.Label>
+
+                            <Form.Control
+                              type="number"
+                              value={gstPercent}
+                              placeholder="Enter GST %"
+                              onChange={(e) => setGstPercent(e.target.value)}
+                            />
+                          </Form.Group>
+
+                          <div className="d-flex justify-content-between mb-3">
+                            <span>GST Amount</span>
+                            <strong>₹{gstAmount.toFixed(2)}</strong>
+                          </div>
+
+                          <hr />
+
+                          <div className="d-flex justify-content-between">
+                            <h5 className="text-primary mb-0">Grand Total</h5>
+
+                            <h5 className="text-primary mb-0">
+                              ₹{grandTotal.toFixed(2)}
+                            </h5>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+
+                    {/* Bottom Contact Text */}
+                    <div
+                      className="text-center py-4"
+                      style={{ borderTop: "1px solid #e9ecef" }}
+                    >
+                      <h6 className="fw-normal">
+                        If you have any questions about this purchase order,
+                        please contact
+                      </h6>
+
+                      <h6 className="fw-normal mt-2">
+                        [Person Name, Phone +91, E-mail]
+                      </h6>
                     </div>
                   </Card.Body>
+
+                  <Card.Footer
+                    className="text-center py-4 bg-white"
+                    style={{ borderTop: "1px solid #e9ecef" }}
+                  >
+                    <h6 className="fw-normal mb-0">
+                      Disclaimer: This Purchase Order is auto-generated and does
+                      not require a signature
+                    </h6>
+                  </Card.Footer>
                 </Card>
-              </Col>
-            </Row>
+              </div>
+              <div className="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+                <Button variant="outline-secondary" onClick={handlePrint}>
+                  Print
+                </Button>
 
-            {/* Footer Buttons */}
-            <div className="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-              <Button
-                variant="outline-secondary"
-                onClick={handlePrint}
-              >
-                Print
-              </Button>
-
-              <Button
-                variant="success"
-                onClick={handleSave}
-              >
-                Save Order
-              </Button>
-            </div>
-          </Card.Body>
-        </Card>
+                <Button variant="success" onClick={handleSave}>
+                  Save Order
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Container>
       </Container>
     </Fragment>
   );
