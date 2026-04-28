@@ -2905,98 +2905,116 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
           >
             <div className="table-responsive pb-4">
               <div className="container">
-                {paymentData.map((row) => (
+                {paymentData.map((row) => {
+                  const filteredOrders = orderDetailsData.filter(
+      (item) => item.proposalId === row.proposalId
+    );
+
+    const filteredInvoices = invoiceDetailsData.filter(
+      (item) => item.orderId === row.orderId
+    );
+    return (
                   <div key={row.id} className="card mb-3 p-3 shadow-sm">
                     <div className="row g-3">
                       {/* ROW 1 (3 fields) */}
                       <div className="col-md-4">
                         <label className="form-label">Proposal Number</label>
-                        <select
-                          className="form-select"
-                          value={row.proposalId || ""}
-                          onChange={(e) => {
-                            const selectedId = Number(e.target.value);
+                       <select
+              className="form-select"
+              value={row.proposalId || ""}
+              onChange={(e) => {
+                const selectedId = Number(e.target.value);
 
-                            const selectedProposal = offerData.find(
-                              (item) => item.proposalId === selectedId,
-                            );
+                const selectedProposal = offerData.find(
+                  (item) => item.proposalId === selectedId
+                );
 
-                            updatePaymentRow(row.id, "proposalId", selectedId);
-                            updatePaymentRow(
-                              row.id,
-                              "proposalNumber",
-                              selectedProposal?.proposalNumber || "",
-                            );
-                          }}
-                        >
-                          <option value="">Select Proposal</option>
-                          {offerData.map((item) => (
-                            <option
-                              key={item.proposalId}
-                              value={item.proposalId}
-                            >
-                              {item.proposalNumber}
-                            </option>
-                          ))}
-                        </select>
+                updatePaymentRow(row.id, "proposalId", selectedId);
+                updatePaymentRow(
+                  row.id,
+                  "proposalNumber",
+                  selectedProposal?.proposalNumber || ""
+                );
+
+                // ✅ RESET ORDER + INVOICE
+                updatePaymentRow(row.id, "orderId", "");
+                updatePaymentRow(row.id, "orderNumber", "");
+                updatePaymentRow(row.id, "invoiceId", "");
+                updatePaymentRow(row.id, "invoiceNumber", "");
+              }}
+            >
+              <option value="">Select Proposal</option>
+              {offerData.map((item) => (
+                <option key={item.proposalId} value={item.proposalId}>
+                  {item.proposalNumber}
+                </option>
+              ))}
+            </select>
                       </div>
 
                       <div className="col-md-4">
                         <label className="form-label">Order Number</label>
                         <select
-                          className="form-select"
-                          value={row.orderId || ""}
-                          onChange={(e) => {
-                            const selectedId = Number(e.target.value);
+              className="form-select"
+              value={row.orderId || ""}
+              disabled={!row.proposalId}
+              onChange={(e) => {
+                const selectedId = Number(e.target.value);
 
-                            const selectedOrder = orderDetailsData.find(
-                              (item) => item.orderId === selectedId,
-                            );
+                const selectedOrder = orderDetailsData.find(
+                  (item) => item.orderId === selectedId
+                );
 
-                            updatePaymentRow(row.id, "orderId", selectedId);
-                            updatePaymentRow(
-                              row.id,
-                              "orderNumber",
-                              selectedOrder?.orderNumber || "",
-                            );
-                          }}
-                        >
-                          <option value="">Select Order</option>
-                          {orderDetailsData.map((item) => (
-                            <option key={item.orderId} value={item.orderId}>
-                              {item.orderNumber}
-                            </option>
-                          ))}
-                        </select>
+                updatePaymentRow(row.id, "orderId", selectedId);
+                updatePaymentRow(
+                  row.id,
+                  "orderNumber",
+                  selectedOrder?.orderNumber || ""
+                );
+
+                // ✅ RESET INVOICE
+                updatePaymentRow(row.id, "invoiceId", "");
+                updatePaymentRow(row.id, "invoiceNumber", "");
+              }}
+            >
+              <option value="">Select Order</option>
+              {filteredOrders.map((item) => (
+                <option key={item.orderId} value={item.orderId}>
+                  {item.orderNumber}
+                </option>
+              ))}
+            </select>
                       </div>
 
                       <div className="col-md-4">
                         <label className="form-label">Invoice Number</label>
-                        <select
-                          className="form-select"
-                          value={row.invoiceId || ""}
-                          onChange={(e) => {
-                            const selectedId = Number(e.target.value);
+                       <select
+              className="form-select"
+              value={row.invoiceId || ""}
+              disabled={!row.orderId}
+              onChange={(e) => {
+                const selectedId = Number(e.target.value);
 
-                            const selectedInvoice = invoiceDetailsData.find(
-                              (item) => item.invoiceId === selectedId,
-                            );
+                const selectedInvoice = invoiceDetailsData.find(
+                  (item) => item.invoiceId === selectedId
+                );
 
-                            updatePaymentRow(row.id, "invoiceId", selectedId);
-                            updatePaymentRow(
-                              row.id,
-                              "invoiceNumber",
-                              selectedInvoice?.invoiceNumber || "",
-                            );
-                          }}
-                        >
-                          <option value="">Select Invoice</option>
-                          {invoiceDetailsData.map((item) => (
-                            <option key={item.invoiceId} value={item.invoiceId}>
-                              {item.invoiceNumber}
-                            </option>
-                          ))}
-                        </select>
+                updatePaymentRow(row.id, "invoiceId", selectedId);
+                updatePaymentRow(
+                  row.id,
+                  "invoiceNumber",
+                  selectedInvoice?.invoiceNumber || ""
+                );
+              }}
+            >
+              <option value="">Select Invoice</option>
+              {filteredInvoices.map((item) => (
+                <option key={item.invoiceId} value={item.invoiceId}>
+                  {item.invoiceNumber}
+                </option>
+              ))}
+            </select>
+
                       </div>
 
                       {/* ROW 2 */}
@@ -3165,7 +3183,8 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                       </div>
                     </div>
                   </div>
-                ))}
+    )
+})}
               </div>
             </div>
           </div>
