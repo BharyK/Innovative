@@ -21,7 +21,8 @@ import { toast, ToastContainer } from "react-toastify";
 import moment from "moment";
 import SpkBadge from "../../../shared/@spk-reusable-components/reusable-uielements/spk-badge";
 import SpkTooltips from "../../../shared/@spk-reusable-components/reusable-uielements/spk-tooltips";
-import { CustomProgress2data } from "../../../shared/data/ui-elements/progressdata";
+import axios from "axios";
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -309,7 +310,7 @@ const Crm = () => {
   const [purchaseOrderData, setPurchaseOrderData] = useState<
     PurchaseOrderRow[]
   >([createEmptyPurchaseOrderRow()]);
-console.log('purchaseOrderData', purchaseOrderData);
+  console.log("purchaseOrderData", purchaseOrderData);
   // ── Invoice state ────────────────────────────────────────────────────────
   const [invoiceData, setInvoiceData] = useState<InvoiceRow[]>([
     {
@@ -366,14 +367,14 @@ console.log('purchaseOrderData', purchaseOrderData);
   const dropdownOptions = {
     status: ["Approved", "Pending", "Rejected"],
     currency: [
-  { "name": "INR", "symbol": "₹" },
-  { "name": "USD", "symbol": "$" },
-  { "name": "EURO", "symbol": "€" },
-  { "name": "GBP", "symbol": "£" },
-  { "name": "Chinese Yuan", "symbol": "¥" },
-  { "name": "Japanese Yen", "symbol": "¥" },
-  { "name": "Dollar", "symbol": "$" }
-],
+      { name: "INR", symbol: "₹" },
+      { name: "USD", symbol: "$" },
+      { name: "EURO", symbol: "€" },
+      { name: "GBP", symbol: "£" },
+      { name: "Chinese Yuan", symbol: "¥" },
+      { name: "Japanese Yen", symbol: "¥" },
+      { name: "Dollar", symbol: "$" },
+    ],
     paymentStatus: [
       "Received",
       "Pending",
@@ -752,7 +753,7 @@ console.log('purchaseOrderData', purchaseOrderData);
   const [editOrderDetails, setEditOrderDetails] = useState([]);
   const [orderEditDetailsPopUp, setOrderEditDetailsPopup] = useState(false);
   const addOrderDetails = () => {
-      setOrderDetailsPopup(true);
+    setOrderDetailsPopup(true);
   };
   const handleUpdateOrderDetails = async (row: any) => {
     console.log(row);
@@ -1193,6 +1194,85 @@ console.log('purchaseOrderData', purchaseOrderData);
     }, {}),
   );
 
+  const [selectedFiles, setSelectedFiles] = useState({});
+
+const handleFileUpload = async (row, file) => {
+  try {
+    // FIRST store file in UI state (for filename display)
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [row.id]: file,
+    }));
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    await axios.post(
+      `https://vinnovativeapi.azurewebsites.net/Proposal/AddProposalDocuments?proposalId=${row.proposalId}`,
+      formData
+    );
+
+    toast.success("Successfully file uploaded", {
+      autoClose: 1500,
+    });
+
+    try {
+      const [Proposal] = await Promise.all([getApi("Proposal")]);
+      const mapped: OfferRow[] = Proposal.data.map(
+        (item: any, index: number) => ({
+          ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
+          id: item.id || Date.now() + index,
+          file: null,
+          fileUrl: item.documentData
+            ? base64ToBlobUrl(item.documentData)
+            : null,
+        }),
+      );
+      setOfferData(mapped);
+    }
+
+    catch (err) {
+    console.error(err);
+
+    toast.error("Technical Error", {
+      autoClose: 1500,
+    });
+  }
+
+  } catch (err) {
+    console.error(err);
+
+    toast.error("Technical Error", {
+      autoClose: 1500,
+    });
+  }
+};
+
+const handleRemoveSelectedFile = (rowId) => {
+  setSelectedFiles((prev) => {
+    const updated = { ...prev };
+    delete updated[rowId];
+    return updated;
+  });
+};
+
+  const handleDownload = async (doc, row) => {
+    try {
+      const [download] = await Promise.all([
+        getApi(`Proposal/download/${doc.documentId}`),
+      ]);
+
+      toast.success("Sucessfully downaloded", {
+        autoClose: 1500,
+      });
+      console.log(download);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      toast.error("Technical Error", { autoClose: 1500 });
+    }
+  };
+
   return (
     <Fragment>
       {!loading ? (
@@ -1275,29 +1355,119 @@ console.log('purchaseOrderData', purchaseOrderData);
                               </div>
                             </td>
 
-                            {/* Proposal No + Upload */}
-                            <td>
-                              <div className="d-flex align-items-center gap-2">
-                                <SpkTooltips placement="top" title="Download">
-                                  <SpkButton
-                                    Buttonvariant="danger-light"
-                                    Customclass="btn btn-icon btn-sm"
-                                    onClick={() => handleFile(row)}
-                                  >
-                                    <i className="ri-download-2-line"></i>
-                                  </SpkButton>
-                                </SpkTooltips>
-                                <span className="text-primary">
-                                  {row.proposalNumber}
-                                </span>
+                            {/* Proposal No + Documents */}
+                            {/* Proposal No + Documents + Upload */}
+                            <td style={{ minWidth: "320px" }}>
+                              {/* Proposal Number */}
+                              <div className="fw-semibold text-primary mb-2">
+                                {row.proposalNumber}
                               </div>
 
-                              {row.fileName ? (
-                                <small className="text-muted fs-12 mt-1">
-                                  📎 {row.fileName}
-                                </small>
-                              ) : (
-                                <small className="text-muted"></small>
+                              {/* Existing Documents from API */}
+                              {row.proposalDocuments?.length > 0 &&
+                                row.proposalDocuments.map((doc) => (
+                                  <div
+                                    key={doc.documentId}
+                                    className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+                                  >
+                                    <div
+                                      className="text-truncate me-2"
+                                      style={{ maxWidth: "180px" }}
+                                      title={doc.originalFileName}
+                                    >
+                                      📎 {doc.originalFileName}
+                                    </div>
+
+                                    <div className="d-flex gap-1">
+                                      {/* Download */}
+                                      <SpkTooltips
+                                        placement="top"
+                                        title="Download"
+                                      >
+                                        <SpkButton
+                                          Buttonvariant="success-light"
+                                          Customclass="btn btn-icon btn-sm"
+                                          onClick={() =>
+                                            handleDownload(doc, row)
+                                          }
+                                        >
+                                          <i className="ri-download-2-line"></i>
+                                        </SpkButton>
+                                      </SpkTooltips>
+
+                                      {/* View */}
+                                      {/* <SpkTooltips placement="top" title="View">
+            <SpkButton
+              Buttonvariant="info-light"
+              Customclass="btn btn-icon btn-sm"
+              onClick={() => handleView(doc, row)}
+            >
+              <i className="ri-eye-line"></i>
+            </SpkButton>
+          </SpkTooltips> */}
+
+                                      {/* Delete */}
+                                      <SpkTooltips
+                                        placement="top"
+                                        title="Delete"
+                                      >
+                                        <SpkButton
+                                          Buttonvariant="danger-light"
+                                          Customclass="btn btn-icon btn-sm"
+                                          onClick={() =>
+                                            handleDeleteDocument(doc, row)
+                                          }
+                                        >
+                                          <i className="ri-delete-bin-line"></i>
+                                        </SpkButton>
+                                      </SpkTooltips>
+                                    </div>
+                                  </div>
+                                ))}
+
+                              {/* Selected Upload File */}
+                              {selectedFiles[row.id] && (
+  <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+    <div className="text-truncate me-2" style={{ maxWidth: "180px" }}>
+      📄 {selectedFiles[row.id].name}
+    </div>
+
+    <button
+      className="btn btn-sm btn-danger"
+      onClick={() => handleRemoveSelectedFile(row.id)}
+    >
+      <i className="ri-close-line"></i>
+    </button>
+  </div>
+)}
+
+                              {/* Upload Button */}
+                              {!selectedFiles[row.id] && (
+                                <>
+                                  <input
+                                    type="file"
+                                    hidden
+                                    id={`upload-${row.id}`}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+
+                                      if (file) {
+                                        handleFileUpload(row, file);
+                                      }
+
+                                      e.target.value = "";
+                                    }}
+                                  />
+
+                                  <label
+                                    htmlFor={`upload-${row.id}`}
+                                    className="btn btn-sm btn-outline-primary"
+                                    style={{ cursor: "pointer" }}
+                                  >
+                                    <i className="ri-upload-2-line me-1"></i>
+                                    Upload
+                                  </label>
+                                </>
                               )}
                             </td>
 
@@ -1370,7 +1540,7 @@ console.log('purchaseOrderData', purchaseOrderData);
                             <td>
                               <div className="d-flex align-items-center">
                                 <div
-                                  className="d-flex align-items-center justify-content-center me-2 rounded-circle bg-primary  text-white"
+                                  className="d-flex align-items-center justify-content-center me-2 rounded-circle bg-primary text-white"
                                   style={{
                                     width: "32px",
                                     height: "32px",
@@ -1409,7 +1579,7 @@ console.log('purchaseOrderData', purchaseOrderData);
                               </div>
                             </td>
 
-                            {/* Efforts / Hours */}
+                            {/* Hours */}
                             <td>
                               <SpkBadge variant="badge bg-primary" size="lg">
                                 {row.estimatedHours}
@@ -2250,7 +2420,7 @@ console.log('purchaseOrderData', purchaseOrderData);
                         <option value="">Select</option>
                         {dropdownOptions.currency.map((opt, index) => (
                           <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
+                            {opt.name} ({opt.symbol})
                           </option>
                         ))}
                       </select>
@@ -2537,11 +2707,11 @@ console.log('purchaseOrderData', purchaseOrderData);
                           }
                         >
                           <option value="">Select</option>
-                           {dropdownOptions.currency.map((opt, index) => (
-                          <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
-                          </option>
-                        ))}
+                          {dropdownOptions.currency.map((opt, index) => (
+                            <option key={index} value={opt.name}>
+                              {opt.name} ({opt.symbol})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -2732,10 +2902,10 @@ console.log('purchaseOrderData', purchaseOrderData);
                         >
                           <option value="">Select</option>
                           {dropdownOptions.currency.map((opt, index) => (
-                          <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
-                          </option>
-                        ))}
+                            <option key={index} value={opt.name}>
+                              {opt.name} ({opt.symbol})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -3012,11 +3182,11 @@ console.log('purchaseOrderData', purchaseOrderData);
                             }
                           >
                             <option value="">Select</option>
-                             {dropdownOptions.currency.map((opt, index) => (
-                          <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
-                          </option>
-                        ))}
+                            {dropdownOptions.currency.map((opt, index) => (
+                              <option key={index} value={opt.name}>
+                                {opt.name} ({opt.symbol})
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -3279,11 +3449,11 @@ console.log('purchaseOrderData', purchaseOrderData);
                           }
                         >
                           <option value="">Select</option>
-                         {dropdownOptions.currency.map((opt, index) => (
-                          <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
-                          </option>
-                        ))}
+                          {dropdownOptions.currency.map((opt, index) => (
+                            <option key={index} value={opt.name}>
+                              {opt.name} ({opt.symbol})
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -3429,214 +3599,230 @@ console.log('purchaseOrderData', purchaseOrderData);
             style={{ paddingBottom: "22px" }}
           >
             <div className="container">
-              {purchaseOrderData.length > 0 && purchaseOrderData.map((poRow) => (
-                <div key={poRow.id} className="card mb-3 p-3 shadow-sm">
-                  <div className="row g-3">
-                    {/* Row 1 */}
-                    <div className="col-md-4">
-                      <label className="form-label">Proposal Number</label>
-                      <select
-                        className="form-select"
-                        value={poRow.proposalId || ""}
-                        onChange={(e) => {
-                          const selectedId = Number(e.target.value);
+              {purchaseOrderData.length > 0 &&
+                purchaseOrderData.map((poRow) => (
+                  <div key={poRow.id} className="card mb-3 p-3 shadow-sm">
+                    <div className="row g-3">
+                      {/* Row 1 */}
+                      <div className="col-md-4">
+                        <label className="form-label">Proposal Number</label>
+                        <select
+                          className="form-select"
+                          value={poRow.proposalId || ""}
+                          onChange={(e) => {
+                            const selectedId = Number(e.target.value);
 
-                          const selectedProposal = offerData.find(
-                            (item) => item.proposalId === selectedId,
-                          );
+                            const selectedProposal = offerData.find(
+                              (item) => item.proposalId === selectedId,
+                            );
 
-                          updatePoRow(poRow.id, "proposalId", selectedId);
-                          updatePoRow(
-                            poRow.id,
-                            "proposalNumber",
-                            selectedProposal?.proposalNumber || "",
-                          );
-                        }}
-                      >
-                        <option value="">Select</option>
-                        {offerData.map((item) => (
-                          <option key={item.proposalId} value={item.proposalId}>
-                            {item.proposalNumber}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                            updatePoRow(poRow.id, "proposalId", selectedId);
+                            updatePoRow(
+                              poRow.id,
+                              "proposalNumber",
+                              selectedProposal?.proposalNumber || "",
+                            );
+                          }}
+                        >
+                          <option value="">Select</option>
+                          {offerData.map((item) => (
+                            <option
+                              key={item.proposalId}
+                              value={item.proposalId}
+                            >
+                              {item.proposalNumber}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Project ID</label>
-                      <input
-                        className="form-control"
-                        value={poRow.projectId}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "projectId", e.target.value)
-                        }
-                      />
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Project ID</label>
+                        <input
+                          className="form-control"
+                          value={poRow.projectId}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "projectId", e.target.value)
+                          }
+                        />
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Business Unit</label>
-                      <select
-                        className="form-select"
-                        value={poRow.businessUnit}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "businessUnit", e.target.value)
-                        }
-                      >
-                        <option value="">Select</option>
-                        {businessUnits.map((opt) => (
-                          <option
-                            key={opt.businessUnitId}
-                            value={opt.businessUnitId}
-                          >
-                            {opt.businessUnitName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Business Unit</label>
+                        <select
+                          className="form-select"
+                          value={poRow.businessUnit}
+                          onChange={(e) =>
+                            updatePoRow(
+                              poRow.id,
+                              "businessUnit",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {businessUnits.map((opt) => (
+                            <option
+                              key={opt.businessUnitId}
+                              value={opt.businessUnitId}
+                            >
+                              {opt.businessUnitName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Order No</label>
-                      <input
-                        className="form-control"
-                        value={poRow.orderNo}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "orderNo", e.target.value)
-                        }
-                      />
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Order No</label>
+                        <input
+                          className="form-control"
+                          value={poRow.orderNo}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "orderNo", e.target.value)
+                          }
+                        />
+                      </div>
 
-                    {/* Row 2 */}
-                    <div className="col-md-4">
-                      <label className="form-label">Order Date</label>
-                      <SpkDatepickr
-                        className="form-control"
-                        selected={
-                          poRow.orderDate ? new Date(poRow.orderDate) : null
-                        }
-                        onChange={(date) =>
-                          updatePoRow(poRow.id, "orderDate", date)
-                        }
-                        placeholderText="Choose date"
-                      />
-                    </div>
+                      {/* Row 2 */}
+                      <div className="col-md-4">
+                        <label className="form-label">Order Date</label>
+                        <SpkDatepickr
+                          className="form-control"
+                          selected={
+                            poRow.orderDate ? new Date(poRow.orderDate) : null
+                          }
+                          onChange={(date) =>
+                            updatePoRow(poRow.id, "orderDate", date)
+                          }
+                          placeholderText="Choose date"
+                        />
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Currency</label>
-                      <select
-                        className="form-select"
-                        value={poRow.orderCurrency || ""}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "orderCurrency", e.target.value)
-                        }
-                      >
-                        <option value="">Select</option>
-                         {dropdownOptions.currency.map((opt, index) => (
-                          <option key={index} value={opt.name}>
-                           {opt.name} ({opt.symbol})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Currency</label>
+                        <select
+                          className="form-select"
+                          value={poRow.orderCurrency || ""}
+                          onChange={(e) =>
+                            updatePoRow(
+                              poRow.id,
+                              "orderCurrency",
+                              e.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {dropdownOptions.currency.map((opt, index) => (
+                            <option key={index} value={opt.name}>
+                              {opt.name} ({opt.symbol})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Order Value</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={poRow.orderAmount}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "orderAmount", e.target.value)
-                        }
-                      />
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Order Value</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={poRow.orderAmount}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "orderAmount", e.target.value)
+                          }
+                        />
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Conversion Rate</label>
-                      <input
-                        className="form-control"
-                        value={poRow.conversionRate}
-                        onChange={(e) =>
-                          updatePoRow(
-                            poRow.id,
-                            "conversionRate",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Conversion Rate</label>
+                        <input
+                          className="form-control"
+                          value={poRow.conversionRate}
+                          onChange={(e) =>
+                            updatePoRow(
+                              poRow.id,
+                              "conversionRate",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
 
-                    {/* Row 3 */}
-                    <div className="col-md-4">
-                      <label className="form-label">
-                        Order Value in Local Currency
-                      </label>
-                      <input
-                        className="form-control"
-                        value={poRow.orderValueINR}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "orderValueINR", e.target.value)
-                        }
-                      />
-                    </div>
+                      {/* Row 3 */}
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          Order Value in Local Currency
+                        </label>
+                        <input
+                          className="form-control"
+                          value={poRow.orderValueINR}
+                          onChange={(e) =>
+                            updatePoRow(
+                              poRow.id,
+                              "orderValueINR",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Invoice Milestone</label>
-                      <input
-                        className="form-control"
-                        value={poRow.invoiceMilestone}
-                        onChange={(e) =>
-                          updatePoRow(
-                            poRow.id,
-                            "invoiceMilestone",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Invoice Milestone</label>
+                        <input
+                          className="form-control"
+                          value={poRow.invoiceMilestone}
+                          onChange={(e) =>
+                            updatePoRow(
+                              poRow.id,
+                              "invoiceMilestone",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
 
-                    <div className="col-md-4">
-                      <label className="form-label">Status</label>
-                      <select
-                        className="form-select"
-                        value={poRow.status}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "status", e.target.value)
-                        }
-                      >
-                        <option value="">Select</option>
-                        {dropdownOptions.status.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Status</label>
+                        <select
+                          className="form-select"
+                          value={poRow.status}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "status", e.target.value)
+                          }
+                        >
+                          <option value="">Select</option>
+                          {dropdownOptions.status.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    {/* Comments full row */}
-                    <div className="col-md-4">
-                      <label className="form-label">Comments</label>
-                      <textarea
-                        className="form-control"
-                        rows={2}
-                        value={poRow.comments || ""}
-                        onChange={(e) =>
-                          updatePoRow(poRow.id, "comments", e.target.value)
-                        }
-                      />
-                    </div>
+                      {/* Comments full row */}
+                      <div className="col-md-4">
+                        <label className="form-label">Comments</label>
+                        <textarea
+                          className="form-control"
+                          rows={2}
+                          value={poRow.comments || ""}
+                          onChange={(e) =>
+                            updatePoRow(poRow.id, "comments", e.target.value)
+                          }
+                        />
+                      </div>
 
-                    {/* Submit */}
-                    <div className="col-12 text-end">
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => handleUpdateOrderDetails(poRow)}
-                      >
-                        Submit
-                      </button>
+                      {/* Submit */}
+                      <div className="col-12 text-end">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => handleUpdateOrderDetails(poRow)}
+                        >
+                          Submit
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
