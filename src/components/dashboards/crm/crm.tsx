@@ -23,7 +23,6 @@ import SpkBadge from "../../../shared/@spk-reusable-components/reusable-uielemen
 import SpkTooltips from "../../../shared/@spk-reusable-components/reusable-uielements/spk-tooltips";
 import axios from "axios";
 
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface OfferRow {
@@ -1196,82 +1195,234 @@ const Crm = () => {
 
   const [selectedFiles, setSelectedFiles] = useState({});
 
-const handleFileUpload = async (row, file) => {
-  try {
-    // FIRST store file in UI state (for filename display)
-    setSelectedFiles((prev) => ({
-      ...prev,
-      [row.id]: file,
-    }));
+  const handleFileUpload = async (row, file) => {
+    try {
+      // FIRST store file in UI state (for filename display)
+      setSelectedFiles((prev) => ({
+        ...prev,
+        [row.id]: file,
+      }));
 
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await axios.post(
+        `https://vinnovativeapi.azurewebsites.net/Proposal/AddProposalDocuments?proposalId=${row.proposalId}`,
+        formData,
+      );
+
+      toast.success("Successfully file uploaded", {
+        autoClose: 1500,
+      });
+
+      try {
+        const [Proposal] = await Promise.all([getApi("Proposal")]);
+        const mapped: OfferRow[] = Proposal.data.map(
+          (item: any, index: number) => ({
+            ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
+            id: item.id || Date.now() + index,
+            file: null,
+            fileUrl: item.documentData
+              ? base64ToBlobUrl(item.documentData)
+              : null,
+          }),
+        );
+        setOfferData(mapped);
+      } catch (err) {
+        console.error(err);
+
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+  const handleRemoveSelectedFile = (rowId) => {
+    setSelectedFiles((prev) => {
+      const updated = { ...prev };
+      delete updated[rowId];
+      return updated;
+    });
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      const response = await getApi(`Proposal/download/${doc.documentId}`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.originalFileName || "document";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Successfully downloaded", {
+        autoClose: 1500,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+  const handleInvoiceFileUpload = async (uniqueKey, row, file) => {
+    setSelectedFiles((prev) => ({
+    ...prev,
+    [uniqueKey]: file, // dynamically added key
+  }));
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await axios.post(
+        `https://vinnovativeapi.azurewebsites.net/Invoice/AddInvoiceDocuments?invoiceId=${row.invoiceId}`,
+        formData, 
+      );
+
+      toast.success("Successfully file uploaded", {
+        autoClose: 1500,
+      });
+      try {
+        const [Invoice] = await Promise.all([getApi("Invoice")]);
+        setInvoiceDetailsData(Invoice.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    } 
+  };
+
+   const handleInvoiceDownload = async (doc) => {
+    try {
+      const response = await getApi(`Invoice/download/${doc.documentId}`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.originalFileName || "document";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Successfully downloaded", {
+        autoClose: 1500,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+  const handlePaymentDownload = async (doc) => {
+    try {
+      const response = await getApi(`InvoicePayment/download/${doc.documentId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.originalFileName || "document";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Successfully downloaded", {
+        autoClose: 1500,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", { 
+        autoClose: 1500,
+      });
+    }
+  };
+
+const handlePaymentFileUpload = async (uniqueKey, row, file) => {
+  // show selected file
+  setSelectedFiles((prev) => ({
+    ...prev,
+    [uniqueKey]: file,
+  }));
+
+  try {
     const formData = new FormData();
     formData.append("file", file);
 
     await axios.post(
-      `https://vinnovativeapi.azurewebsites.net/Proposal/AddProposalDocuments?proposalId=${row.proposalId}`,
-      formData
+      `https://vinnovativeapi.azurewebsites.net/InvoicePayment/AddInvoicePaymentDocuments?invoicePaymentId=${row.paymentId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          accept: "*/*",
+        },
+      }
     );
 
     toast.success("Successfully file uploaded", {
       autoClose: 1500,
     });
 
-    try {
-      const [Proposal] = await Promise.all([getApi("Proposal")]);
-      const mapped: OfferRow[] = Proposal.data.map(
-        (item: any, index: number) => ({
-          ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
-          id: item.id || Date.now() + index,
-          file: null,
-          fileUrl: item.documentData
-            ? base64ToBlobUrl(item.documentData)
-            : null,
-        }),
-      );
-      setOfferData(mapped);
-    }
+    const res = await getApi("InvoicePayment");
+    setPaymentDetailsData(res.data);
 
-    catch (err) {
-    console.error(err);
-
-    toast.error("Technical Error", {
-      autoClose: 1500,
+    // ✅ ✅ IMPORTANT FIX: remove selected file after upload
+    setSelectedFiles((prev) => {
+      const updated = { ...prev };
+      delete updated[uniqueKey];
+      return updated;
     });
-  }
 
   } catch (err) {
-    console.error(err);
+    console.error("Upload error:", err);
+
+    if (err.response) {
+      console.log("Status:", err.response.status);
+      console.log("Data:", err.response.data);
+    }
 
     toast.error("Technical Error", {
       autoClose: 1500,
     });
+
+    // 🔁 Optional: also clear on error
+    setSelectedFiles((prev) => {
+      const updated = { ...prev };
+      delete updated[uniqueKey];
+      return updated;
+    });
   }
 };
-
-const handleRemoveSelectedFile = (rowId) => {
-  setSelectedFiles((prev) => {
-    const updated = { ...prev };
-    delete updated[rowId];
-    return updated;
-  });
-};
-
-  const handleDownload = async (doc, row) => {
-    try {
-      const [download] = await Promise.all([
-        getApi(`Proposal/download/${doc.documentId}`),
-      ]);
-
-      toast.success("Sucessfully downaloded", {
-        autoClose: 1500,
-      });
-      console.log(download);
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-      toast.error("Technical Error", { autoClose: 1500 });
-    }
-  };
 
   return (
     <Fragment>
@@ -1395,17 +1546,6 @@ const handleRemoveSelectedFile = (rowId) => {
                                         </SpkButton>
                                       </SpkTooltips>
 
-                                      {/* View */}
-                                      {/* <SpkTooltips placement="top" title="View">
-            <SpkButton
-              Buttonvariant="info-light"
-              Customclass="btn btn-icon btn-sm"
-              onClick={() => handleView(doc, row)}
-            >
-              <i className="ri-eye-line"></i>
-            </SpkButton>
-          </SpkTooltips> */}
-
                                       {/* Delete */}
                                       <SpkTooltips
                                         placement="top"
@@ -1427,19 +1567,24 @@ const handleRemoveSelectedFile = (rowId) => {
 
                               {/* Selected Upload File */}
                               {selectedFiles[row.id] && (
-  <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
-    <div className="text-truncate me-2" style={{ maxWidth: "180px" }}>
-      📄 {selectedFiles[row.id].name}
-    </div>
+                                <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+                                  <div
+                                    className="text-truncate me-2"
+                                    style={{ maxWidth: "180px" }}
+                                  >
+                                    📄 {selectedFiles[row.id].name}
+                                  </div>
 
-    <button
-      className="btn btn-sm btn-danger"
-      onClick={() => handleRemoveSelectedFile(row.id)}
-    >
-      <i className="ri-close-line"></i>
-    </button>
-  </div>
-)}
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() =>
+                                      handleRemoveSelectedFile(row.id)
+                                    }
+                                  >
+                                    <i className="ri-close-line"></i>
+                                  </button>
+                                </div>
+                              )}
 
                               {/* Upload Button */}
                               {!selectedFiles[row.id] && (
@@ -1482,21 +1627,34 @@ const handleRemoveSelectedFile = (rowId) => {
 
                             {/* Customer */}
                             <td>
-                              <div className="d-flex align-items-center">
-                                <div className="avatar avatar-sm me-2 avatar-rounded">
-                                  <span className="avatar-text">
-                                    {row.customerName?.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
+                              {(() => {
+                                const customer =
+                                  customerInfo.length > 0 &&
+                                  customerInfo.find(
+                                    (item) =>
+                                      item.customerId === row.customerId,
+                                  );
 
-                                <div>
-                                  <div className="lh-1">
-                                    <span>{row.customerName}</span>
+                                return (
+                                  <div className="d-flex align-items-center">
+                                    <div className="avatar avatar-sm me-2 avatar-rounded">
+                                      <span className="avatar-text">
+                                        {customer?.customerName?.charAt(0) ||
+                                          "-"}
+                                      </span>
+                                    </div>
+
+                                    <div>
+                                      <div className="lh-1">
+                                        <span>
+                                          {customer?.customerName || "-"}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
+                                );
+                              })()}
                             </td>
-
                             {/* Lead Generator */}
                             <td>
                               <div className="d-flex align-items-center">
@@ -1957,6 +2115,119 @@ const handleRemoveSelectedFile = (rowId) => {
                                             <div className="fw-seminormal d-block">
                                               {row.invoiceNumber}
                                             </div>
+                                          
+ 
+  {(() => {
+    const uniqueKey = `${row.proposalNumber}-${row.orderNumber}-${row.id}`;
+
+    return (
+      <>
+        {/* Proposal Number */}
+        <div className="fw-semibold text-primary mb-2">
+          {row.proposalNumber}
+        </div>
+
+        {/* Existing Documents from API */}
+        {row.invoiceDocuments?.length > 0 &&
+          row.invoiceDocuments.map((doc) => (
+            <div
+              key={doc.documentId}
+              className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+            >
+              <div
+                className="text-truncate me-2"
+                style={{ maxWidth: "180px" }}
+                title={doc.originalFileName}
+              >
+                📎 {doc.originalFileName}
+              </div>
+
+              <div className="d-flex gap-1">
+                {/* Download */}
+                <SpkTooltips placement="top" title="Download">
+                  <SpkButton
+                    Buttonvariant="success-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() => handleInvoiceDownload(doc, row)}
+                  >
+                    <i className="ri-download-2-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
+
+                {/* Delete */}
+                <SpkTooltips placement="top" title="Delete">
+                  <SpkButton
+                    Buttonvariant="danger-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() => handleDeleteDocument(doc, row)}
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
+              </div>
+            </div>
+          ))}
+
+        {/* Selected Upload File */}
+        {selectedFiles[uniqueKey] && (
+          <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+            <div
+              className="text-truncate me-2"
+              style={{ maxWidth: "180px" }}
+              title={selectedFiles[uniqueKey].name}
+            >
+              📄 {selectedFiles[uniqueKey].name}
+            </div>
+
+            <SpkTooltips placement="top" title="Remove">
+              <button
+                type="button"
+                className="btn btn-sm btn-danger"
+                onClick={() =>
+                  handleRemoveSelectedFile(uniqueKey)
+                }
+              >
+                <i className="ri-close-line"></i>
+              </button>
+            </SpkTooltips>
+          </div>
+        )}
+
+        {/* Upload Button */}
+        {!selectedFiles[uniqueKey] && (
+          <>
+            <input
+              type="file"
+              hidden
+              id={`upload-${uniqueKey}`}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+
+                if (file) {
+                  handleInvoiceFileUpload(uniqueKey, row, file);
+                }
+
+                e.target.value = "";
+              }}
+            />
+
+            <label
+              htmlFor={`upload-${uniqueKey}`}
+              className="btn btn-sm btn-outline-primary"
+              style={{ cursor: "pointer" }}
+            >
+              <i className="ri-upload-2-line me-1"></i>
+              Upload
+            </label>
+          </>
+        )}
+      </>
+    );
+  })()}
+
+
+
+
                                           </td>
 
                                           {/* Invoice Date */}
@@ -2194,25 +2465,112 @@ const handleRemoveSelectedFile = (rowId) => {
                                             )}
 
                                             {/* 🔽 Rest normal fields */}
-                                            <td>
-                                              <FileUploadCell
-                                                file={row.file}
-                                                onUpload={(f) =>
-                                                  updatePaymentRow(
-                                                    row.id,
-                                                    "file",
-                                                    f,
-                                                  )
-                                                }
-                                                onRemove={() =>
-                                                  updatePaymentRow(
-                                                    row.id,
-                                                    "file",
-                                                    null,
-                                                  )
-                                                }
-                                              />
-                                            </td>
+                                            <td style={{ minWidth: "320px" }}>
+  {(() => {
+    const uniqueKey = `${proposalNumber}-${orderNumber}-${invoiceId}-${row.paymentId}`;
+
+    return (
+      <>
+        {/* Existing Documents from API */}
+        {row.paymentDocuments?.length > 0 &&
+          row.paymentDocuments.map((doc) => (
+            <div
+              key={doc.documentId}
+              className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+            >
+              <div
+                className="text-truncate me-2"
+                style={{ maxWidth: "180px" }}
+                title={doc.originalFileName}
+              >
+                📎 {doc.originalFileName}
+              </div>
+
+              <div className="d-flex gap-1">
+                {/* Download */}
+                <SpkTooltips placement="top" title="Download">
+                  <SpkButton
+                    Buttonvariant="success-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() => handlePaymentDownload(doc, row)}
+                  >
+                    <i className="ri-download-2-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
+
+                {/* Delete */}
+                <SpkTooltips placement="top" title="Delete">
+                  <SpkButton
+                    Buttonvariant="danger-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() =>
+                      handleDeleteDocument(doc, row)
+                    }
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
+              </div>
+            </div>
+          ))}
+
+        {/* Selected Upload File */}
+        {selectedFiles[uniqueKey] && (
+          <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+            <div
+              className="text-truncate me-2"
+              style={{ maxWidth: "180px" }}
+              title={selectedFiles[uniqueKey].name}
+            >
+              📄 {selectedFiles[uniqueKey].name}
+            </div>
+
+            <SpkTooltips placement="top" title="Remove">
+              <button
+                type="button"
+                className="btn btn-sm btn-danger"
+                onClick={() =>
+                  handleRemoveSelectedFile(uniqueKey)
+                }
+              >
+                <i className="ri-close-line"></i>
+              </button>
+            </SpkTooltips>
+          </div>
+        )}
+
+        {/* Upload Button */}
+        {!selectedFiles[uniqueKey] && (
+          <>
+            <input
+              type="file"
+              hidden
+              id={`upload-${uniqueKey}`}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+
+                if (file) {
+                  handlePaymentFileUpload(uniqueKey, row, file);
+                }
+
+                e.target.value = "";
+              }}
+            />
+
+            <label
+              htmlFor={`upload-${uniqueKey}`}
+              className="btn btn-sm btn-outline-primary"
+              style={{ cursor: "pointer" }}
+            >
+              <i className="ri-upload-2-line me-1"></i>
+              Upload
+            </label>
+          </>
+        )}
+      </>
+    );
+  })()}
+</td>
 
                                             <td>{row.amountReceived}</td>
                                             <td>{row.currency}</td>
