@@ -456,28 +456,39 @@ const Crm = () => {
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
-    setInvoiceData((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
+const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
+  setInvoiceData((prev) =>
+    prev.map((r) => {
+      if (r.id !== id) return r;
 
-        const updatedRow = { ...r, [field]: value };
+      const updatedRow = { ...r, [field]: value };
 
-        // ✅ AUTO CALCULATE DUE DATE
-        if (
-          (field === "invoiceDate" || field === "paymentTerm") &&
-          updatedRow.invoiceDate &&
-          updatedRow.paymentTerm
-        ) {
-          const baseDate = new Date(updatedRow.invoiceDate);
-          baseDate.setDate(baseDate.getDate() + Number(updatedRow.paymentTerm));
+      // ✅ AUTO CALCULATE DUE DATE
+      if (
+        (field === "invoiceDate" || field === "paymentTerm") &&
+        updatedRow.invoiceDate &&
+        updatedRow.paymentTerm
+      ) {
+        const baseDate = new Date(updatedRow.invoiceDate);
+        baseDate.setDate(baseDate.getDate() + Number(updatedRow.paymentTerm));
 
-          updatedRow.dueDate = baseDate;
-        }
+        updatedRow.dueDate = baseDate;
+      }
 
-        return updatedRow;
-      }),
-    );
+      // ✅ AUTO CALCULATE INVOICE VALUE INR
+      if (
+        field === "invoiceAmount" ||
+        field === "conversionRate"
+      ) {
+        const amount = Number(updatedRow.invoiceAmount) || 0;
+        const rate = Number(updatedRow.conversionRate) || 0;
+
+        updatedRow.invoiceValueINR = amount * rate;
+      }
+
+      return updatedRow;
+    })
+  );
 
   const updatePaymentRow = (id: number, field: keyof PaymentRow, value: any) =>
     setPaymentData((prev) =>
@@ -496,27 +507,6 @@ const Crm = () => {
     setPaymentData((prev) => [...prev, createEmptyPaymentRow()]);
 
   // ── Submit offer row ─────────────────────────────────────────────────────
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.readAsDataURL(file);
-
-      reader.onload = () => {
-        const result = reader.result;
-
-        // ✅ remove prefix
-        const base64 = result.split(",")[1];
-
-        resolve(base64);
-      };
-
-      reader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  }
 
   const [btnLoading, setBtnLoading] = useState(false);
 
@@ -581,23 +571,6 @@ const Crm = () => {
     }
   };
 
-  // ── Remove file (offer) ──────────────────────────────────────────────────
-
-  const removeOfferFile = (proposalId: number) => {
-    setEditProposalData((prev) =>
-      prev.map((r) => {
-        if (r.proposalId !== proposalId) return r;
-        if (r.fileUrl) URL.revokeObjectURL(r.fileUrl);
-        return {
-          ...r,
-          file: null,
-          fileUrl: null,
-          documentData: null,
-          fileName: null,
-        };
-      }),
-    );
-  };
   // ── Accordion ────────────────────────────────────────────────────────────
 
   const toggleAccordion = (key: string) =>
@@ -658,11 +631,11 @@ const Crm = () => {
   const handleUpdateProposalData = async (rows) => {
     try {
       const row = editPropodaData[0];
-      console.log("wor", row);
+      console.log("data", row);
       const payload = {
         proposalNumber: row.proposalNumber,
         firmId: Number(row.firmId),
-        customerId: 0,
+        customerId: Number(row.customerId),
         proposalDate: row.proposalDate,
         leadGenerator: row.leadGenerator,
         projectDetails: row.projectDetails,
@@ -800,7 +773,9 @@ const Crm = () => {
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  const handleOrderDetailsUpdate = async (row) => {
+  const handleOrderDetailsUpdate = async (rows) => {
+    console.log("editOrderDetails", editOrderDetails);
+    const row = editOrderDetails[0];
     console.log("row", row);
     const payload = {
       orderId: row.orderId,
@@ -843,24 +818,26 @@ const Crm = () => {
     setInvoiceDetailsPopup(true);
   };
 
-  const handleInvoiceAddDetails = async (row: any) => {
-    setInvoiceDetailsPopup(false);
-    console.log("row", row);
+  const handleInvoiceAddDetails = async (rows: any) => {
+    //
+    console.log("invoiceData", invoiceData, rows);
+    const row = invoiceData[0];
     const payload = {
       orderId: row.orderId,
       invoiceNumber: row.invoiceNumber,
       invoiceDate: row.invoiceDate,
       milestone: "12",
-      invoiceValue: row.invoiceAmount,
-      invoiceCurrency: row.invoiceValue,
+      invoiceValue: Number(row.invoiceAmount),
+      invoiceCurrency: row.invoiceCurrency,
       conversionRate: Number(row.conversionRate),
       invoiceValueInr: row.invoiceValueINR,
       paymentTerm: row.paymentTerm,
-      dueDays: 33,
+      dueDays: 0,
       dueDate: row.dueDate,
       paymentStatus: row.status,
       comments: row.comments,
     };
+    console.log('payload', payload)
     try {
       await postApi(`Invoice`, payload);
       toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
@@ -869,6 +846,7 @@ const Crm = () => {
         setInvoiceDetailsData(Invoice.data);
         setInvoiceEditDetailsPopUp(false);
         setLoading(false);
+        setInvoiceDetailsPopup(false);
       } catch (err) {
         console.error(err);
         setLoading(false);
@@ -878,10 +856,30 @@ const Crm = () => {
     }
   };
 
-  const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
-    setInvoiceEditDetails((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
-    );
+const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
+  setInvoiceEditDetails((prev) =>
+    prev.map((r) => {
+      if (r.id !== id) return r;
+
+      const updatedRow = {
+        ...r,
+        [field]: value,
+      };
+
+      // ✅ Auto calculate INR value
+      if (
+        field === "invoiceValue" ||
+        field === "invoiceConversionRate"
+      ) {
+        const invoiceValue = Number(updatedRow.invoiceValue) || 0;
+        const rate = Number(updatedRow.invoiceConversionRate) || 0;
+
+        updatedRow.invoiceValueInr = invoiceValue * rate;
+      }
+
+      return updatedRow;
+    })
+  );
 
   const handleInvoiceEditDetails = (row: any) => {
     console.log(row);
@@ -904,8 +902,9 @@ const Crm = () => {
     return parsed.utc().toISOString();
   }
 
-  const handleInvoiceDetailsUpdate = async (row: any) => {
-    console.log(row);
+  const handleInvoiceDetailsUpdate = async (rows: any) => {
+    console.log('invoiceEditDetails', invoiceEditDetails);
+    const row = invoiceEditDetails[0]
     const payload = {
       invoiceId: row.invoiceId,
       orderId: row.orderId,
@@ -1283,15 +1282,15 @@ const Crm = () => {
 
   const handleInvoiceFileUpload = async (uniqueKey, row, file) => {
     setSelectedFiles((prev) => ({
-    ...prev,
-    [uniqueKey]: file, // dynamically added key
-  }));
+      ...prev,
+      [uniqueKey]: file, // dynamically added key
+    }));
     try {
       const formData = new FormData();
       formData.append("file", file);
       await axios.post(
         `https://vinnovativeapi.azurewebsites.net/Invoice/AddInvoiceDocuments?invoiceId=${row.invoiceId}`,
-        formData, 
+        formData,
       );
 
       toast.success("Successfully file uploaded", {
@@ -1311,10 +1310,10 @@ const Crm = () => {
       toast.error("Technical Error", {
         autoClose: 1500,
       });
-    } 
+    }
   };
 
-   const handleInvoiceDownload = async (doc) => {
+  const handleInvoiceDownload = async (doc) => {
     try {
       const response = await getApi(`Invoice/download/${doc.documentId}`, {
         responseType: "blob",
@@ -1345,9 +1344,12 @@ const Crm = () => {
 
   const handlePaymentDownload = async (doc) => {
     try {
-      const response = await getApi(`InvoicePayment/download/${doc.documentId}`, {
-        responseType: "blob",
-      });
+      const response = await getApi(
+        `InvoicePayment/download/${doc.documentId}`,
+        {
+          responseType: "blob",
+        },
+      );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -1361,68 +1363,67 @@ const Crm = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error("Technical Error", { 
+      toast.error("Technical Error", {
         autoClose: 1500,
       });
     }
   };
 
-const handlePaymentFileUpload = async (uniqueKey, row, file) => {
-  // show selected file
-  setSelectedFiles((prev) => ({
-    ...prev,
-    [uniqueKey]: file,
-  }));
+  const handlePaymentFileUpload = async (uniqueKey, row, file) => {
+    // show selected file
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [uniqueKey]: file,
+    }));
 
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    await axios.post(
-      `https://vinnovativeapi.azurewebsites.net/InvoicePayment/AddInvoicePaymentDocuments?invoicePaymentId=${row.paymentId}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          accept: "*/*",
+      await axios.post(
+        `https://vinnovativeapi.azurewebsites.net/InvoicePayment/AddInvoicePaymentDocuments?invoicePaymentId=${row.paymentId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            accept: "*/*",
+          },
         },
+      );
+
+      toast.success("Successfully file uploaded", {
+        autoClose: 1500,
+      });
+
+      const res = await getApi("InvoicePayment");
+      setPaymentDetailsData(res.data);
+
+      // ✅ ✅ IMPORTANT FIX: remove selected file after upload
+      setSelectedFiles((prev) => {
+        const updated = { ...prev };
+        delete updated[uniqueKey];
+        return updated;
+      });
+    } catch (err) {
+      console.error("Upload error:", err);
+
+      if (err.response) {
+        console.log("Status:", err.response.status);
+        console.log("Data:", err.response.data);
       }
-    );
 
-    toast.success("Successfully file uploaded", {
-      autoClose: 1500,
-    });
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
 
-    const res = await getApi("InvoicePayment");
-    setPaymentDetailsData(res.data);
-
-    // ✅ ✅ IMPORTANT FIX: remove selected file after upload
-    setSelectedFiles((prev) => {
-      const updated = { ...prev };
-      delete updated[uniqueKey];
-      return updated;
-    });
-
-  } catch (err) {
-    console.error("Upload error:", err);
-
-    if (err.response) {
-      console.log("Status:", err.response.status);
-      console.log("Data:", err.response.data);
+      // 🔁 Optional: also clear on error
+      setSelectedFiles((prev) => {
+        const updated = { ...prev };
+        delete updated[uniqueKey];
+        return updated;
+      });
     }
-
-    toast.error("Technical Error", {
-      autoClose: 1500,
-    });
-
-    // 🔁 Optional: also clear on error
-    setSelectedFiles((prev) => {
-      const updated = { ...prev };
-      delete updated[uniqueKey];
-      return updated;
-    });
-  }
-};
+  };
 
   return (
     <Fragment>
@@ -2112,122 +2113,168 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
 
                                           {/* Invoice Number */}
                                           <td>
-                                            <div className="fw-seminormal d-block">
+                                            {/* <div className="fw-seminormal d-block">
                                               {row.invoiceNumber}
-                                            </div>
-                                          
- 
-  {(() => {
-    const uniqueKey = `${row.proposalNumber}-${row.orderNumber}-${row.id}`;
+                                            </div> */}
 
-    return (
-      <>
-        {/* Proposal Number */}
-        <div className="fw-semibold text-primary mb-2">
-          {row.proposalNumber}
-        </div>
+                                            {(() => {
+                                              const uniqueKey = `${row.proposalNumber}-${row.orderNumber}-${row.id}`;
 
-        {/* Existing Documents from API */}
-        {row.invoiceDocuments?.length > 0 &&
-          row.invoiceDocuments.map((doc) => (
-            <div
-              key={doc.documentId}
-              className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
-            >
-              <div
-                className="text-truncate me-2"
-                style={{ maxWidth: "180px" }}
-                title={doc.originalFileName}
-              >
-                📎 {doc.originalFileName}
-              </div>
+                                              return (
+                                                <>
+                                                  {/* Proposal Number */}
+                                                  <div className="fw-semibold text-primary mb-2">
+                                                    {row.proposalNumber}
+                                                  </div>
 
-              <div className="d-flex gap-1">
-                {/* Download */}
-                <SpkTooltips placement="top" title="Download">
-                  <SpkButton
-                    Buttonvariant="success-light"
-                    Customclass="btn btn-icon btn-sm"
-                    onClick={() => handleInvoiceDownload(doc, row)}
-                  >
-                    <i className="ri-download-2-line"></i>
-                  </SpkButton>
-                </SpkTooltips>
+                                                  {/* Existing Documents from API */}
+                                                  {row.invoiceDocuments
+                                                    ?.length > 0 &&
+                                                    row.invoiceDocuments.map(
+                                                      (doc) => (
+                                                        <div
+                                                          key={doc.documentId}
+                                                          className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+                                                        >
+                                                          <div
+                                                            className="text-truncate me-2"
+                                                            style={{
+                                                              maxWidth: "180px",
+                                                            }}
+                                                            title={
+                                                              doc.originalFileName
+                                                            }
+                                                          >
+                                                            📎{" "}
+                                                            {
+                                                              doc.originalFileName
+                                                            }
+                                                          </div>
 
-                {/* Delete */}
-                <SpkTooltips placement="top" title="Delete">
-                  <SpkButton
-                    Buttonvariant="danger-light"
-                    Customclass="btn btn-icon btn-sm"
-                    onClick={() => handleDeleteDocument(doc, row)}
-                  >
-                    <i className="ri-delete-bin-line"></i>
-                  </SpkButton>
-                </SpkTooltips>
-              </div>
-            </div>
-          ))}
+                                                          <div className="d-flex gap-1">
+                                                            {/* Download */}
+                                                            <SpkTooltips
+                                                              placement="top"
+                                                              title="Download"
+                                                            >
+                                                              <SpkButton
+                                                                Buttonvariant="success-light"
+                                                                Customclass="btn btn-icon btn-sm"
+                                                                onClick={() =>
+                                                                  handleInvoiceDownload(
+                                                                    doc,
+                                                                    row,
+                                                                  )
+                                                                }
+                                                              >
+                                                                <i className="ri-download-2-line"></i>
+                                                              </SpkButton>
+                                                            </SpkTooltips>
 
-        {/* Selected Upload File */}
-        {selectedFiles[uniqueKey] && (
-          <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
-            <div
-              className="text-truncate me-2"
-              style={{ maxWidth: "180px" }}
-              title={selectedFiles[uniqueKey].name}
-            >
-              📄 {selectedFiles[uniqueKey].name}
-            </div>
+                                                            {/* Delete */}
+                                                            <SpkTooltips
+                                                              placement="top"
+                                                              title="Delete"
+                                                            >
+                                                              <SpkButton
+                                                                Buttonvariant="danger-light"
+                                                                Customclass="btn btn-icon btn-sm"
+                                                                onClick={() =>
+                                                                  handleDeleteDocument(
+                                                                    doc,
+                                                                    row,
+                                                                  )
+                                                                }
+                                                              >
+                                                                <i className="ri-delete-bin-line"></i>
+                                                              </SpkButton>
+                                                            </SpkTooltips>
+                                                          </div>
+                                                        </div>
+                                                      ),
+                                                    )}
 
-            <SpkTooltips placement="top" title="Remove">
-              <button
-                type="button"
-                className="btn btn-sm btn-danger"
-                onClick={() =>
-                  handleRemoveSelectedFile(uniqueKey)
-                }
-              >
-                <i className="ri-close-line"></i>
-              </button>
-            </SpkTooltips>
-          </div>
-        )}
+                                                  {/* Selected Upload File */}
+                                                  {selectedFiles[uniqueKey] && (
+                                                    <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+                                                      <div
+                                                        className="text-truncate me-2"
+                                                        style={{
+                                                          maxWidth: "180px",
+                                                        }}
+                                                        title={
+                                                          selectedFiles[
+                                                            uniqueKey
+                                                          ].name
+                                                        }
+                                                      >
+                                                        📄{" "}
+                                                        {
+                                                          selectedFiles[
+                                                            uniqueKey
+                                                          ].name
+                                                        }
+                                                      </div>
 
-        {/* Upload Button */}
-        {!selectedFiles[uniqueKey] && (
-          <>
-            <input
-              type="file"
-              hidden
-              id={`upload-${uniqueKey}`}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
+                                                      <SpkTooltips
+                                                        placement="top"
+                                                        title="Remove"
+                                                      >
+                                                        <button
+                                                          type="button"
+                                                          className="btn btn-sm btn-danger"
+                                                          onClick={() =>
+                                                            handleRemoveSelectedFile(
+                                                              uniqueKey,
+                                                            )
+                                                          }
+                                                        >
+                                                          <i className="ri-close-line"></i>
+                                                        </button>
+                                                      </SpkTooltips>
+                                                    </div>
+                                                  )}
 
-                if (file) {
-                  handleInvoiceFileUpload(uniqueKey, row, file);
-                }
+                                                  {/* Upload Button */}
+                                                  {!selectedFiles[
+                                                    uniqueKey
+                                                  ] && (
+                                                    <>
+                                                      <input
+                                                        type="file"
+                                                        hidden
+                                                        id={`upload-${uniqueKey}`}
+                                                        onChange={(e) => {
+                                                          const file =
+                                                            e.target.files?.[0];
 
-                e.target.value = "";
-              }}
-            />
+                                                          if (file) {
+                                                            handleInvoiceFileUpload(
+                                                              uniqueKey,
+                                                              row,
+                                                              file,
+                                                            );
+                                                          }
 
-            <label
-              htmlFor={`upload-${uniqueKey}`}
-              className="btn btn-sm btn-outline-primary"
-              style={{ cursor: "pointer" }}
-            >
-              <i className="ri-upload-2-line me-1"></i>
-              Upload
-            </label>
-          </>
-        )}
-      </>
-    );
-  })()}
+                                                          e.target.value = "";
+                                                        }}
+                                                      />
 
-
-
-
+                                                      <label
+                                                        htmlFor={`upload-${uniqueKey}`}
+                                                        className="btn btn-sm btn-outline-primary"
+                                                        style={{
+                                                          cursor: "pointer",
+                                                        }}
+                                                      >
+                                                        <i className="ri-upload-2-line me-1"></i>
+                                                        Upload
+                                                      </label>
+                                                    </>
+                                                  )}
+                                                </>
+                                              );
+                                            })()}
                                           </td>
 
                                           {/* Invoice Date */}
@@ -2261,21 +2308,8 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                                           {/* Invoice Value INR */}
                                           <td>
                                             <div className="fw-seminormal d-block">
-                                              ₹{" "}
-                                              {new Intl.NumberFormat(
-                                                "en-IN",
-                                              ).format(
-                                                (
-                                                  Number(
-                                                    row.invoiceValue || 0,
-                                                  ) -
-                                                  Number(
-                                                    row.invoiceConversionRate ||
-                                                      0,
-                                                  )
-                                                ).toFixed(2),
-                                              )}
-                                            </div>
+  ₹ {Number(row.invoiceValueInr || 0).toFixed(2)}
+</div>
                                           </td>
 
                                           {/* Payment Term */}
@@ -2466,111 +2500,164 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
 
                                             {/* 🔽 Rest normal fields */}
                                             <td style={{ minWidth: "320px" }}>
-  {(() => {
-    const uniqueKey = `${proposalNumber}-${orderNumber}-${invoiceId}-${row.paymentId}`;
+                                              {(() => {
+                                                const uniqueKey = `${proposalNumber}-${orderNumber}-${invoiceId}-${row.paymentId}`;
 
-    return (
-      <>
-        {/* Existing Documents from API */}
-        {row.paymentDocuments?.length > 0 &&
-          row.paymentDocuments.map((doc) => (
-            <div
-              key={doc.documentId}
-              className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
-            >
-              <div
-                className="text-truncate me-2"
-                style={{ maxWidth: "180px" }}
-                title={doc.originalFileName}
-              >
-                📎 {doc.originalFileName}
-              </div>
+                                                return (
+                                                  <>
+                                                    {/* Existing Documents from API */}
+                                                    {row.paymentDocuments
+                                                      ?.length > 0 &&
+                                                      row.paymentDocuments.map(
+                                                        (doc) => (
+                                                          <div
+                                                            key={doc.documentId}
+                                                            className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+                                                          >
+                                                            <div
+                                                              className="text-truncate me-2"
+                                                              style={{
+                                                                maxWidth:
+                                                                  "180px",
+                                                              }}
+                                                              title={
+                                                                doc.originalFileName
+                                                              }
+                                                            >
+                                                              📎{" "}
+                                                              {
+                                                                doc.originalFileName
+                                                              }
+                                                            </div>
 
-              <div className="d-flex gap-1">
-                {/* Download */}
-                <SpkTooltips placement="top" title="Download">
-                  <SpkButton
-                    Buttonvariant="success-light"
-                    Customclass="btn btn-icon btn-sm"
-                    onClick={() => handlePaymentDownload(doc, row)}
-                  >
-                    <i className="ri-download-2-line"></i>
-                  </SpkButton>
-                </SpkTooltips>
+                                                            <div className="d-flex gap-1">
+                                                              {/* Download */}
+                                                              <SpkTooltips
+                                                                placement="top"
+                                                                title="Download"
+                                                              >
+                                                                <SpkButton
+                                                                  Buttonvariant="success-light"
+                                                                  Customclass="btn btn-icon btn-sm"
+                                                                  onClick={() =>
+                                                                    handlePaymentDownload(
+                                                                      doc,
+                                                                      row,
+                                                                    )
+                                                                  }
+                                                                >
+                                                                  <i className="ri-download-2-line"></i>
+                                                                </SpkButton>
+                                                              </SpkTooltips>
 
-                {/* Delete */}
-                <SpkTooltips placement="top" title="Delete">
-                  <SpkButton
-                    Buttonvariant="danger-light"
-                    Customclass="btn btn-icon btn-sm"
-                    onClick={() =>
-                      handleDeleteDocument(doc, row)
-                    }
-                  >
-                    <i className="ri-delete-bin-line"></i>
-                  </SpkButton>
-                </SpkTooltips>
-              </div>
-            </div>
-          ))}
+                                                              {/* Delete */}
+                                                              <SpkTooltips
+                                                                placement="top"
+                                                                title="Delete"
+                                                              >
+                                                                <SpkButton
+                                                                  Buttonvariant="danger-light"
+                                                                  Customclass="btn btn-icon btn-sm"
+                                                                  onClick={() =>
+                                                                    handleDeleteDocument(
+                                                                      doc,
+                                                                      row,
+                                                                    )
+                                                                  }
+                                                                >
+                                                                  <i className="ri-delete-bin-line"></i>
+                                                                </SpkButton>
+                                                              </SpkTooltips>
+                                                            </div>
+                                                          </div>
+                                                        ),
+                                                      )}
 
-        {/* Selected Upload File */}
-        {selectedFiles[uniqueKey] && (
-          <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
-            <div
-              className="text-truncate me-2"
-              style={{ maxWidth: "180px" }}
-              title={selectedFiles[uniqueKey].name}
-            >
-              📄 {selectedFiles[uniqueKey].name}
-            </div>
+                                                    {/* Selected Upload File */}
+                                                    {selectedFiles[
+                                                      uniqueKey
+                                                    ] && (
+                                                      <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+                                                        <div
+                                                          className="text-truncate me-2"
+                                                          style={{
+                                                            maxWidth: "180px",
+                                                          }}
+                                                          title={
+                                                            selectedFiles[
+                                                              uniqueKey
+                                                            ].name
+                                                          }
+                                                        >
+                                                          📄{" "}
+                                                          {
+                                                            selectedFiles[
+                                                              uniqueKey
+                                                            ].name
+                                                          }
+                                                        </div>
 
-            <SpkTooltips placement="top" title="Remove">
-              <button
-                type="button"
-                className="btn btn-sm btn-danger"
-                onClick={() =>
-                  handleRemoveSelectedFile(uniqueKey)
-                }
-              >
-                <i className="ri-close-line"></i>
-              </button>
-            </SpkTooltips>
-          </div>
-        )}
+                                                        <SpkTooltips
+                                                          placement="top"
+                                                          title="Remove"
+                                                        >
+                                                          <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-danger"
+                                                            onClick={() =>
+                                                              handleRemoveSelectedFile(
+                                                                uniqueKey,
+                                                              )
+                                                            }
+                                                          >
+                                                            <i className="ri-close-line"></i>
+                                                          </button>
+                                                        </SpkTooltips>
+                                                      </div>
+                                                    )}
 
-        {/* Upload Button */}
-        {!selectedFiles[uniqueKey] && (
-          <>
-            <input
-              type="file"
-              hidden
-              id={`upload-${uniqueKey}`}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
+                                                    {/* Upload Button */}
+                                                    {!selectedFiles[
+                                                      uniqueKey
+                                                    ] && (
+                                                      <>
+                                                        <input
+                                                          type="file"
+                                                          hidden
+                                                          id={`upload-${uniqueKey}`}
+                                                          onChange={(e) => {
+                                                            const file =
+                                                              e.target
+                                                                .files?.[0];
 
-                if (file) {
-                  handlePaymentFileUpload(uniqueKey, row, file);
-                }
+                                                            if (file) {
+                                                              handlePaymentFileUpload(
+                                                                uniqueKey,
+                                                                row,
+                                                                file,
+                                                              );
+                                                            }
 
-                e.target.value = "";
-              }}
-            />
+                                                            e.target.value = "";
+                                                          }}
+                                                        />
 
-            <label
-              htmlFor={`upload-${uniqueKey}`}
-              className="btn btn-sm btn-outline-primary"
-              style={{ cursor: "pointer" }}
-            >
-              <i className="ri-upload-2-line me-1"></i>
-              Upload
-            </label>
-          </>
-        )}
-      </>
-    );
-  })()}
-</td>
+                                                        <label
+                                                          htmlFor={`upload-${uniqueKey}`}
+                                                          className="btn btn-sm btn-outline-primary"
+                                                          style={{
+                                                            cursor: "pointer",
+                                                          }}
+                                                        >
+                                                          <i className="ri-upload-2-line me-1"></i>
+                                                          Upload
+                                                        </label>
+                                                      </>
+                                                    )}
+                                                  </>
+                                                );
+                                              })()}
+                                            </td>
 
                                             <td>{row.amountReceived}</td>
                                             <td>{row.currency}</td>
@@ -2907,284 +2994,299 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
               <div className="container">
                 {paymentData.map((row) => {
                   const filteredOrders = orderDetailsData.filter(
-      (item) => item.proposalId === row.proposalId
-    );
+                    (item) => item.proposalId === row.proposalId,
+                  );
 
-    const filteredInvoices = invoiceDetailsData.filter(
-      (item) => item.orderId === row.orderId
-    );
-    return (
-                  <div key={row.id} className="card mb-3 p-3 shadow-sm">
-                    <div className="row g-3">
-                      {/* ROW 1 (3 fields) */}
-                      <div className="col-md-4">
-                        <label className="form-label">Proposal Number</label>
-                       <select
-              className="form-select"
-              value={row.proposalId || ""}
-              onChange={(e) => {
-                const selectedId = Number(e.target.value);
+                  const filteredInvoices = invoiceDetailsData.filter(
+                    (item) => item.orderId === row.orderId,
+                  );
+                  return (
+                    <div key={row.id} className="card mb-3 p-3 shadow-sm">
+                      <div className="row g-3">
+                        {/* ROW 1 (3 fields) */}
+                        <div className="col-md-4">
+                          <label className="form-label">Proposal Number</label>
+                          <select
+                            className="form-select"
+                            value={row.proposalId || ""}
+                            onChange={(e) => {
+                              const selectedId = Number(e.target.value);
 
-                const selectedProposal = offerData.find(
-                  (item) => item.proposalId === selectedId
-                );
+                              const selectedProposal = offerData.find(
+                                (item) => item.proposalId === selectedId,
+                              );
 
-                updatePaymentRow(row.id, "proposalId", selectedId);
-                updatePaymentRow(
-                  row.id,
-                  "proposalNumber",
-                  selectedProposal?.proposalNumber || ""
-                );
+                              updatePaymentRow(
+                                row.id,
+                                "proposalId",
+                                selectedId,
+                              );
+                              updatePaymentRow(
+                                row.id,
+                                "proposalNumber",
+                                selectedProposal?.proposalNumber || "",
+                              );
 
-                // ✅ RESET ORDER + INVOICE
-                updatePaymentRow(row.id, "orderId", "");
-                updatePaymentRow(row.id, "orderNumber", "");
-                updatePaymentRow(row.id, "invoiceId", "");
-                updatePaymentRow(row.id, "invoiceNumber", "");
-              }}
-            >
-              <option value="">Select Proposal</option>
-              {offerData.map((item) => (
-                <option key={item.proposalId} value={item.proposalId}>
-                  {item.proposalNumber}
-                </option>
-              ))}
-            </select>
-                      </div>
+                              // ✅ RESET ORDER + INVOICE
+                              updatePaymentRow(row.id, "orderId", "");
+                              updatePaymentRow(row.id, "orderNumber", "");
+                              updatePaymentRow(row.id, "invoiceId", "");
+                              updatePaymentRow(row.id, "invoiceNumber", "");
+                            }}
+                          >
+                            <option value="">Select Proposal</option>
+                            {offerData.map((item) => (
+                              <option
+                                key={item.proposalId}
+                                value={item.proposalId}
+                              >
+                                {item.proposalNumber}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      <div className="col-md-4">
-                        <label className="form-label">Order Number</label>
-                        <select
-              className="form-select"
-              value={row.orderId || ""}
-              disabled={!row.proposalId}
-              onChange={(e) => {
-                const selectedId = Number(e.target.value);
+                        <div className="col-md-4">
+                          <label className="form-label">Order Number</label>
+                          <select
+                            className="form-select"
+                            value={row.orderId || ""}
+                            disabled={!row.proposalId}
+                            onChange={(e) => {
+                              const selectedId = Number(e.target.value);
 
-                const selectedOrder = orderDetailsData.find(
-                  (item) => item.orderId === selectedId
-                );
+                              const selectedOrder = orderDetailsData.find(
+                                (item) => item.orderId === selectedId,
+                              );
 
-                updatePaymentRow(row.id, "orderId", selectedId);
-                updatePaymentRow(
-                  row.id,
-                  "orderNumber",
-                  selectedOrder?.orderNumber || ""
-                );
+                              updatePaymentRow(row.id, "orderId", selectedId);
+                              updatePaymentRow(
+                                row.id,
+                                "orderNumber",
+                                selectedOrder?.orderNumber || "",
+                              );
 
-                // ✅ RESET INVOICE
-                updatePaymentRow(row.id, "invoiceId", "");
-                updatePaymentRow(row.id, "invoiceNumber", "");
-              }}
-            >
-              <option value="">Select Order</option>
-              {filteredOrders.map((item) => (
-                <option key={item.orderId} value={item.orderId}>
-                  {item.orderNumber}
-                </option>
-              ))}
-            </select>
-                      </div>
+                              // ✅ RESET INVOICE
+                              updatePaymentRow(row.id, "invoiceId", "");
+                              updatePaymentRow(row.id, "invoiceNumber", "");
+                            }}
+                          >
+                            <option value="">Select Order</option>
+                            {filteredOrders.map((item) => (
+                              <option key={item.orderId} value={item.orderId}>
+                                {item.orderNumber}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      <div className="col-md-4">
-                        <label className="form-label">Invoice Number</label>
-                       <select
-              className="form-select"
-              value={row.invoiceId || ""}
-              disabled={!row.orderId}
-              onChange={(e) => {
-                const selectedId = Number(e.target.value);
+                        <div className="col-md-4">
+                          <label className="form-label">Invoice Number</label>
+                          <select
+                            className="form-select"
+                            value={row.invoiceId || ""}
+                            disabled={!row.orderId}
+                            onChange={(e) => {
+                              const selectedId = Number(e.target.value);
 
-                const selectedInvoice = invoiceDetailsData.find(
-                  (item) => item.invoiceId === selectedId
-                );
+                              const selectedInvoice = invoiceDetailsData.find(
+                                (item) => item.invoiceId === selectedId,
+                              );
 
-                updatePaymentRow(row.id, "invoiceId", selectedId);
-                updatePaymentRow(
-                  row.id,
-                  "invoiceNumber",
-                  selectedInvoice?.invoiceNumber || ""
-                );
-              }}
-            >
-              <option value="">Select Invoice</option>
-              {filteredInvoices.map((item) => (
-                <option key={item.invoiceId} value={item.invoiceId}>
-                  {item.invoiceNumber}
-                </option>
-              ))}
-            </select>
+                              updatePaymentRow(row.id, "invoiceId", selectedId);
+                              updatePaymentRow(
+                                row.id,
+                                "invoiceNumber",
+                                selectedInvoice?.invoiceNumber || "",
+                              );
+                            }}
+                          >
+                            <option value="">Select Invoice</option>
+                            {filteredInvoices.map((item) => (
+                              <option
+                                key={item.invoiceId}
+                                value={item.invoiceId}
+                              >
+                                {item.invoiceNumber}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      </div>
+                        {/* ROW 2 */}
+                        <div className="col-md-4">
+                          <label className="form-label">Documents</label>
 
-                      {/* ROW 2 */}
-                      <div className="col-md-4">
-                        <label className="form-label">Documents</label>
+                          <input
+                            type="file"
+                            className="form-control"
+                            onChange={(e) => {
+                              const f = e.target.files[0];
+                              if (!f) return;
 
-                        <input
-                          type="file"
-                          className="form-control"
-                          onChange={(e) => {
-                            const f = e.target.files[0];
-                            if (!f) return;
+                              updatePaymentRow(row.id, "file", {
+                                file: f,
+                                fileName: f.name,
+                              });
+                            }}
+                          />
 
-                            updatePaymentRow(row.id, "file", {
-                              file: f,
-                              fileName: f.name,
-                            });
-                          }}
-                        />
+                          <div className="d-flex justify-content-between align-items-center mt-1">
+                            <small>
+                              {row.file?.fileName || "No file selected"}
+                            </small>
 
-                        <div className="d-flex justify-content-between align-items-center mt-1">
-                          <small>
-                            {row.file?.fileName || "No file selected"}
-                          </small>
+                            {row.file?.fileName && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-link text-danger p-0"
+                                onClick={() =>
+                                  updatePaymentRow(row.id, "file", null)
+                                }
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
 
-                          {row.file?.fileName && (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-link text-danger p-0"
-                              onClick={() =>
-                                updatePaymentRow(row.id, "file", null)
-                              }
-                            >
-                              Remove
-                            </button>
-                          )}
+                        <div className="col-md-4">
+                          <label className="form-label">Value Received</label>
+                          <input
+                            className="form-control"
+                            value={row.valueReceived || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "valueReceived",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label">Currency</label>
+                          <select
+                            className="form-select"
+                            value={row.amountCurrency || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "amountCurrency",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {dropdownOptions.currency.map((opt, index) => (
+                              <option key={index} value={opt.name}>
+                                {opt.name} ({opt.symbol})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* ROW 3 */}
+                        <div className="col-md-4">
+                          <label className="form-label">Amount Realised</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={row.amountValue || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "amountValue",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label">Realised Date</label>
+                          <SpkDatepickr
+                            className="form-control"
+                            selected={
+                              row.realisedDate
+                                ? new Date(row.realisedDate)
+                                : null
+                            }
+                            onChange={(date) =>
+                              updatePaymentRow(row.id, "realisedDate", date)
+                            }
+                            placeholderText="Choose date"
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label">Payment Status</label>
+                          <select
+                            className="form-select"
+                            value={row.paymentStatus || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "paymentStatus",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Select</option>
+                            {dropdownOptions.paymentStatus.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* ROW 4 */}
+                        <div className="col-md-4">
+                          <label className="form-label">
+                            Fluctuation Difference
+                          </label>
+                          <input
+                            className="form-control"
+                            value={row.fluctuation || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "fluctuation",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="col-md-4">
+                          <label className="form-label">Comments</label>
+                          <input
+                            className="form-control"
+                            value={row.comments || ""}
+                            onChange={(e) =>
+                              updatePaymentRow(
+                                row.id,
+                                "comments",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="col-md-4 d-flex align-items-end">
+                          <button
+                            className="btn btn-primary w-100"
+                            onClick={() => handlePaymentDetailsStore(row)}
+                          >
+                            Submit
+                          </button>
                         </div>
                       </div>
-
-                      <div className="col-md-4">
-                        <label className="form-label">Value Received</label>
-                        <input
-                          className="form-control"
-                          value={row.valueReceived || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(
-                              row.id,
-                              "valueReceived",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="col-md-4">
-                        <label className="form-label">Currency</label>
-                        <select
-                          className="form-select"
-                          value={row.amountCurrency || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(
-                              row.id,
-                              "amountCurrency",
-                              e.target.value,
-                            )
-                          }
-                        >
-                          <option value="">Select</option>
-                          {dropdownOptions.currency.map((opt, index) => (
-                            <option key={index} value={opt.name}>
-                              {opt.name} ({opt.symbol})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* ROW 3 */}
-                      <div className="col-md-4">
-                        <label className="form-label">Amount Realised</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={row.amountValue || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(
-                              row.id,
-                              "amountValue",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="col-md-4">
-                        <label className="form-label">Realised Date</label>
-                        <SpkDatepickr
-                          className="form-control"
-                          selected={
-                            row.realisedDate ? new Date(row.realisedDate) : null
-                          }
-                          onChange={(date) =>
-                            updatePaymentRow(row.id, "realisedDate", date)
-                          }
-                          placeholderText="Choose date"
-                        />
-                      </div>
-
-                      <div className="col-md-4">
-                        <label className="form-label">Payment Status</label>
-                        <select
-                          className="form-select"
-                          value={row.paymentStatus || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(
-                              row.id,
-                              "paymentStatus",
-                              e.target.value,
-                            )
-                          }
-                        >
-                          <option value="">Select</option>
-                          {dropdownOptions.paymentStatus.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* ROW 4 */}
-                      <div className="col-md-4">
-                        <label className="form-label">
-                          Fluctuation Difference
-                        </label>
-                        <input
-                          className="form-control"
-                          value={row.fluctuation || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(
-                              row.id,
-                              "fluctuation",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="col-md-4">
-                        <label className="form-label">Comments</label>
-                        <input
-                          className="form-control"
-                          value={row.comments || ""}
-                          onChange={(e) =>
-                            updatePaymentRow(row.id, "comments", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="col-md-4 d-flex align-items-end">
-                        <button
-                          className="btn btn-primary w-100"
-                          onClick={() => handlePaymentDetailsStore(row)}
-                        >
-                          Submit
-                        </button>
-                      </div>
                     </div>
-                  </div>
-    )
-})}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -3324,7 +3426,7 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                         </label>
                         <input
                           className="form-control"
-                          value={row.invoiceValueInr}
+                          value={row.invoiceConversionRate * row.invoiceValue}
                           onChange={(e) =>
                             updateInvoiceEdit(
                               row.id,
@@ -3459,10 +3561,9 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                           <label className="form-label">Proposal Number</label>
                           <select
                             className="form-select"
-                            value={row.proposalId || ""}
+                            value={row.proposalId}
                             onChange={(e) => {
                               const selectedId = Number(e.target.value);
-
                               updateInvoiceRow(
                                 row.id,
                                 "proposalId",
@@ -3605,7 +3706,7 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                           </label>
                           <input
                             className="form-control"
-                            value={row.invoiceValueINR}
+                            value={row.invoiceAmount * row.conversionRate}
                             onChange={(e) =>
                               updateInvoiceRow(
                                 row.id,
@@ -3872,7 +3973,8 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                         </label>
                         <input
                           className="form-control"
-                          value={poRow.orderValueInr}
+                          value={poRow.conversionRate * poRow.orderValue}
+                          disabled
                           onChange={(e) =>
                             updateEditOrdetailsRow(
                               poRow.id,
@@ -4777,7 +4879,7 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                       </div>
 
                       {/* Row 4 - File Upload */}
-                      <div className="col-md-6">
+                      {/* <div className="col-md-6">
                         <label className="form-label">Upload File</label>
 
                         <FileUploadCell
@@ -4798,7 +4900,7 @@ const handlePaymentFileUpload = async (uniqueKey, row, file) => {
                           }}
                           onRemove={() => removeOfferFile(row.proposalId)}
                         />
-                      </div>
+                      </div> */}
 
                       {/* Actions */}
                       <div className="col-12 text-end">
