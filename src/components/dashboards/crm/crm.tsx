@@ -998,38 +998,50 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  const handlePaymentUpdateDetails = async (row: any) => {
-    console.log(row);
+const handlePaymentUpdateDetails = async (rows: any) => {
+  const row = paymentEditDetails[0];
+  console.log('row', row);
+
+  try {
+    setLoading(true);
+
+    const amount = Number(row.amountReceived) || 0;
+    const rate = Number(row.conversionRateAtPayment) || 0;
+
     const payload = {
       paymentId: row.paymentId,
-      paymentDate: "2026-04-20T18:22:31.160Z", //row.paymentDate,
+      paymentDate: row.paymentDate,
       amountReceived: Number(row.amountReceived),
       currency: row.amountCurrency,
-      amountReceivedInr: row.amountReceivedInr,
-      conversionRateAtPayment: row.conversionRateAtPayment,
+      amountReceivedInr: amount * rate,
+      conversionRateAtPayment: rate,
       fluctuationDifference: Number(row.fluctuationDifference),
       paymentMethod: row.paymentMethod,
       referenceNumber: row.referenceNumber,
       comments: row.comments,
     };
-    try {
-      await putApi(`InvoicePayment/${row.paymentId}`, payload);
-      toast.success("Sucessfully invoice payment data updated", {
-        autoClose: 1500,
-      });
-      try {
-        const [InvoicePayment] = await Promise.all([getApi("InvoicePayment")]);
-        setPaymentData([InvoicePayment.data]);
-        setPaymentEditPopUP(false);
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setLoading(false);
-      }
-    } catch (err) {
-      toast.error("Techinicall Error", { autoClose: 1500 });
-    }
-  };
+
+    console.log('payload', payload);
+
+    // ✅ STEP 1: PUT — if this throws, GET never runs
+    await putApi(`InvoicePayment/${row.paymentId}`, payload);
+
+    toast.success("Successfully invoice payment data updated", {
+      autoClose: 1500,
+    });
+
+    // ✅ STEP 2: GET — only reached if PUT succeeded
+    const response = await getApi("InvoicePayment");
+    setPaymentData(response.data); // ✅ fixed — no wrapping []
+    setPaymentEditPopUP(false);
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Technical Error", { autoClose: 1500 });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getInvoiceDeetailsGroup = invoiceDetailsData.reduce(
     (acc: any, item) => {
@@ -1880,7 +1892,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
                                   </td>
                                   <td>
                                     <div className="fw-semibold d-block">
-                                      {poRow.proposalId}
+                                      {poRow.projectName}
                                     </div>
                                   </td>
 
@@ -2822,18 +2834,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
                       </select>
                     </div>
 
-                    {/* ROW 2 */}
-                    <div className="col-md-4">
-                      <label className="form-label">Documents</label>
-                      <FileUploadCell
-                        file={row.file}
-                        onUpload={(f) => updatePaymenteEdit(row.id, "file", f)}
-                        onRemove={() =>
-                          updatePaymenteEdit(row.id, "file", null)
-                        }
-                      />
-                    </div>
-
+                  
                     <div className="col-md-4">
                       <label className="form-label">Value Received</label>
                       <input
@@ -2853,7 +2854,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
                       <label className="form-label">Currency</label>
                       <select
                         className="form-select"
-                        value={row.amountCurrency || ""}
+                        value={row.currency}
                         onChange={(e) =>
                           updatePaymenteEdit(
                             row.id,
@@ -3113,42 +3114,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
                           </select>
                         </div>
 
-                        {/* ROW 2 */}
-                        <div className="col-md-4">
-                          <label className="form-label">Documents</label>
-
-                          <input
-                            type="file"
-                            className="form-control"
-                            onChange={(e) => {
-                              const f = e.target.files[0];
-                              if (!f) return;
-
-                              updatePaymentRow(row.id, "file", {
-                                file: f,
-                                fileName: f.name,
-                              });
-                            }}
-                          />
-
-                          <div className="d-flex justify-content-between align-items-center mt-1">
-                            <small>
-                              {row.file?.fileName || "No file selected"}
-                            </small>
-
-                            {row.file?.fileName && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-link text-danger p-0"
-                                onClick={() =>
-                                  updatePaymentRow(row.id, "file", null)
-                                }
-                              >
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                      
 
                         <div className="col-md-4">
                           <label className="form-label">Value Received</label>
@@ -3848,7 +3814,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
                         <label className="form-label">Project ID</label>
                         <input
                           className="form-control"
-                          value={poRow.projectId}
+                          value={poRow.projectName}
                           onChange={(e) =>
                             updateEditOrdetailsRow(
                               poRow.id,
