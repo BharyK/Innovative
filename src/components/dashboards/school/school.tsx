@@ -13,6 +13,7 @@ import {
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import './styles.css'
+import { Tabs, Tab } from "react-bootstrap";
 
 const School = () => {
   const companyInfo = {
@@ -49,7 +50,7 @@ const School = () => {
   const handleSupplier = (e) => {
     setSupplier({ ...supplier, [e.target.name]: e.target.value });
   };
-
+const [poList, setPoList] = useState([]);
   const handleItem = (index, field, value) => {
     const data = [...items];
     data[index][field] = value;
@@ -88,6 +89,15 @@ const School = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  const fetchPOList = async () => {
+  try {
+    const res = await getApi("Order/purchase-order");
+    setPoList(res || []);
+  } catch (err) {
+    toast.error("Failed to fetch data");
+  }
+};
 
   return (
     <Fragment>

@@ -29,3 +29,233 @@
   }
 
 }
+
+/* =========================
+   GLOBAL TABLE WRAPPER
+========================= */
+.app-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;     /* horizontal scroll */
+  overflow-y: auto;     /* vertical scroll */
+  max-height: 500px;    /* adjustable */
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* =========================
+   TABLE BASE
+========================= */
+.app-table {
+  width: max-content;     /* IMPORTANT: prevents shrink */
+  min-width: 1200px;      /* base width */
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* =========================
+   HEADER (STICKY)
+========================= */
+.app-table thead th {
+  position: sticky;
+  top: 0;
+  background: black;
+  color: #fff;
+  z-index: 2;
+  text-align: center;
+}
+
+/* =========================
+   CELL STYLING
+========================= */
+.app-table th,
+.app-table td {
+  padding: 8px 12px;
+  vertical-align: middle;
+  white-space: nowrap;   /* prevent breaking */
+}
+
+/* =========================
+   INPUT / DROPDOWN FIX
+========================= */
+.app-table input,
+.app-table select {
+  width: 100%;
+  min-width: 120px;
+  box-sizing: border-box;
+}
+
+/* =========================
+   LONG TEXT HANDLING
+========================= */
+.app-table .wrap-text {
+  white-space: normal !important;
+  word-break: break-word;
+  max-width: 300px;
+}
+
+/* =========================
+   OPTIONAL: NICE SCROLLBAR
+========================= */
+.app-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.app-table-wrapper::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+}
+
+/* Toolbar Layout */
+.table-toolbar {
+  display: flex;
+  justify-content: space-between; /* left + right */
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Search Right */
+.search-box input {
+  width: 280px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: 0.3s;
+}
+
+.search-box input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 6px rgba(13, 110, 253, 0.3);
+}
+
+.radio-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.radio-group span{
+    margin-left:10px;
+    font-size: 14px;
+    text-transform: capitalize;
+}
+
+/* Radio Group */
+.radio-group {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Hide default radio */
+.custom-radio input {
+  display: none;
+}
+
+/* Bigger pill style */
+.custom-radio span {
+  padding: 10px 18px;          /* 🔥 increased size */
+  border-radius: 25px;
+  border: 1.5px solid #ccc;
+  cursor: pointer;
+  font-size: 15px;             /* 🔥 bigger text */
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+/* Hover */
+.custom-radio span:hover {
+  background: #e9f2ff;
+  border-color: #0d6efd;
+  transform: translateY(-1px);  /* subtle lift */
+}
+
+/* Active (Selected) */
+.custom-radio input:checked + span {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.4);
+  transform: scale(1.05);      /* 🔥 slight zoom */
+}
+
+.file-upload-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Upload button */
+.upload-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #0d6efd;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  width: fit-content;
+  transition: 0.3s;
+}
+
+.upload-btn:hover {
+  background: #0b5ed7;
+}
+
+/* File info */
+.file-info {
+  background: #f1f3f5;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #333;
+  word-break: break-word;
+}
+
+.file-size {
+  color: #666;
+  font-size: 11px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+tbody tr {
+  border: 1px solid #ccc;
+}
+
+tbody tr td {
+  border: 1px solid #ccc;
+}
+
+.custom-full-modal {
+  max-width: 95vw !important;
+  width: 95vw;
+  margin: 10px auto;
+}
+
+.custom-full-modal .modal-content {
+  height: 90vh;
+}
+
+.custom-full-modal .modal-body {
+  overflow: auto;
+}
+
+.badge {
+  font-size: 12px !important;
+  padding: 6px;
+}
