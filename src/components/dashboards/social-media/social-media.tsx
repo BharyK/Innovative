@@ -14,6 +14,9 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./style.css";
+import { getApi, postApi, putApi, deleteApi } from "../../../api/services";
+import { toast, ToastContainer } from "react-toastify";
+import moment from "moment";
 
 const SocialMedia = () => {
   const companyInfo = {
@@ -25,8 +28,8 @@ const SocialMedia = () => {
   };
 
   const [poDetails, setPoDetails] = useState({
-    poNumber: "V126271001",
-    date: "2026-04-23",
+    poNumber: "",
+    date: moment().format("DD/MM/YYYY"),
     quotationNo: "",
     quotationDate: "",
   });
@@ -36,7 +39,7 @@ const SocialMedia = () => {
     address: "",
     gstin: "",
     attention: "",
-    date: "",
+    date: moment().format("DD/MM/YYYY"),
   });
 
   const [items, setItems] = useState([
@@ -47,16 +50,6 @@ const SocialMedia = () => {
       total: "",
     },
   ]);
-  const [comments, setComments] = useState();
-
-  const [gstPercent, setGstPercent] = useState("");
-  const subTotalGST = items.reduce(
-    (acc, item) => acc + (Number(item.total) || 0),
-    0,
-  );
-  const gstAmount = subTotalGST * ((Number(gstPercent) || 0) / 100);
-
-  const grandTotal = subTotalGST + gstAmount;
 
   const handleSupplierChange = (e) => {
     setSupplier({
@@ -76,7 +69,7 @@ const SocialMedia = () => {
       ...items,
       {
         description: "",
-        qty: "",
+        quantity: "",
         unitPrice: "",
         total: "",
       },
@@ -93,22 +86,57 @@ const SocialMedia = () => {
     0,
   );
 
-  const handleSave = () => {
-    const payload = {
-      companyInfo,
-      poDetails,
-      supplier,
-      items,
-      summary: {
-        subTotal,
-        gst,
-        grandTotal,
-      },
-    };
+  const initialPoDetails = {
+  poNumber: "",
+  date: moment().format("DD/MM/YYYY"),
+  quotationNo: "",
+  quotationDate: "",
+};
 
-    console.log(payload);
-    alert("Saved Successfully!");
+const initialSupplier = {
+  name: "",
+  address: "",
+  gstin: "",
+  attention: "",
+  date: moment().format("DD/MM/YYYY"),
+};
+
+const initialItems = [
+  {
+    description: "",
+    qty: "",
+    unitPrice: "",
+    total: "",
+  },
+];
+
+
+const handleSave = async () => {
+  const doc = {
+    poNumber: poDetails.poNumber,
+    poDate: moment(poDetails.date).toISOString(),
+    supplierName: supplier.name,
+    quotationNumber: poDetails.quotationNo,
+    quotationDate: moment(poDetails.quotationDate).toISOString(),
+    gstin: supplier.gstin,
+    address: supplier.address,
+    items,
   };
+
+  try {
+    await postApi("Order/purchase-order", doc);
+
+    toast.success("Successfully data updated", { autoClose: 1500 });
+
+    // ✅ RESET EVERYTHING
+    setPoDetails(initialPoDetails);
+    setSupplier(initialSupplier);
+    setItems(initialItems);
+
+  } catch (err) {
+    toast.error("Please try again", { autoClose: 1500 });
+  }
+};
 
   const handlePrint = () => {
     window.print();
@@ -117,7 +145,7 @@ const SocialMedia = () => {
   return (
     <Fragment>
       <Seo title={"Release of Purchase Orders"} />
-
+      <ToastContainer />
       <Pageheader
         title="Dashboard"
         currentpage="Release of Purchase Orders"
@@ -169,10 +197,10 @@ const SocialMedia = () => {
                           selected={
                             poDetails.date ? new Date(poDetails.date) : null
                           }
-                          onChange={(e) =>
+                          onChange={(date) =>
                             setPoDetails({
                               ...poDetails,
-                              date: e.target.value,
+                              date: moment(date).toISOString(),
                             })
                           }
                           placeholderText="Choose date"
@@ -223,11 +251,11 @@ const SocialMedia = () => {
                   <SpkDatepickr
                     className="form-control"
                     selected={supplier.date ? new Date(supplier.date) : null}
-                    onChange={(e) =>
-                      setPoDetails({
-                        ...supplier,
-                        date: e.target.value,
-                      })
+                    onChange={(date) =>
+                      setPoDetails((prev) => ({
+                        ...prev,
+                        date: moment(date).toISOString(),
+                      }))
                     }
                     placeholderText="Choose date"
                   />
@@ -341,7 +369,7 @@ const SocialMedia = () => {
                 </tbody>
               </Table>
               <div style={{ clear: "both" }}></div>
-              
+
               <div className="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
                 <Button variant="outline-secondary" onClick={handlePrint}>
                   Print
