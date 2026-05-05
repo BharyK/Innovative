@@ -14,7 +14,7 @@ import {
 } from "react-bootstrap";
 import SpkDatepickr from "../../../shared/@spk-reusable-components/reusable-plugins/spk-datepicker";
 import "./crm.css";
-import { getApi, postApi, putApi } from "../../../api/services";
+import { getApi, postApi, putApi, deleteApi } from "../../../api/services";
 import SpkButton from "../../../shared/@spk-reusable-components/reusable-uielements/spk-button";
 import AddCustomer from "../../apps/ecommerce/add-products/add-products";
 import { toast, ToastContainer } from "react-toastify";
@@ -456,39 +456,36 @@ const Crm = () => {
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
-  setInvoiceData((prev) =>
-    prev.map((r) => {
-      if (r.id !== id) return r;
+  const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
+    setInvoiceData((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
 
-      const updatedRow = { ...r, [field]: value };
+        const updatedRow = { ...r, [field]: value };
 
-      // ✅ AUTO CALCULATE DUE DATE
-      if (
-        (field === "invoiceDate" || field === "paymentTerm") &&
-        updatedRow.invoiceDate &&
-        updatedRow.paymentTerm
-      ) {
-        const baseDate = new Date(updatedRow.invoiceDate);
-        baseDate.setDate(baseDate.getDate() + Number(updatedRow.paymentTerm));
+        // ✅ AUTO CALCULATE DUE DATE
+        if (
+          (field === "invoiceDate" || field === "paymentTerm") &&
+          updatedRow.invoiceDate &&
+          updatedRow.paymentTerm
+        ) {
+          const baseDate = new Date(updatedRow.invoiceDate);
+          baseDate.setDate(baseDate.getDate() + Number(updatedRow.paymentTerm));
 
-        updatedRow.dueDate = baseDate;
-      }
+          updatedRow.dueDate = baseDate;
+        }
 
-      // ✅ AUTO CALCULATE INVOICE VALUE INR
-      if (
-        field === "invoiceAmount" ||
-        field === "conversionRate"
-      ) {
-        const amount = Number(updatedRow.invoiceAmount) || 0;
-        const rate = Number(updatedRow.conversionRate) || 0;
+        // ✅ AUTO CALCULATE INVOICE VALUE INR
+        if (field === "invoiceAmount" || field === "conversionRate") {
+          const amount = Number(updatedRow.invoiceAmount) || 0;
+          const rate = Number(updatedRow.conversionRate) || 0;
 
-        updatedRow.invoiceValueINR = amount * rate;
-      }
+          updatedRow.invoiceValueINR = amount * rate;
+        }
 
-      return updatedRow;
-    })
-  );
+        return updatedRow;
+      }),
+    );
 
   const updatePaymentRow = (id: number, field: keyof PaymentRow, value: any) =>
     setPaymentData((prev) =>
@@ -745,7 +742,7 @@ const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
     };
     try {
       await postApi("Order", payload);
-      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      toast.success("Sucessfully order data updated", { autoClose: 1500 });
       setOrderDetailsPopup(false);
       try {
         const [order] = await Promise.all([getApi("Order")]);
@@ -794,7 +791,7 @@ const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
     };
     try {
       await putApi(`Order`, payload);
-      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      toast.success("Sucessfully order data updated", { autoClose: 1500 });
       try {
         const [order] = await Promise.all([getApi("Order")]);
         setOrderDetailsData(order.data);
@@ -837,10 +834,10 @@ const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
       paymentStatus: row.status,
       comments: row.comments,
     };
-    console.log('payload', payload)
+    console.log("payload", payload);
     try {
       await postApi(`Invoice`, payload);
-      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      toast.success("Sucessfully invoice data updated", { autoClose: 1500 });
       try {
         const [Invoice] = await Promise.all([getApi("Invoice")]);
         setInvoiceDetailsData(Invoice.data);
@@ -856,30 +853,27 @@ const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
     }
   };
 
-const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
-  setInvoiceEditDetails((prev) =>
-    prev.map((r) => {
-      if (r.id !== id) return r;
+  const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
+    setInvoiceEditDetails((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
 
-      const updatedRow = {
-        ...r,
-        [field]: value,
-      };
+        const updatedRow = {
+          ...r,
+          [field]: value,
+        };
 
-      // ✅ Auto calculate INR value
-      if (
-        field === "invoiceValue" ||
-        field === "invoiceConversionRate"
-      ) {
-        const invoiceValue = Number(updatedRow.invoiceValue) || 0;
-        const rate = Number(updatedRow.invoiceConversionRate) || 0;
+        // ✅ Auto calculate INR value
+        if (field === "invoiceValue" || field === "invoiceConversionRate") {
+          const invoiceValue = Number(updatedRow.invoiceValue) || 0;
+          const rate = Number(updatedRow.invoiceConversionRate) || 0;
 
-        updatedRow.invoiceValueInr = invoiceValue * rate;
-      }
+          updatedRow.invoiceValueInr = invoiceValue * rate;
+        }
 
-      return updatedRow;
-    })
-  );
+        return updatedRow;
+      }),
+    );
 
   const handleInvoiceEditDetails = (row: any) => {
     console.log(row);
@@ -903,8 +897,8 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
   }
 
   const handleInvoiceDetailsUpdate = async (rows: any) => {
-    console.log('invoiceEditDetails', invoiceEditDetails);
-    const row = invoiceEditDetails[0]
+    console.log("invoiceEditDetails", invoiceEditDetails);
+    const row = invoiceEditDetails[0];
     const payload = {
       invoiceId: row.invoiceId,
       orderId: row.orderId,
@@ -925,7 +919,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
     };
     try {
       await putApi(`Invoice/${row.invoiceId}`, payload);
-      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
+      toast.success("Sucessfully invoice data updated", { autoClose: 1500 });
       try {
         const [Invoice] = await Promise.all([getApi("Invoice")]);
         setInvoiceDetailsData(Invoice.data);
@@ -966,7 +960,7 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
     };
     try {
       await postApi(`InvoicePayment`, payload);
-      toast.success("Sucessfully invoice payment data updated", {
+      toast.success("Sucessfully payment invoice payment data updated", {
         autoClose: 1500,
       });
       try {
@@ -998,50 +992,49 @@ const updateInvoiceEdit = (id: number, field: keyof InvoiceRow, value: any) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-const handlePaymentUpdateDetails = async (rows: any) => {
-  const row = paymentEditDetails[0];
-  console.log('row', row);
+  const handlePaymentUpdateDetails = async (rows: any) => {
+    const row = paymentEditDetails[0];
+    console.log("row", row);
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const amount = Number(row.amountReceived) || 0;
-    const rate = Number(row.conversionRateAtPayment) || 0;
+      const amount = Number(row.amountReceived) || 0;
+      const rate = Number(row.conversionRateAtPayment) || 0;
 
-    const payload = {
-      paymentId: row.paymentId,
-      paymentDate: row.paymentDate,
-      amountReceived: Number(row.amountReceived),
-      currency: row.amountCurrency,
-      amountReceivedInr: amount * rate,
-      conversionRateAtPayment: rate,
-      fluctuationDifference: Number(row.fluctuationDifference),
-      paymentMethod: row.paymentMethod,
-      referenceNumber: row.referenceNumber,
-      comments: row.comments,
-    };
+      const payload = {
+        paymentId: row.paymentId,
+        paymentDate: row.paymentDate,
+        amountReceived: Number(row.amountReceived),
+        currency: row.amountCurrency,
+        amountReceivedInr: amount * rate,
+        conversionRateAtPayment: rate,
+        fluctuationDifference: Number(row.fluctuationDifference),
+        paymentMethod: row.paymentMethod,
+        referenceNumber: row.referenceNumber,
+        comments: row.comments,
+      };
 
-    console.log('payload', payload);
+      console.log("payload", payload);
 
-    // ✅ STEP 1: PUT — if this throws, GET never runs
-    await putApi(`InvoicePayment/${row.paymentId}`, payload);
+      // ✅ STEP 1: PUT — if this throws, GET never runs
+      await putApi(`InvoicePayment/${row.paymentId}`, payload);
 
-    toast.success("Successfully invoice payment data updated", {
-      autoClose: 1500,
-    });
+      toast.success("Successfully invoice payment data updated", {
+        autoClose: 1500,
+      });
 
-    // ✅ STEP 2: GET — only reached if PUT succeeded
-    const response = await getApi("InvoicePayment");
-    setPaymentData(response.data); // ✅ fixed — no wrapping []
-    setPaymentEditPopUP(false);
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Technical Error", { autoClose: 1500 });
-  } finally {
-    setLoading(false);
-  }
-};
+      // ✅ STEP 2: GET — only reached if PUT succeeded
+      const response = await getApi("InvoicePayment");
+      setPaymentData(response.data); // ✅ fixed — no wrapping []
+      setPaymentEditPopUP(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", { autoClose: 1500 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getInvoiceDeetailsGroup = invoiceDetailsData.reduce(
     (acc: any, item) => {
@@ -1437,6 +1430,165 @@ const handlePaymentUpdateDetails = async (rows: any) => {
     }
   };
 
+  const handleOrderListUpload = async (row, file) => {
+    try {
+
+      const orderData = new FormData();
+      orderData.append("file", file);
+
+      await axios.post(
+        `https://vinnovativeapi.azurewebsites.net/Order/AddOrderDocuments?orderId=${row.orderId}`,
+        orderData,
+      );
+
+      toast.success("Successfully file uploaded", {
+        autoClose: 1500,
+      });
+
+      try {
+        const [order] = await Promise.all([getApi("Order")]);
+        setOrderDetailsData(order.data);
+      } catch (err) {
+        console.error(err);
+
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+  const handleOrderDownload = async (doc) => {
+    try {
+      const response = await getApi(`Order/download/${doc.documentId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = doc.originalFileName || "document";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Successfully downloaded", {
+        autoClose: 1500,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+  const handleOrderDelete = async (id) => {
+    try {
+      await deleteApi(`Order/document/${id.documentId}`)
+       toast.success("Successfully deleted", {
+        autoClose: 1500,
+      });
+       try {
+        const [order] = await Promise.all([getApi("Order")]);
+        setOrderDetailsData(order.data);
+      } catch (err) {
+        console.error(err);
+
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+  };
+
+const handleproposalDeleteDocument = async (doc) => {
+try {
+      await deleteApi(`Proposal/document/${doc.documentId}`)
+       toast.success("Successfully deleted", {
+        autoClose: 1500,
+      });
+       try {
+        const [Proposal] = await Promise.all([getApi("Proposal")]);
+        const mapped: OfferRow[] = Proposal.data.map(
+          (item: any, index: number) => ({
+            ...JSON.parse(JSON.stringify(item)), // ✅ deep clone
+            id: item.id || Date.now() + index,
+            file: null,
+            fileUrl: item.documentData
+              ? base64ToBlobUrl(item.documentData)
+              : null,
+          }),
+        );
+        setOfferData(mapped);
+      } catch (err) {
+        console.error(err);
+
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+}
+
+const handleInvoiceDeleteDocument = async (doc) => {
+  try {
+      await deleteApi(`Invoice/document/${doc.documentId}`)
+       toast.success("Successfully deleted", {
+        autoClose: 1500,
+      });
+        try {
+        const [Invoice] = await Promise.all([getApi("Invoice")]);
+        setInvoiceDetailsData(Invoice.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Technical Error", {
+          autoClose: 1500,
+        });
+      }
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+}
+
+const handleInvoicePaymentDeleteDocument = async (doc) => {
+  try {
+      await deleteApi(`InvoicePayment/document/${doc.documentId}`)
+       toast.success("Successfully deleted", {
+        autoClose: 1500,
+      });
+       
+const res = await getApi("InvoicePayment");
+      setPaymentDetailsData(res.data);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Technical Error", {
+        autoClose: 1500,
+      });
+    }
+}
+
   return (
     <Fragment>
       {!loading ? (
@@ -1568,7 +1720,7 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                                           Buttonvariant="danger-light"
                                           Customclass="btn btn-icon btn-sm"
                                           onClick={() =>
-                                            handleDeleteDocument(doc, row)
+                                            handleproposalDeleteDocument(doc, row)
                                           }
                                         >
                                           <i className="ri-delete-bin-line"></i>
@@ -1885,10 +2037,121 @@ const handlePaymentUpdateDetails = async (rows: any) => {
 
                                   {/* ✅ Project ID */}
                                   {/* Order No */}
-                                  <td>
-                                    <div className="fw-semibold d-block">
+                                  <td style={{ minWidth: "320px" }}>
+                                    {/* Order Number */}
+                                    <div className="fw-semibold text-primary mb-2">
                                       {poRow.orderNumber}
                                     </div>
+
+                                    {/* Existing Documents */}
+                                    {poRow.orderDocuments?.length > 0 &&
+                                      poRow.orderDocuments.map((doc) => (
+                                        <div
+                                          key={doc.documentId}
+                                          className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+                                        >
+                                          <div
+                                            className="text-truncate me-2"
+                                            style={{ maxWidth: "180px" }}
+                                            title={doc.originalFileName}
+                                          >
+                                            📎 {doc.originalFileName}
+                                          </div>
+
+                                          <div className="d-flex gap-1">
+                                            {/* Download */}
+                                            <SpkTooltips
+                                              placement="top"
+                                              title="Download"
+                                            >
+                                              <SpkButton
+                                                Buttonvariant="success-light"
+                                                Customclass="btn btn-icon btn-sm"
+                                                onClick={() =>
+                                                  handleOrderDownload(
+                                                    doc,
+                                                    poRow,
+                                                  )
+                                                }
+                                              >
+                                                <i className="ri-download-2-line"></i>
+                                              </SpkButton>
+                                            </SpkTooltips>
+
+                                            {/* Delete */}
+                                            <SpkTooltips
+                                              placement="top"
+                                              title="Delete"
+                                            >
+                                              <SpkButton
+                                                Buttonvariant="danger-light"
+                                                Customclass="btn btn-icon btn-sm"
+                                                onClick={() =>
+                                                  handleOrderDelete(
+                                                    doc,
+                                                    poRow,
+                                                  )
+                                                }
+                                              >
+                                                <i className="ri-delete-bin-line"></i>
+                                              </SpkButton>
+                                            </SpkTooltips>
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                    {/* Selected Upload File */}
+                                    {selectedFiles[poRow.id] && (
+                                      <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+                                        <div
+                                          className="text-truncate me-2"
+                                          style={{ maxWidth: "180px" }}
+                                        >
+                                          📄 {selectedFiles[poRow.id].name}
+                                        </div>
+
+                                        <button
+                                          className="btn btn-sm btn-danger"
+                                          onClick={() =>
+                                            handleRemoveSelectedFile(poRow.id)
+                                          }
+                                        >
+                                          <i className="ri-close-line"></i>
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {/* Upload Button */}
+                                    {!selectedFiles[poRow.id] && (
+                                      <>
+                                        <input
+                                          type="file"
+                                          hidden
+                                          id={`upload-${poRow.id}`}
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+
+                                            if (file) {
+                                              handleOrderListUpload(
+                                                poRow,
+                                                file,
+                                              );
+                                            }
+
+                                            e.target.value = "";
+                                          }}
+                                        />
+
+                                        <label
+                                          htmlFor={`upload-${poRow.id}`}
+                                          className="btn btn-sm btn-outline-primary"
+                                          style={{ cursor: "pointer" }}
+                                        >
+                                          <i className="ri-upload-2-line me-1"></i>
+                                          Upload
+                                        </label>
+                                      </>
+                                    )}
                                   </td>
                                   <td>
                                     <div className="fw-semibold d-block">
@@ -2192,7 +2455,7 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                                                                 Buttonvariant="danger-light"
                                                                 Customclass="btn btn-icon btn-sm"
                                                                 onClick={() =>
-                                                                  handleDeleteDocument(
+                                                                  handleInvoiceDeleteDocument(
                                                                     doc,
                                                                     row,
                                                                   )
@@ -2320,8 +2583,11 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                                           {/* Invoice Value INR */}
                                           <td>
                                             <div className="fw-seminormal d-block">
-  ₹ {Number(row.invoiceValueInr || 0).toFixed(2)}
-</div>
+                                              ₹{" "}
+                                              {Number(
+                                                row.invoiceValueInr || 0,
+                                              ).toFixed(2)}
+                                            </div>
                                           </td>
 
                                           {/* Payment Term */}
@@ -2571,7 +2837,7 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                                                                   Buttonvariant="danger-light"
                                                                   Customclass="btn btn-icon btn-sm"
                                                                   onClick={() =>
-                                                                    handleDeleteDocument(
+                                                                    handleInvoicePaymentDeleteDocument(
                                                                       doc,
                                                                       row,
                                                                     )
@@ -2834,7 +3100,6 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                       </select>
                     </div>
 
-                  
                     <div className="col-md-4">
                       <label className="form-label">Value Received</label>
                       <input
@@ -3113,8 +3378,6 @@ const handlePaymentUpdateDetails = async (rows: any) => {
                             ))}
                           </select>
                         </div>
-
-                      
 
                         <div className="col-md-4">
                           <label className="form-label">Value Received</label>
