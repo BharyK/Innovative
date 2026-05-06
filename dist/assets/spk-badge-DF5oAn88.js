@@ -1,0 +1,1 @@
+import{j as s,r as c,as as l}from"./index-BdhSu1lm.js";const d=({children:a,Customclass:r,variant:t,Pill:e,Text:o,bsPrefix:x,Id:i,as:n,Onclickfun:p})=>s.jsx(c.Fragment,{children:s.jsx(l,{bg:t,className:`${r}`,pill:e,text:o,as:n,bsPrefix:x,id:i,onClick:p,children:a})});export{d as S};

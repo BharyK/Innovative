@@ -717,6 +717,7 @@ const updatePoRow = (
       projectName: row.projectId,
       comments: row.comments,
     };
+    console.log (payload, "update pyalod")
     try {
       await postApi("Order", payload);
       toast.success("Sucessfully order data updated", { autoClose: 1500 });
@@ -2376,7 +2377,7 @@ const res = await getApi("InvoicePayment");
                                                 <>
                                                   {/* Proposal Number */}
                                                   <div className="fw-semibold text-primary mb-2">
-                                                    {row.proposalNumber}
+                                                    {row.invoiceNumber}
                                                   </div>
 
                                                   {/* Existing Documents from API */}
@@ -2532,7 +2533,7 @@ const res = await getApi("InvoicePayment");
                                           {/* Invoice Date */}
                                           <td>
                                             <div className="fw-seminormal d-block">
-                                              {row.invoiceDate}
+                                              {moment(row.invoiceDate).format("MMMM DD, YYYY")}
                                             </div>
                                           </td>
 
@@ -2748,7 +2749,7 @@ const res = await getApi("InvoicePayment");
                                             {rowIndex === 0 && (
                                               <td rowSpan={rows.length}>
                                                 <span className="fw-semibold d-block">
-                                                  {invoiceId}
+                                                  {row.invoiceNumber}
                                                 </span>
                                               </td>
                                             )}
@@ -2917,7 +2918,7 @@ const res = await getApi("InvoicePayment");
                                             <td>{row.amountReceived}</td>
                                             <td>{row.currency}</td>
                                             <td>{row.amountReceivedInr}</td>
-                                            <td>{row.paymentDate}</td>
+                                            <td>{moment(row.paymentDate).format("MMMM DD, YYYY")}</td>
                                             <td>{row.paymentMethod}</td>
                                             <td>{row.fluctuationDifference}</td>
                                             <td>{row.comments}</td>
