@@ -1263,38 +1263,51 @@ const updatePoRow = (
     }
   };
 
-  const handleInvoiceFileUpload = async (uniqueKey, row, file) => {
-    setSelectedFiles((prev) => ({
-      ...prev,
-      [uniqueKey]: file, // dynamically added key
-    }));
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      await axios.post(
-        `https://vinnovativeapi.azurewebsites.net/Invoice/AddInvoiceDocuments?invoiceId=${row.invoiceId}`,
-        formData,
-      );
+const handleInvoiceFileUpload = async (uniqueKey, row, file) => {
+  // show temporary preview (optional)
+  setSelectedFiles((prev) => ({
+    ...prev,
+    [uniqueKey]: file,
+  }));
 
-      toast.success("Successfully file uploaded", {
-        autoClose: 1500,
-      });
-      try {
-        const [Invoice] = await Promise.all([getApi("Invoice")]);
-        setInvoiceDetailsData(Invoice.data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Technical Error", {
-          autoClose: 1500,
-        });
-      }
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    await axios.post(
+      `https://vinnovativeapi.azurewebsites.net/Invoice/AddInvoiceDocuments?invoiceId=${row.invoiceId}`,
+      formData
+    );
+
+    toast.success("Successfully file uploaded", {
+      autoClose: 1500,
+    });
+
+    // ✅ REMOVE local file after upload (IMPORTANT FIX)
+    setSelectedFiles((prev) => {
+      const updated = { ...prev };
+      delete updated[uniqueKey];
+      return updated;
+    });
+
+    // 🔄 Refresh data
+    try {
+      const [Invoice] = await Promise.all([getApi("Invoice")]);
+      setInvoiceDetailsData(Invoice.data);
     } catch (err) {
       console.error(err);
       toast.error("Technical Error", {
         autoClose: 1500,
       });
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Technical Error", {
+      autoClose: 1500,
+    });
+  }
+};
 
   const handleInvoiceDownload = async (doc) => {
     try {
@@ -2365,170 +2378,115 @@ const res = await getApi("InvoicePayment");
                                           {/* 🔽 ALL YOUR FIELDS */}
 
                                           {/* Invoice Number */}
-                                          <td>
-                                            {/* <div className="fw-seminormal d-block">
-                                              {row.invoiceNumber}
-                                            </div> */}
+                                         <td>
+  {(() => {
+    const uniqueKey = `${row.proposalNumber}-${row.orderNumber}-${row.id}`;
 
-                                            {(() => {
-                                              const uniqueKey = `${row.proposalNumber}-${row.orderNumber}-${row.id}`;
+    return (
+      <>
+        {/* Invoice Number */}
+        <div className="fw-semibold text-primary mb-2">
+          {row.invoiceNumber}
+        </div>
 
-                                              return (
-                                                <>
-                                                  {/* Proposal Number */}
-                                                  <div className="fw-semibold text-primary mb-2">
-                                                    {row.invoiceNumber}
-                                                  </div>
+        {/* Existing Documents from API */}
+        {row.invoiceDocuments?.length > 0 &&
+          row.invoiceDocuments.map((doc) => (
+            <div
+              key={doc.documentId}
+              className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
+            >
+              <div
+                className="text-truncate me-2"
+                style={{ maxWidth: "180px" }}
+                title={doc.originalFileName}
+              >
+                📎 {doc.originalFileName}
+              </div>
 
-                                                  {/* Existing Documents from API */}
-                                                  {row.invoiceDocuments
-                                                    ?.length > 0 &&
-                                                    row.invoiceDocuments.map(
-                                                      (doc) => (
-                                                        <div
-                                                          key={doc.documentId}
-                                                          className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2"
-                                                        >
-                                                          <div
-                                                            className="text-truncate me-2"
-                                                            style={{
-                                                              maxWidth: "180px",
-                                                            }}
-                                                            title={
-                                                              doc.originalFileName
-                                                            }
-                                                          >
-                                                            📎{" "}
-                                                            {
-                                                              doc.originalFileName
-                                                            }
-                                                          </div>
+              <div className="d-flex gap-1">
+                {/* Download */}
+                <SpkTooltips placement="top" title="Download">
+                  <SpkButton
+                    Buttonvariant="success-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() =>
+                      handleInvoiceDownload(doc, row)
+                    }
+                  >
+                    <i className="ri-download-2-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
 
-                                                          <div className="d-flex gap-1">
-                                                            {/* Download */}
-                                                            <SpkTooltips
-                                                              placement="top"
-                                                              title="Download"
-                                                            >
-                                                              <SpkButton
-                                                                Buttonvariant="success-light"
-                                                                Customclass="btn btn-icon btn-sm"
-                                                                onClick={() =>
-                                                                  handleInvoiceDownload(
-                                                                    doc,
-                                                                    row,
-                                                                  )
-                                                                }
-                                                              >
-                                                                <i className="ri-download-2-line"></i>
-                                                              </SpkButton>
-                                                            </SpkTooltips>
+                {/* Delete */}
+                <SpkTooltips placement="top" title="Delete">
+                  <SpkButton
+                    Buttonvariant="danger-light"
+                    Customclass="btn btn-icon btn-sm"
+                    onClick={() =>
+                      handleInvoiceDeleteDocument(doc, row)
+                    }
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                  </SpkButton>
+                </SpkTooltips>
+              </div>
+            </div>
+          ))}
 
-                                                            {/* Delete */}
-                                                            <SpkTooltips
-                                                              placement="top"
-                                                              title="Delete"
-                                                            >
-                                                              <SpkButton
-                                                                Buttonvariant="danger-light"
-                                                                Customclass="btn btn-icon btn-sm"
-                                                                onClick={() =>
-                                                                  handleInvoiceDeleteDocument(
-                                                                    doc,
-                                                                    row,
-                                                                  )
-                                                                }
-                                                              >
-                                                                <i className="ri-delete-bin-line"></i>
-                                                              </SpkButton>
-                                                            </SpkTooltips>
-                                                          </div>
-                                                        </div>
-                                                      ),
-                                                    )}
+        {/* Selected Upload File Preview */}
+        {selectedFiles[uniqueKey] && (
+          <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
+            <div
+              className="text-truncate me-2"
+              style={{ maxWidth: "180px" }}
+              title={selectedFiles[uniqueKey].name}
+            >
+              📄 {selectedFiles[uniqueKey].name}
+            </div>
 
-                                                  {/* Selected Upload File */}
-                                                  {selectedFiles[uniqueKey] && (
-                                                    <div className="d-flex align-items-center justify-content-between border rounded px-2 py-1 mb-2 bg-light">
-                                                      <div
-                                                        className="text-truncate me-2"
-                                                        style={{
-                                                          maxWidth: "180px",
-                                                        }}
-                                                        title={
-                                                          selectedFiles[
-                                                            uniqueKey
-                                                          ].name
-                                                        }
-                                                      >
-                                                        📄{" "}
-                                                        {
-                                                          selectedFiles[
-                                                            uniqueKey
-                                                          ].name
-                                                        }
-                                                      </div>
+            <SpkTooltips placement="top" title="Remove">
+              <button
+                type="button"
+                className="btn btn-sm btn-danger"
+                onClick={() =>
+                  handleRemoveSelectedFile(uniqueKey)
+                }
+              >
+                <i className="ri-close-line"></i>
+              </button>
+            </SpkTooltips>
+          </div>
+        )}
 
-                                                      <SpkTooltips
-                                                        placement="top"
-                                                        title="Remove"
-                                                      >
-                                                        <button
-                                                          type="button"
-                                                          className="btn btn-sm btn-danger"
-                                                          onClick={() =>
-                                                            handleRemoveSelectedFile(
-                                                              uniqueKey,
-                                                            )
-                                                          }
-                                                        >
-                                                          <i className="ri-close-line"></i>
-                                                        </button>
-                                                      </SpkTooltips>
-                                                    </div>
-                                                  )}
+        {/* Upload Button (ALWAYS VISIBLE) */}
+        <input
+          type="file"
+          hidden
+          id={`upload-${uniqueKey}`}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
 
-                                                  {/* Upload Button */}
-                                                  {!selectedFiles[
-                                                    uniqueKey
-                                                  ] && (
-                                                    <>
-                                                      <input
-                                                        type="file"
-                                                        hidden
-                                                        id={`upload-${uniqueKey}`}
-                                                        onChange={(e) => {
-                                                          const file =
-                                                            e.target.files?.[0];
+            if (file) {
+              handleInvoiceFileUpload(uniqueKey, row, file);
+            }
 
-                                                          if (file) {
-                                                            handleInvoiceFileUpload(
-                                                              uniqueKey,
-                                                              row,
-                                                              file,
-                                                            );
-                                                          }
+            e.target.value = ""; // reset input
+          }}
+        />
 
-                                                          e.target.value = "";
-                                                        }}
-                                                      />
-
-                                                      <label
-                                                        htmlFor={`upload-${uniqueKey}`}
-                                                        className="btn btn-sm btn-outline-primary"
-                                                        style={{
-                                                          cursor: "pointer",
-                                                        }}
-                                                      >
-                                                        <i className="ri-upload-2-line me-1"></i>
-                                                        Upload
-                                                      </label>
-                                                    </>
-                                                  )}
-                                                </>
-                                              );
-                                            })()}
-                                          </td>
+        <label
+          htmlFor={`upload-${uniqueKey}`}
+          className="btn btn-sm btn-outline-primary"
+          style={{ cursor: "pointer" }}
+        >
+          <i className="ri-upload-2-line me-1"></i>
+          Upload
+        </label>
+      </>
+    );
+  })()}
+</td>
 
                                           {/* Invoice Date */}
                                           <td>
