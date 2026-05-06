@@ -984,7 +984,7 @@ const updatePoRow = (
         paymentId: row.paymentId,
         paymentDate: row.paymentDate,
         amountReceived: Number(row.amountReceived),
-        currency: row.amountCurrency,
+        currency: row.currency,
         amountReceivedInr: amount * rate,
         conversionRateAtPayment: rate,
         fluctuationDifference: Number(row.fluctuationDifference),
