@@ -451,10 +451,28 @@ const Crm = () => {
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  const updatePoRow = (id: number, field: keyof PurchaseOrderRow, value: any) =>
-    setPurchaseOrderData((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
-    );
+const updatePoRow = (
+  id: number,
+  field: keyof PurchaseOrderRow,
+  value: any
+) => {
+  setPurchaseOrderData((prev) =>
+    prev.map((r) => {
+      if (r.id !== id) return r;
+
+      const updatedRow = { ...r, [field]: value };
+
+      // Convert to numbers safely
+      const amount = parseFloat(updatedRow.orderAmount) || 0;
+      const rate = parseFloat(updatedRow.conversionRate) || 0;
+
+      // Auto calculate
+      updatedRow.orderValueINR = amount * rate;
+
+      return updatedRow;
+    })
+  );
+};
 
   const updateInvoiceRow = (id: number, field: keyof InvoiceRow, value: any) =>
     setInvoiceData((prev) =>
@@ -492,19 +510,6 @@ const Crm = () => {
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
 
-  // ── Add Row ──────────────────────────────────────────────────────────────
-
-  const addOfferRow = () =>
-    setOfferData((prev) => [...prev, createEmptyOfferRow()]);
-  const addPoRow = () =>
-    setPurchaseOrderData((prev) => [...prev, createEmptyPurchaseOrderRow()]);
-  const addInvoiceRow = () =>
-    setInvoiceData((prev) => [...prev, createEmptyInvoiceRow()]);
-  const addPaymentRow = () =>
-    setPaymentData((prev) => [...prev, createEmptyPaymentRow()]);
-
-  // ── Submit offer row ─────────────────────────────────────────────────────
-
   const [btnLoading, setBtnLoading] = useState(false);
 
   const modalSubmit = async () => {
@@ -525,7 +530,7 @@ const Crm = () => {
       comments: row.comments,
       documentData: row.file?.base64,
       year: row.year,
-      fileName: row.file.fileName,
+      fileName: "",
     };
     console.log("row", payload);
     try {
@@ -540,34 +545,6 @@ const Crm = () => {
       toast.error("Pease try again", { autoClose: 1500 });
     }
   };
-  const handleOfferSubmit = async (row: OfferRow) => {
-    console.log("row", row);
-    const payload = {
-      proposalNumber: row.proposalNumber,
-      firmId: Number(row.firmId),
-      customerId: 0,
-      proposalDate: row.proposalDate,
-      leadGenerator: row.leadGenerator,
-      projectDetails: row.projectDetails,
-      departmentId: Number(row.departmentId),
-      estimatedHours: Number(row.hours),
-      businessUnitId: Number(row.businessUnitId),
-      status: row.status,
-      comments: row.comments,
-      documentData: row.file?.base64,
-      year: row.year,
-      fileName: row.fileName,
-    };
-    console.log("row", payload);
-    try {
-      await postApi("Proposal", payload);
-      toast.success("Sucessfully proposal data updated", { autoClose: 1500 });
-      fetchData();
-    } catch (err) {
-      toast.error("Sucessfully proposal data updated", { autoClose: 1500 });
-    }
-  };
-
   // ── Accordion ────────────────────────────────────────────────────────────
 
   const toggleAccordion = (key: string) =>
@@ -4802,38 +4779,7 @@ const res = await getApi("InvoicePayment");
                       />
                     </div>
 
-                    {/* ROW 5 (full width file upload) */}
-                    <div className="col-md-12">
-                      <label className="form-label">Upload File</label>
-                      <input
-                        type="file"
-                        className="form-control"
-                        onChange={(e) => {
-                          const f = e.target.files[0];
-                          if (!f) return;
-
-                          updateAddProposalRow(row.id, "file", {
-                            file: f,
-                            fileName: f.name,
-                          });
-                        }}
-                      />
-
-                      {row.file?.fileName && (
-                        <div className="d-flex justify-content-between mt-1">
-                          <small>{row.file.fileName}</small>
-                          <button
-                            type="button"
-                            className="btn btn-link text-danger p-0"
-                            onClick={() =>
-                              updateAddProposalRow(row.id, "file", null)
-                            }
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  
 
                     {/* SUBMIT */}
                     <div className="col-12 text-end">
