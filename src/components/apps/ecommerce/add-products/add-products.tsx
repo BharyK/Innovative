@@ -41,6 +41,7 @@ const DEPT_ID = { purchase: 1, account: 2, technical: 3 } as const;
 
 const AddProduct = ({ handleCustomerAdded }) => {
   // ── General info state ──────────────────────────────────────────────────
+  const [disAbleButn, setDisabledBtn] = useState(false)
   const [generalData, setGeneralData] = useState({
     customerName: "",
     geography: "",
@@ -83,6 +84,7 @@ const AddProduct = ({ handleCustomerAdded }) => {
   // ── Build payload & save ─────────────────────────────────────────────────
   const handleSave = async () => {
     const firmId = sessionStorage.getItem("selectedFirmId") || "1";
+    setDisabledBtn(true)
 
     /** ✅ Check if at least one meaningful field is filled */
     const isFilled = (c: any) => {
@@ -158,6 +160,7 @@ const AddProduct = ({ handleCustomerAdded }) => {
       ],
     };
     handleCustomerAdded(payload);
+     setDisabledBtn(false)
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -1208,16 +1211,18 @@ const AddProduct = ({ handleCustomerAdded }) => {
                       </Tab.Content>
 
                       <Card.Footer className="border-top-0">
-                        <div
-                          className="btn-list float-end"
-                          onClick={handleSave}
-                        >
-                          <SpkButton Buttonvariant="primary" Customclass="btn">
-                            Save Customer Information
-                            <i className="bi bi-download ms-2"></i>
-                          </SpkButton>
-                        </div>
-                      </Card.Footer>
+  <div className="btn-list float-end">
+    <SpkButton
+      Buttonvariant="primary"
+      Customclass="btn"
+      onClick={handleSave}
+      Disabled={disAbleButn}
+    >
+      Save Customer Information
+      <i className="bi bi-download ms-2"></i>
+    </SpkButton>
+  </div>₹
+</Card.Footer>
                     </Card>
                   </Col>
                 </Tab.Container>
