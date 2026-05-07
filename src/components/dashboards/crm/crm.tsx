@@ -1580,6 +1580,14 @@ const res = await getApi("InvoicePayment");
     }
 }
 
+const getCurrencySymbol = (currencyName) => {
+  return (
+    dropdownOptions.currency.find(
+      (item) => item.name === currencyName
+    )?.symbol || ""
+  );
+};
+
   return (
     <Fragment>
       {!loading ? (
@@ -2207,8 +2215,9 @@ const res = await getApi("InvoicePayment");
                                   {/* Order Value */}
                                   <td>
                                     <div className="fw-semibold d-block">
-                                      {poRow.orderValue}
-                                    </div>
+  {getCurrencySymbol(poRow.orderCurrency)}
+  {Number(poRow.orderValue).toLocaleString()}
+</div>
                                   </td>
 
                                   {/* Conversion Rate */}
@@ -2216,6 +2225,7 @@ const res = await getApi("InvoicePayment");
                                     <div className="fw-semibold d-block">
                                       {poRow.conversionRate}
                                     </div>
+                                    
                                   </td>
 
                                   {/* INR Value */}
@@ -2504,9 +2514,12 @@ const res = await getApi("InvoicePayment");
 
                                           {/* Invoice Value */}
                                           <td>
-                                            <div className="fw-seminormal d-block">
-                                              {row.invoiceValue}
-                                            </div>
+                                            
+                                             <div className="fw-semibold d-block">
+  {getCurrencySymbol(row.invoiceCurrency)}
+  {Number(row.invoiceValue).toLocaleString()}
+</div>
+                                            
                                           </td>
 
                                           {/* Conversion Rate */}
