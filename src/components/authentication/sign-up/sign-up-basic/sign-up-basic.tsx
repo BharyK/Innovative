@@ -12,93 +12,89 @@ import { getApi, postApi } from "../../../../api/services";
 const SignUpBasic = () => {
   const [inputpassWord, setInputPassword] = useState(false);
   const [errors, setErrors] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-  mobileNumber: "",
-  password: "",
-  confirmpassword: "",
-  roleIds: "",
-});
-const [data, setData] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-  mobileNumber: "",
-  userName: "",
-  password: "",
-  confirmpassword: "",
-  roleIds: [] as number[],
-});
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobileNumber: "",
+    password: "",
+    confirmpassword: "",
+    roleIds: "",
+  });
+  const [data, setData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobileNumber: "",
+    userName: "",
+    password: "",
+    confirmpassword: "",
+    roleIds: [] as number[],
+  });
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const passwordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
-const mobileRegex = /^[0-9]{10}$/;
+  const mobileRegex = /^[0-9]{10}$/;
 
-const [countryCode, setCountryCode] = useState("+91");
+  const [countryCode, setCountryCode] = useState("+91");
 
-const [roles, setRoles] = useState<any[]>([]);
-  
-const changeHandler = (
-  e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
-  const { name, value } = e.target;
+  const [roles, setRoles] = useState<any[]>([]);
 
-  setData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
+  const changeHandler = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
 
-  switch (name) {
-    case "email":
-      setErrors((prev) => ({
-        ...prev,
-        email: emailRegex.test(value)
-          ? ""
-          : "Please enter a valid email address",
-      }));
-      break;
+    setData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-    case "mobileNumber":
-      setErrors((prev) => ({
-        ...prev,
-        mobileNumber: mobileRegex.test(value)
-          ? ""
-          : "Mobile number must be exactly 10 digits",
-      }));
-      break;
-
-    case "password":
-      setErrors((prev) => ({
-        ...prev,
-        password: passwordRegex.test(value)
-          ? ""
-          : "Password must contain uppercase, lowercase, number and special character",
-        confirmpassword:
-          data.confirmpassword &&
-          value !== data.confirmpassword
-            ? "Passwords do not match"
-            : "",
-      }));
-      break;
-
-    case "confirmpassword":
-      setErrors((prev) => ({
-        ...prev,
-        confirmpassword:
-          value === data.password
+    switch (name) {
+      case "email":
+        setErrors((prev) => ({
+          ...prev,
+          email: emailRegex.test(value)
             ? ""
-            : "Passwords do not match",
-      }));
-      break;
+            : "Please enter a valid email address",
+        }));
+        break;
 
-    default:
-      break;
-  }
-};
+      case "mobileNumber":
+        setErrors((prev) => ({
+          ...prev,
+          mobileNumber: mobileRegex.test(value)
+            ? ""
+            : "Mobile number must be exactly 10 digits",
+        }));
+        break;
+
+      case "password":
+        setErrors((prev) => ({
+          ...prev,
+          password: passwordRegex.test(value)
+            ? ""
+            : "Password must contain uppercase, lowercase, number and special character",
+          confirmpassword:
+            data.confirmpassword && value !== data.confirmpassword
+              ? "Passwords do not match"
+              : "",
+        }));
+        break;
+
+      case "confirmpassword":
+        setErrors((prev) => ({
+          ...prev,
+          confirmpassword:
+            value === data.password ? "" : "Passwords do not match",
+        }));
+        break;
+
+      default:
+        break;
+    }
+  };
   const navigate = useNavigate();
   const fetchRoles = async () => {
     try {
@@ -112,76 +108,76 @@ const changeHandler = (
   useEffect(() => {
     fetchRoles();
   }, []);
-const Login1 = async (e: React.FormEvent) => {
-  e.preventDefault();
-if (!emailRegex.test(data.email)) {
-  toast.error("Please enter a valid email address");
-  return;
-}
+  const Login1 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailRegex.test(data.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
 
-if (!mobileRegex.test(data.mobileNumber)) {
-  toast.error("Mobile number must be 10 digits");
-  return;
-}
+    if (!mobileRegex.test(data.mobileNumber)) {
+      toast.error("Mobile number must be 10 digits");
+      return;
+    }
 
-if (data.password !== data.confirmpassword) {
-  toast.error("Passwords do not match");
-  return;
-}
+    if (data.password !== data.confirmpassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
-if (!data.roleIds.length) {
-  toast.error("Please select a role");
-  return;
-}
-  const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    if (!data.roleIds.length) {
+      toast.error("Please select a role");
+      return;
+    }
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
-  if (!passwordRegex.test(data.password)) {
-    setErrors((prev) => ({
-      ...prev,
-      password:
-        "Password must contain 8+ characters, uppercase, lowercase, number and special character.",
-    }));
+    if (!passwordRegex.test(data.password)) {
+      setErrors((prev) => ({
+        ...prev,
+        password:
+          "Password must contain 8+ characters, uppercase, lowercase, number and special character.",
+      }));
 
-    return;
-  }
+      return;
+    }
 
-  if (data.password !== data.confirmpassword) {
-    setErrors((prev) => ({
-      ...prev,
-      confirmpassword: "Passwords do not match.",
-    }));
+    if (data.password !== data.confirmpassword) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmpassword: "Passwords do not match.",
+      }));
 
-    toast.error("Passwords do not match!");
-    return;
-  }
+      toast.error("Passwords do not match!");
+      return;
+    }
 
-  const payload = {
-    firstName: data.firstName,
-    lastName: data.lastName,
-    email: data.email,
-    mobileNumber: data.mobileNumber,
-    userName: data.email,
-    password: data.password,
-    roleIds: [Number(data.roleIds[0])],
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      mobileNumber: data.mobileNumber,
+      userName: data.email,
+      password: data.password,
+      roleIds: [Number(data.roleIds[0])],
+    };
+
+    console.log("Payload => ", payload);
+
+    try {
+      const response = await postApi("/UserProfile/register", payload);
+
+      toast.success("Account Created Successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      navigate(`${import.meta.env.BASE_URL}`);
+      
+    } catch (error) {
+      // setError1("Please check your details and try again.");
+      toast.error(error.response.data.message, { autoClose: 1500 });
+    }
   };
-
-  console.log("Payload => ", payload);
-
-  try {
-    const response = await postApi("/UserProfile/register", payload);
-
-    toast.success("Account Created Successfully!", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-
-    console.log(payload);
-  } catch (error) {
-    toast.error("Failed to create account");
-    console.error(error);
-  }
-};
   useEffect(() => {
     const body = document.body;
     body.classList.add("authentication-background");
@@ -201,10 +197,20 @@ if (!data.roleIds.length) {
               <Col xxl={5} xl={12} lg={6} md={10} sm={12} className="col-12">
                 <div className="my-5 d-flex justify-content-center">
                   <Link to={`${import.meta.env.BASE_URL}dashboards/sales`}>
-                    <img
+                    {/* <img
                       src={logo}
                       alt=""
                       className="authentication-brand desktop-logo"
+                    /> */}
+                    <img
+                      src="https://vinnovative.co.in/wp-content/uploads/2017/02/logo.png"
+                      className="authentication-brand desktop-logo"
+                      alt="Vinnovative Engineering Pvt Ltd."
+                      style={{
+                        maxHeight: "70px",
+                        width: "auto",
+                        objectFit: "contain",
+                      }}
                     />
                     <img
                       src={dark}
@@ -222,192 +228,208 @@ if (!data.roleIds.length) {
                     {/* {err && <SpkAlert variant="danger">{err}</SpkAlert>} */}
                     <Form onSubmit={Login1}>
                       <Row className="gy-3">
-  <Col xl={4}>
-    <label htmlFor="signup-firstname" className="form-label text-default">
-      First Name
-    </label>
-    <Form.Control
-      type="text"
-      name="firstName"
-      value={data.firstName}
-     // className="form-control-lg"
-      id="signup-firstname"
-      placeholder="Enter First Name"
-      onChange={changeHandler}
-    />
-  </Col>
+                        <Col xl={4}>
+                          <label
+                            htmlFor="signup-firstname"
+                            className="form-label text-default"
+                          >
+                            First Name
+                          </label>
+                          <Form.Control
+                            type="text"
+                            name="firstName"
+                            value={data.firstName}
+                            // className="form-control-lg"
+                            id="signup-firstname"
+                            placeholder="Enter First Name"
+                            onChange={changeHandler}
+                          />
+                        </Col>
 
-  <Col xl={4}>
-    <label htmlFor="signup-lastname" className="form-label text-default">
-      Last Name
-    </label>
-    <Form.Control
-      type="text"
-      name="lastName"
-      value={data.lastName}
-     // className="form-control-lg"
-      id="signup-lastname"
-      placeholder="Enter Last Name"
-      onChange={changeHandler}
-    />
-  </Col>
+                        <Col xl={4}>
+                          <label
+                            htmlFor="signup-lastname"
+                            className="form-label text-default"
+                          >
+                            Last Name
+                          </label>
+                          <Form.Control
+                            type="text"
+                            name="lastName"
+                            value={data.lastName}
+                            // className="form-control-lg"
+                            id="signup-lastname"
+                            placeholder="Enter Last Name"
+                            onChange={changeHandler}
+                          />
+                        </Col>
 
-  <Col xl={4}>
-    <label className="form-label text-default">
-      Mobile Number
-    </label>
+                        <Col xl={4}>
+                          <label className="form-label text-default">
+                            Mobile Number
+                          </label>
 
-    <div className="d-flex gap-2">
-      <Form.Select
-        style={{ maxWidth: "110px" }}
-        value={countryCode}
-        onChange={(e) => setCountryCode(e.target.value)}
-      >
-        <option value="+91">🇮🇳 +91</option>
-        <option value="+1">🇺🇸 +1</option>
-        <option value="+44">🇬🇧 +44</option>
-        <option value="+971">🇦🇪 +971</option>
-      </Form.Select>
+                          <div className="d-flex gap-2">
+                            <Form.Select
+                              style={{ maxWidth: "110px" }}
+                              value={countryCode}
+                              onChange={(e) => setCountryCode(e.target.value)}
+                            >
+                              <option value="+91">🇮🇳 +91</option>
+                              <option value="+1">🇺🇸 +1</option>
+                              <option value="+44">🇬🇧 +44</option>
+                              <option value="+971">🇦🇪 +971</option>
+                            </Form.Select>
 
-      <Form.Control
-        type="text"
-        name="mobileNumber"
-        value={data.mobileNumber}
-        maxLength={10}
-        placeholder="Enter Mobile Number"
-        onChange={changeHandler}
-      />
-    </div>
+                            <Form.Control
+                              type="text"
+                              name="mobileNumber"
+                              value={data.mobileNumber}
+                              maxLength={10}
+                              placeholder="Enter Mobile Number"
+                              onChange={changeHandler}
+                            />
+                          </div>
 
-    {errors.mobileNumber && (
-      <small className="text-danger">
-        {errors.mobileNumber}
-      </small>
-    )}
-  </Col>
+                          {errors.mobileNumber && (
+                            <small className="text-danger">
+                              {errors.mobileNumber}
+                            </small>
+                          )}
+                        </Col>
 
-  <Col xl={4}>
-    <label htmlFor="signup-email" className="form-label text-default">
-      Email Address
-    </label>
+                        <Col xl={4}>
+                          <label
+                            htmlFor="signup-email"
+                            className="form-label text-default"
+                          >
+                            Email Address
+                          </label>
 
-    <Form.Control
-      type="email"
-      name="email"
-      value={data.email}
-     // className="form-control-lg"
-      id="signup-email"
-      placeholder="Enter Email ID"
-      onChange={changeHandler}
-    />
+                          <Form.Control
+                            type="email"
+                            name="email"
+                            value={data.email}
+                            // className="form-control-lg"
+                            id="signup-email"
+                            placeholder="Enter Email ID"
+                            onChange={changeHandler}
+                          />
 
-    {errors.email && (
-      <small className="text-danger">
-        {errors.email}
-      </small>
-    )}
-  </Col>
+                          {errors.email && (
+                            <small className="text-danger">
+                              {errors.email}
+                            </small>
+                          )}
+                        </Col>
 
-  <Col xl={4}>
-    <label htmlFor="signup-password" className="form-label text-default">
-      Password
-    </label>
+                        <Col xl={4}>
+                          <label
+                            htmlFor="signup-password"
+                            className="form-label text-default"
+                          >
+                            Password
+                          </label>
 
-    <div className="position-relative">
-      <Form.Control
-        type={inputpassWord ? "text" : "password"}
-        name="password"
-        value={data.password}
-       // className="form-control-lg"
-        id="signup-password"
-        placeholder="Password"
-        onChange={changeHandler}
-      />
+                          <div className="position-relative">
+                            <Form.Control
+                              type={inputpassWord ? "text" : "password"}
+                              name="password"
+                              value={data.password}
+                              // className="form-control-lg"
+                              id="signup-password"
+                              placeholder="Password"
+                              onChange={changeHandler}
+                            />
 
-      <Link
-        to="#!"
-        className="show-password-button text-muted"
-        onClick={() => setInputPassword(!inputpassWord)}
-      >
-        <i
-          className={`${
-            inputpassWord ? "ri-eye-line" : "ri-eye-off-line"
-          } mt-1 align-middle`}
-        />
-      </Link>
-    </div>
+                            <Link
+                              to="#!"
+                              className="show-password-button text-muted"
+                              onClick={() => setInputPassword(!inputpassWord)}
+                            >
+                              <i
+                                className={`${
+                                  inputpassWord
+                                    ? "ri-eye-line"
+                                    : "ri-eye-off-line"
+                                } mt-1 align-middle`}
+                              />
+                            </Link>
+                          </div>
 
-    {errors.password && (
-      <small className="text-danger">
-        {errors.password}
-      </small>
-    )}
-  </Col>
+                          {errors.password && (
+                            <small className="text-danger">
+                              {errors.password}
+                            </small>
+                          )}
+                        </Col>
 
-  <Col xl={4}>
-    <label
-      htmlFor="signup-confirm-password"
-      className="form-label text-default"
-    >
-      Confirm Password
-    </label>
+                        <Col xl={4}>
+                          <label
+                            htmlFor="signup-confirm-password"
+                            className="form-label text-default"
+                          >
+                            Confirm Password
+                          </label>
 
-    <div className="position-relative">
-      <Form.Control
-        type={inputpassWord ? "text" : "password"}
-        name="confirmpassword"
-        value={data.confirmpassword}
-       // className="form-control-lg"
-        id="signup-confirm-password"
-        placeholder="Confirm Password"
-        onChange={changeHandler}
-      />
+                          <div className="position-relative">
+                            <Form.Control
+                              type={inputpassWord ? "text" : "password"}
+                              name="confirmpassword"
+                              value={data.confirmpassword}
+                              // className="form-control-lg"
+                              id="signup-confirm-password"
+                              placeholder="Confirm Password"
+                              onChange={changeHandler}
+                            />
 
-      <Link
-        to="#!"
-        className="show-password-button text-muted"
-        onClick={() => setInputPassword(!inputpassWord)}
-      >
-        <i
-          className={`${
-            inputpassWord ? "ri-eye-line" : "ri-eye-off-line"
-          } mt-1 align-middle`}
-        />
-      </Link>
-    </div>
+                            <Link
+                              to="#!"
+                              className="show-password-button text-muted"
+                              onClick={() => setInputPassword(!inputpassWord)}
+                            >
+                              <i
+                                className={`${
+                                  inputpassWord
+                                    ? "ri-eye-line"
+                                    : "ri-eye-off-line"
+                                } mt-1 align-middle`}
+                              />
+                            </Link>
+                          </div>
 
-    {errors.confirmpassword && (
-      <small className="text-danger">
-        {errors.confirmpassword}
-      </small>
-    )}
-  </Col>
+                          {errors.confirmpassword && (
+                            <small className="text-danger">
+                              {errors.confirmpassword}
+                            </small>
+                          )}
+                        </Col>
 
-  <Col xl={4}>
-    <label className="form-label text-default">
-      Role
-    </label>
+                        <Col xl={4}>
+                          <label className="form-label text-default">
+                            Role
+                          </label>
 
-    <Form.Select
-      value={data.roleIds[0] || ""}
-      onChange={(e) =>
-        setData((prev) => ({
-          ...prev,
-          roleIds: [Number(e.target.value)],
-        }))
-      }
-    >
-      <option value="">Select Role</option>
+                          <Form.Select
+                            value={data.roleIds[0] || ""}
+                            onChange={(e) =>
+                              setData((prev) => ({
+                                ...prev,
+                                roleIds: [Number(e.target.value)],
+                              }))
+                            }
+                          >
+                            <option value="">Select Role</option>
 
-      {roles.map((role) => (
-        <option key={role.roleId} value={role.roleId}>
-          {role.roleName}
-        </option>
-      ))}
-    </Form.Select>
-  </Col>
-</Row>
-                      <div className="d-grid mt-4">
+                            {roles.map((role) => (
+                              <option key={role.roleId} value={role.roleId}>
+                                {role.roleName}
+                              </option>
+                            ))}
+                          </Form.Select>
+                        </Col>
+                      </Row>
+                      <div className="d-grid mt-4 ">
                         <SpkButton
                           Buttontype="submit"
                           Size="lg"
@@ -429,7 +451,6 @@ if (!data.roleIds.length) {
                         </Link>
                       </p>
                     </div>
-                    
                   </Card.Body>
                 </Card>
               </Col>

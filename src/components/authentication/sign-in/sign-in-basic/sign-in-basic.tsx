@@ -128,7 +128,7 @@ const SignInBasic = () => {
                                             <p className="text-muted mt-3 mb-0">Dont have an account? <Link to={`${import.meta.env.BASE_URL}authentication/sign-up/sign-up-basic`}
                                                 className="text-primary fw-medium">Sign Up</Link></p>
                                         </div>
-                                        <div className="text-center my-4 authentication-barrier">
+                                        {/* <div className="text-center my-4 authentication-barrier">
                                             <span className="text-muted fs-12">Or SignIn With</span>
                                         </div>
                                         <div className="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
@@ -150,7 +150,7 @@ const SignInBasic = () => {
                                                 </span>
                                                 <span className="lh-1 ms-2 fs-13 text-default fw-medium">Twitter</span>
                                             </SpkButton>
-                                        </div>
+                                        </div> */}
                                     </Card.Body>
                                 </Card>
                             </Col>
